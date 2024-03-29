@@ -25,6 +25,23 @@ export const updateUser = async (userId, updateData) => {
   }
 };
 
+export const updateProfilePicture = async (userId, newProfilePicture) => {
+  try {
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: { profilePicture: newProfilePicture },
+      },
+      {
+        new: true,
+      }
+    );
+    return user;
+  } catch (err) {
+    throw err;
+  }
+};
+
 export const deleteUser = async (userId) => {
   try {
     await UserModel.findByIdAndDelete(userId);
@@ -36,6 +53,15 @@ export const deleteUser = async (userId) => {
 export const getUser = async (userId) => {
   try {
     const user = await UserModel.findById(userId);
+    return user;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const getUserProfile = async (query) => {
+  try {
+    const user = await UserModel.findOne({ username: query.username });
     return user;
   } catch (err) {
     throw err;
@@ -91,5 +117,24 @@ export const unfollowUser = async (userdata, updateData) => {
     } catch (error) {
       throw error;
     }
+  }
+};
+
+export const getUserFriends = async (params) => {
+  try {
+    const user = await UserModel.findById(params.userId);
+    const friends = await Promise.all(
+      user.followings.map((friendId) => {
+        return UserModel.findById(friendId);
+      })
+    );
+    const friendList = [];
+    friends.map((friend) => {
+      const { _id, username, profilePicture } = friend;
+      friendList.push({ _id, username, profilePicture });
+    });
+    return friendList;
+  } catch (err) {
+    throw err;
   }
 };

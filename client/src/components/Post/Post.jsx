@@ -1,16 +1,47 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { MdOutlineMoreVert } from "react-icons/md";
 import profilePic from "../../assets/profilepic.jpg";
 import postPic from "../../assets/postPic.jpg";
 import likeIcon from "../../assets/like.png";
 import heartIcon from "../../assets/heart.png";
 import { Users } from "../../data/dummyData";
+import axios from "axios";
+import userPic from "./assets/user.png";
+import moment from "moment";
+import { getUserData, likeAndDislikePost } from "../../utils/api/api";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { AuthContext } from "../../context/AuthContext";
 
 const Post = ({ post }) => {
-  const [like, setLike] = useState(post.like);
+  const [like, setLike] = useState(post.likes?.length);
   const [isLiked, setIsLiked] = useState(false);
+  const [user, setUser] = useState({});
+  const { user: currentUser } = useContext(AuthContext);
 
-  const handleLike = () => {
+  useEffect(() => {
+    setIsLiked(post.likes?.includes(currentUser._id));
+  }, [currentUser?._id, post.likes]);
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      try {
+        const res = await getUserData(post.userId);
+        setUser(res.data.userInfo);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getUserInfo();
+  }, [post.userId]);
+
+  const handleLike = async () => {
+    try {
+      await likeAndDislikePost(post._id, currentUser._id);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    }
     setLike(isLiked ? like - 1 : like + 1);
     setIsLiked(!isLiked);
   };
@@ -20,17 +51,17 @@ const Post = ({ post }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <img
-              src={
-                Users.filter((user) => user.id === post?.userId)[0]
-                  .profilePicture
-              }
+              src={user.profilePicture ? user.profilePicture : userPic}
               alt="Profile Picture"
               className="w-[32px] h-[32px] rounded-full object-cover"
             />
-            <span className="font-bold ml-[10px] mr-[10px]">
-              {Users.filter((user) => user.id === post?.userId)[0].username}
-            </span>
-            <span className="text-sm">{post.date}</span>
+            <Link to={`/profile/${user.username}`}>
+              <span className="font-bold ml-[10px] mr-[10px]">
+                {user.username}
+              </span>
+            </Link>
+
+            <span className="text-sm">{moment(post.createdAt).fromNow()}</span>
           </div>
           <div>
             <MdOutlineMoreVert className="text-xl cursor-pointer" />
@@ -39,12 +70,14 @@ const Post = ({ post }) => {
       </div>
       <div className="mt-[20px] mb-[20px]">
         <span>{post?.desc}</span>
-        <img
-          src={post.photo}
-          alt="Post Picture"
-          className="mt-[20px] w-full object-contain "
-          style={{ maxHeight: "500px" }}
-        />
+        {post.img && (
+          <img
+            src={post.img}
+            alt="Post Picture"
+            className="mt-[20px] w-full object-contain "
+            style={{ maxHeight: "500px" }}
+          />
+        )}
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[5px]">

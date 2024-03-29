@@ -2,7 +2,10 @@ import {
   deleteUser,
   followUser,
   getUser,
+  getUserFriends,
+  getUserProfile,
   unfollowUser,
+  updateProfilePicture,
   updateUser,
 } from "../services/user.service.js";
 
@@ -22,6 +25,22 @@ export const updateUserController = async (req, res) => {
     res.status(500).json("you can only update your account");
   }
 };
+
+export const updateProfilePictureController = async (req, res) => {
+    try {
+      const user = await updateProfilePicture(req.params.id, req.file.path);
+      res.status(200).json({
+        user,
+        message: "Profile Picture has been updated Successfully",
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json(err);
+    }
+};
+
+
+
 
 export const deleteUserController = async (req, res) => {
   if (req.body.userId === req.params.id || req.body.isAdmin) {
@@ -44,7 +63,21 @@ export const getUserController = async (req, res) => {
     const user = await getUser(req.params.id);
     const { password, ...data } = user._doc;
     res.status(200).json({
-      data,
+      userInfo: data,
+      message: "Account has been fetched Successfully",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+};
+
+export const getUserProfileController = async (req, res) => {
+  try {
+    const user = await getUserProfile(req.query);
+    const { password, ...data } = user._doc;
+    res.status(200).json({
+      userInfo: data,
       message: "Account has been fetched Successfully",
     });
   } catch (err) {
@@ -72,6 +105,19 @@ export const unfollowUserController = async (req, res) => {
     res.status(200).json({
       data,
       message: "UnFollow User Successfully",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+};
+
+export const getUserFriendsController = async (req, res) => {
+  try {
+    const friends = await getUserFriends(req.params);
+    res.status(200).json({
+      friends,
+      message: "Friends have fetched Successfully!",
     });
   } catch (err) {
     console.log(err);
