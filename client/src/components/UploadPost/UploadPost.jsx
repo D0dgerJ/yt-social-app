@@ -9,6 +9,8 @@ import {
 import { uploadPost } from "../../utils/api/api";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import userPic from "../Post/assets/user.png";
+
 
 const UploadPost = () => {
   const [desc, setDesc] = useState("");
@@ -52,7 +54,7 @@ const UploadPost = () => {
       <div className="wrapper p-[10px]">
         <div className="top flex items-center">
           <img
-            src={profilePic}
+            src={user.profilePicture ? user.profilePicture : userPic}
             alt="profilepic"
             className="w-[50px] h-[50px] rounded-full mr-[10px] object-cover"
           />

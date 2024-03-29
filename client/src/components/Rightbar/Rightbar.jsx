@@ -7,17 +7,18 @@ import { Users } from "../../data/dummyData";
 import { toast } from "react-toastify";
 import { followUser, getUserFriends, unfollowUser } from "../../utils/api/api";
 import { AuthContext } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const Rightbar = ({ user }) => {
   const [friends, setFriends] = useState([]);
   const { user: currentUser, dispatch } = useContext(AuthContext);
   const [isFollowed, setIsFollowed] = useState(
-    currentUser.followings.includes(user?._id)
-      );
+    currentUser?.followings.includes(user?._id)
+  );
 
   useEffect(() => {
-    setIsFollowed(currentUser.followings.includes(user?._id));
-  }, [currentUser, user._id]);
+    setIsFollowed(currentUser?.followings.includes(user?._id));
+  }, [currentUser, user?._id]);
 
   useEffect(() => {
     const getFriends = async () => {
@@ -77,7 +78,7 @@ const Rightbar = ({ user }) => {
   const RightBarProfile = () => {
     return (
       <>
-        {user.username !== currentUser.username && (
+        {user.username !== currentUser?.username && (
           <button
             className="bg-green-600 text-white mt-10 mb-5 py-2 px-5 rounded-md cursor-pointer hover:bg-green-700 transition"
             onClick={handleFollow}
@@ -114,16 +115,18 @@ const Rightbar = ({ user }) => {
           <h1 className="font-bold text-xl mb-[10px]">Friends</h1>
           <div className="grid grid-cols-3 gap-4">
             {friends.map((friend) => (
-              <div key={friend._id} className="flex flex-col items-center">
-                <img
-                  src={
-                    friend.profilePicture ? friend.profilePicture : profilePic
-                  }
-                  alt="user picture"
-                  className="w-[100px] h-[100px] object-cover rounded-md"
-                />
-                <span>{friend.username}</span>
-              </div>
+              <Link to={`/profile/${friend?.username}`}>
+                <div key={friend._id} className="flex flex-col items-center">
+                  <img
+                    src={
+                      friend.profilePicture ? friend.profilePicture : profilePic
+                    }
+                    alt="user picture"
+                    className="w-[100px] h-[100px] object-cover rounded-md"
+                  />
+                  <span>{friend.username}</span>
+                </div>
+              </Link>
             ))}
           </div>
         </div>

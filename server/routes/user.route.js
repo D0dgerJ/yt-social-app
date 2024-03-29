@@ -6,13 +6,23 @@ import {
   getUserFriendsController,
   getUserProfileController,
   unfollowUserController,
+  updateProfilePictureController,
   updateUserController,
 } from "../controllers/user.controller.js";
+import { parser } from "../config/cloudinary.js";
 
 const router = express.Router();
 
 //update USER
 router.put("/:id", updateUserController);
+
+//update profile Picture
+router.put(
+  "/:id/profile-picture",
+  parser.single("profilePicture"),
+  updateProfilePictureController
+);
+
 //delete user
 router.delete("/:id", deleteUserController);
 

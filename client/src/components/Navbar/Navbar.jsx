@@ -59,9 +59,9 @@ const Navbar = () => {
           </div>
         </div>
         <div className="profilePicDiv">
-          <Link to={`/profile/${user.username}`}>
+          <Link to={`/profile/${user?.username}`}>
             <img
-              src={user.profilePicture ? user.profilePicture : noProfile}
+              src={user?.profilePicture ? user?.profilePicture : noProfile}
               alt="A user Profile Picture"
               className="w-[32px] h-[32px] object-cover rounded-full cursor-pointer"
             />

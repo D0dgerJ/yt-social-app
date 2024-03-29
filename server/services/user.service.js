@@ -25,6 +25,23 @@ export const updateUser = async (userId, updateData) => {
   }
 };
 
+export const updateProfilePicture = async (userId, newProfilePicture) => {
+  try {
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: { profilePicture: newProfilePicture },
+      },
+      {
+        new: true,
+      }
+    );
+    return user;
+  } catch (err) {
+    throw err;
+  }
+};
+
 export const deleteUser = async (userId) => {
   try {
     await UserModel.findByIdAndDelete(userId);

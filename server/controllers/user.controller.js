@@ -5,6 +5,7 @@ import {
   getUserFriends,
   getUserProfile,
   unfollowUser,
+  updateProfilePicture,
   updateUser,
 } from "../services/user.service.js";
 
@@ -24,6 +25,22 @@ export const updateUserController = async (req, res) => {
     res.status(500).json("you can only update your account");
   }
 };
+
+export const updateProfilePictureController = async (req, res) => {
+    try {
+      const user = await updateProfilePicture(req.params.id, req.file.path);
+      res.status(200).json({
+        user,
+        message: "Profile Picture has been updated Successfully",
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json(err);
+    }
+};
+
+
+
 
 export const deleteUserController = async (req, res) => {
   if (req.body.userId === req.params.id || req.body.isAdmin) {
