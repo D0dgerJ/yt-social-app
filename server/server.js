@@ -9,6 +9,10 @@ import routes from "./routes/routes.js";
 const app = express();
 dotenv.config();
 
+app.get("/", (req, res)=>{
+  res.send("Backend is working!")
+)
+
 app.use(helmet());
 app.use(morgan("common"));
 app.use(cors());
