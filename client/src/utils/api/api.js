@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const API = axios.create({
-  baseURL: "http://localhost:5000/api/v1",
+  baseURL: "https://socio-junkie-backend.onrender.com/api/v1",
 });
 
 export const getTimeLinePost = (username) =>
