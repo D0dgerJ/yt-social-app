@@ -23,7 +23,7 @@ const UploadPost = () => {
   const handlePostUpload = async () => {
     setLoading(true);
     try {
-      const res = await uploadPost(user._id, desc, file);
+      const res = await uploadPost(desc, file);
       toast.success("Post has been Uploaded Successfully!");
       setFile(null);
       setPreview(null);

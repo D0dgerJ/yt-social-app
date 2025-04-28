@@ -1,140 +1,96 @@
+import prisma from "../prismaClient.js";
 import bcrypt from "bcrypt";
-import UserModel from "../models/user.model.js";
 
+// Обновить пользователя
 export const updateUser = async (userId, updateData) => {
   if (updateData.password) {
-    try {
-      updateData.password = await bcrypt.hashSync(updateData.password, 10);
-    } catch (err) {
-      throw err;
-    }
+    updateData.password = await bcrypt.hash(updateData.password, 10);
   }
-  try {
-    const user = await UserModel.findByIdAndUpdate(
-      userId,
-      {
-        $set: updateData,
-      },
-      {
-        new: true,
-      }
-    );
-    return user;
-  } catch (err) {
-    throw err;
-  }
+
+  const user = await prisma.user.update({
+    where: { id: Number(userId) },
+    data: updateData,
+  });
+
+  return user;
 };
 
+// Обновить аватар
 export const updateProfilePicture = async (userId, newProfilePicture) => {
-  try {
-    const user = await UserModel.findByIdAndUpdate(
-      userId,
-      {
-        $set: { profilePicture: newProfilePicture },
-      },
-      {
-        new: true,
-      }
-    );
-    return user;
-  } catch (err) {
-    throw err;
-  }
+  const user = await prisma.user.update({
+    where: { id: Number(userId) },
+    data: { profilePicture: newProfilePicture },
+  });
+
+  return user;
 };
 
+// Удалить пользователя
 export const deleteUser = async (userId) => {
-  try {
-    await UserModel.findByIdAndDelete(userId);
-  } catch (err) {
-    throw err;
-  }
+  await prisma.user.delete({
+    where: { id: Number(userId) },
+  });
 };
 
+// Получить пользователя по id
 export const getUser = async (userId) => {
-  try {
-    const user = await UserModel.findById(userId);
-    return user;
-  } catch (err) {
-    throw err;
-  }
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+  });
+
+  return user;
 };
 
+// Получить пользователя по username
 export const getUserProfile = async (query) => {
-  try {
-    const user = await UserModel.findOne({ username: query.username });
-    return user;
-  } catch (err) {
-    throw err;
-  }
+  const user = await prisma.user.findUnique({
+    where: { username: query.username },
+  });
+
+  return user;
 };
 
+// Подписаться на пользователя
 export const followUser = async (userdata, updateData) => {
-  if (userdata.userId === updateData.id) {
+  if (Number(userdata.userId) === Number(updateData.id)) {
     throw new Error("You cannot follow yourself");
-  } else {
-    try {
-      const user = await UserModel.findById(userdata.userId);
-      const currentUser = await UserModel.findById(updateData.id);
-      // console.log(user);
-      // console.log(currentUser);
-      if (!user.followings.includes(updateData.id)) {
-        await currentUser.updateOne({ $push: { followers: userdata.userId } });
-        await user.updateOne({ $push: { followings: updateData.id } });
-        return { user, currentUser };
-      } else {
-        throw new Error("You have already followed this user");
-      }
-    } catch (error) {
-      throw error;
-    }
   }
+
+  // Создаём запись в таблице Follow
+  await prisma.follow.create({
+    data: {
+      followerId: Number(userdata.userId),
+      followingId: Number(updateData.id),
+    },
+  });
 };
 
+// Отписаться от пользователя
 export const unfollowUser = async (userdata, updateData) => {
-  if (userdata.userId === updateData.id) {
+  if (Number(userdata.userId) === Number(updateData.id)) {
     throw new Error("You cannot unfollow yourself");
-  } else {
-    try {
-      const user = await UserModel.findById(userdata.userId);
-      const currentUser = await UserModel.findById(updateData.id);
-      // console.log(user);
-      // console.log(updateData);
-      if (user.followings.includes(updateData.id)) {
-        await currentUser.updateOne(
-          { $pull: { followers: userdata.userId } },
-          { new: true }
-        );
-        await user.updateOne(
-          {
-            $pull: { followings: updateData.id },
-          },
-          { new: true }
-        );
-        return { user, currentUser };
-      } else {
-        throw new Error("You don't follow this user");
-      }
-    } catch (error) {
-      throw error;
-    }
   }
+
+  await prisma.follow.deleteMany({
+    where: {
+      followerId: Number(userdata.userId),
+      followingId: Number(updateData.id),
+    },
+  });
 };
 
+// Получить список друзей пользователя
 export const getUserFriends = async (params) => {
-  try {
-    const user = await UserModel.findById(params.userId);
-    const friends = await Promise.all(
-      user.followings.map((friendId) => {
-        return UserModel.findById(friendId);
-      })
-    );
-    const friendList = [];
-    friends.map((friend) => {
-      const { _id, username, profilePicture } = friend;
-      friendList.push({ _id, username, profilePicture });
-    });
-    return friendList;
-  } catch (err) {
-    throw err;
-  }
+  const following = await prisma.follow.findMany({
+    where: { followerId: Number(params.userId) },
+    include: {
+      following: true,
+    },
+  });
+
+  return following.map((f) => ({
+    id: f.following.id,
+    username: f.following.username,
+    profilePicture: f.following.profilePicture,
+  }));
 };

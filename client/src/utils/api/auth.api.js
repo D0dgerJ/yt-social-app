@@ -4,6 +4,8 @@ export const loginAuth = async (userInfo, dispatch) => {
   dispatch({ type: "LOGIN START" });
   try {
     const res = await API.post("/auth/login", userInfo);
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.userData));
     dispatch({
       type: "LOGIN_SUCCESS",
       payload: res.data.userData,

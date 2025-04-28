@@ -32,7 +32,7 @@ const NewsFeed = ({ userPosts }) => {
           <UploadPost />
       )}
       {posts.map((post) => (
-        <Post key={post._id} post={post} />
+        <Post key={post.id} post={post} />
       ))}
     </div>
   );
