@@ -1,7 +1,15 @@
 import axios from "axios";
 
 export const API = axios.create({
-  baseURL: "https://socio-junkie-backend.onrender.com/api/v1",
+  baseURL: "http://localhost:5000/api/v1",
+});
+
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.token = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export const getTimeLinePost = (username) =>
@@ -11,13 +19,14 @@ export const getUserData = (userId) => API.get(`/users/${userId}`);
 export const getUserProfileData = (username) =>
   API.get(`/users?username=${username}`);
 
-export const likeAndDislikePost = (postId, userId) =>
-  API.put(`/posts/like-post/${postId}`, { userId: userId });
+export const likeAndDislikePost = (postId) =>
+  API.put(`/posts/like-post/${postId}`);
 export const uploadPost = async (userId, desc, img) => {
   const formData = new FormData();
-  formData.append("userId", userId);
   formData.append("desc", desc);
+  if (img) {
   formData.append("img", img);
+}
 
   const res = await API.post("/posts/create-post", formData, {
     headers: {
@@ -28,6 +37,9 @@ export const uploadPost = async (userId, desc, img) => {
   return res.data;
 };
 
-export const getUserFriends = (userId) => API.get(`/users/friends/${userId}`);
-export const unfollowUser = (userId, id) => API.put(`/users/unfollow/${id}`, {userId: userId});
-export const followUser = (userId, id) => API.put(`/users/follow/${id}`, {userId: userId});
+export const getUserFriends = (userId) => 
+  API.get(`/users/friends/${userId}`);
+export const unfollowUser = (id) =>
+  API.put(`/users/unfollow/${id}`);
+export const followUser = (id) =>
+  API.put(`/users/follow/${id}`);

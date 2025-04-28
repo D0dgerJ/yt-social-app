@@ -37,7 +37,7 @@ const Post = ({ post }) => {
 
   const handleLike = async () => {
     try {
-      await likeAndDislikePost(post._id, currentUser._id);
+      await likeAndDislikePost(post.id);
     } catch (error) {
       console.log(error);
       toast.error(error.response.data.message);

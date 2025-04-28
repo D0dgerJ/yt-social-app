@@ -12,22 +12,24 @@ import { Link } from "react-router-dom";
 const Rightbar = ({ user }) => {
   const [friends, setFriends] = useState([]);
   const { user: currentUser, dispatch } = useContext(AuthContext);
-  const [isFollowed, setIsFollowed] = useState(
-    currentUser?.followings.includes(user?._id)
-  );
+  const [isFollowed, setIsFollowed] = useState(false);
 
   useEffect(() => {
-    setIsFollowed(currentUser?.followings.includes(user?._id));
-  }, [currentUser, user?._id]);
+    if (currentUser?.followings && user?._id) {
+      setIsFollowed(currentUser.followings.includes(user._id));
+    }
+  }, [currentUser, user]);
 
   useEffect(() => {
     const getFriends = async () => {
-      try {
-        const res = await getUserFriends(user?._id);
-        setFriends(res.data.friends);
-        console.log(res.data);
-      } catch (error) {
-        console.log(error);
+      if (user?._id) {
+        try {
+          const res = await getUserFriends(user._id);
+          setFriends(res.data.friends);
+          console.log(res.data);
+        } catch (error) {
+          console.log(error);
+        }
       }
     };
     getFriends();
@@ -36,10 +38,10 @@ const Rightbar = ({ user }) => {
   const handleFollow = async () => {
     try {
       if (isFollowed) {
-        await unfollowUser(currentUser._id, user._id);
+        await unfollowUser(user._id);
         dispatch({ type: "UNFOLLOW", payload: user._id });
       } else {
-        await followUser(currentUser._id, user._id);
+        await followUser(user._id);
         dispatch({ type: "FOLLOW", payload: user._id });
       }
     } catch (error) {
