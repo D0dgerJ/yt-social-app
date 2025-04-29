@@ -1,0 +1,35 @@
+@use '../../styles/variables' as *;
+
+.online-user {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  
+    .user-image-wrapper {
+      position: relative;
+      margin-right: 10px;
+  
+      .user-image {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+  
+      .online-badge {
+        width: 12px;
+        height: 12px;
+        background-color: $main-color;
+        border-radius: 50%;
+        position: absolute;
+        top: -2px;
+        right: 0;
+        border: 2px solid $white-color;
+      }
+    }
+  
+    .user-name {
+      font-weight: bold;
+    }
+  }
+  

@@ -1,5 +1,4 @@
 import React, { useContext, useState } from "react";
-import profilePic from "../../assets/profilepic.jpg";
 import {
   MdLabel,
   MdPermMedia,
@@ -10,7 +9,7 @@ import { uploadPost } from "../../utils/api/api";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import userPic from "../Post/assets/user.png";
-
+import "./UploadPost.scss";
 
 const UploadPost = () => {
   const [desc, setDesc] = useState("");
@@ -18,7 +17,6 @@ const UploadPost = () => {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const { user } = useContext(AuthContext);
-  console.log(file);
 
   const handlePostUpload = async () => {
     setLoading(true);
@@ -28,7 +26,6 @@ const UploadPost = () => {
       setFile(null);
       setPreview(null);
       setDesc("");
-      setLoading(false);
       console.log(res);
     } catch (error) {
       console.log(error);
@@ -50,65 +47,58 @@ const UploadPost = () => {
   };
 
   return (
-    <div className="w-full h-[170px] rounded-lg shadow-lg ">
-      <div className="wrapper p-[10px]">
-        <div className="top flex items-center">
+    <div className="upload-post">
+      <div className="upload-post__wrapper">
+        <div className="upload-post__top">
           <img
             src={user.profilePicture ? user.profilePicture : userPic}
             alt="profilepic"
-            className="w-[50px] h-[50px] rounded-full mr-[10px] object-cover"
+            className="upload-post__profile-pic"
           />
           <input
             type="text"
             placeholder="What is on your mind?"
-            className="w-[80%] focus:outline-none"
-            onChange={(e) => {
-              setDesc(e.target.value);
-            }}
+            className="upload-post__input"
+            onChange={(e) => setDesc(e.target.value)}
           />
           {preview && (
             <img
               src={preview}
-              alt="Image Preview"
-              className="w-[50px] h-[50px] rounded-md object-cover ml-[15px]"
+              alt="Preview"
+              className="upload-post__preview"
             />
           )}
         </div>
-        <hr className="m-[20px]" />
-        <div className="bottom flex items-center justify-between">
-          <div className="flex ml-[20px]">
-            <label
-              htmlFor="file"
-              className="flex items-center mr-[15px] cursor-pointer"
-            >
-              <MdPermMedia className="mr-[3px] text-orange-600" />
+        <hr className="upload-post__divider" />
+        <div className="upload-post__bottom">
+          <div className="upload-post__options">
+            <label htmlFor="file" className="upload-post__option">
+              <MdPermMedia className="upload-post__icon upload-post__icon--orange" />
               <span>Photo or Video</span>
               <input
                 type="file"
-                name="file"
                 id="file"
                 onChange={handleFileChange}
-                className="hidden"
                 accept=".png, .jpg, .jpeg"
               />
             </label>
-            <div className="flex items-center mr-[15px] cursor-pointer">
-              <MdLabel className="mr-[3px] text-blue-600" />
+            <div className="upload-post__option">
+              <MdLabel className="upload-post__icon upload-post__icon--blue" />
               <span>Tags</span>
             </div>
-            <div className="flex items-center mr-[15px] cursor-pointer">
-              <MdEmojiEmotions className="mr-[3px] text-yellow-600" />
+            <div className="upload-post__option">
+              <MdEmojiEmotions className="upload-post__icon upload-post__icon--yellow" />
               <span>Emoji</span>
             </div>
-            <div className="flex items-center mr-[15px] cursor-pointer">
-              <MdLocationPin className="mr-[3px] text-green-600" />
+            <div className="upload-post__option">
+              <MdLocationPin className="upload-post__icon upload-post__icon--green" />
               <span>Location</span>
             </div>
           </div>
           <button
             disabled={loading}
             onClick={handlePostUpload}
-            className="bg-green-600 text-white p-[7px] rounded-lg font-bold"
+            className="upload-post__button"
           >
             {loading ? "Uploading" : "Upload"}
           </button>

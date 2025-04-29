@@ -1,0 +1,97 @@
+.rightbar {
+    width: 320px;
+    min-width: 320px;
+  
+    .rightbar-wrapper {
+      padding: 20px;
+    }
+  
+    .birthday-section {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+  
+      .birthday-icon {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
+      }
+  
+      span {
+        font-weight: 600;
+        font-size: 16px;
+      }
+    }
+  
+    .advert-image {
+      width: 100%;
+      border-radius: 8px;
+      margin: 30px 0;
+    }
+  
+    .online-title {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+  
+    .online-users {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+  
+    .follow-button {
+      background-color: #16a34a;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px 0;
+      cursor: pointer;
+      transition: background-color 0.3s;
+  
+      &:hover {
+        background-color: #15803d;
+      }
+    }
+  
+    .user-info {
+      margin-bottom: 30px;
+  
+      .info-item {
+        margin-bottom: 10px;
+        span:first-child {
+          font-weight: 600;
+          margin-right: 15px;
+          color: gray;
+        }
+      }
+    }
+  
+    .friends-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+  
+      .friend-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+  
+        .friend-img {
+          width: 100px;
+          height: 100px;
+          object-fit: cover;
+          border-radius: 8px;
+        }
+  
+        span {
+          margin-top: 8px;
+          font-size: 14px;
+          text-align: center;
+        }
+      }
+    }
+  }
+  

@@ -1,0 +1,19 @@
+.friend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .friend-image {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .friend-name {
+    font-weight: 500;
+    font-size: 14px;
+  }
+  

@@ -1,14 +1,15 @@
 import React from "react";
+import "./FriendsList.scss";
 
 const FriendsList = ({ friend }) => {
   return (
-    <li>
+    <li className="friend-item">
       <img
         src={friend.profilePicture}
         alt="profileImage"
-        className="w-[32px] h-[32px] rounded-full object-cover"
+        className="friend-image"
       />
-      <span>{friend.username}</span>
+      <span className="friend-name">{friend.username}</span>
     </li>
   );
 };

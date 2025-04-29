@@ -1,0 +1,17 @@
+.home {
+    display: flex;
+    width: 100%;
+  }
+  
+.layout {
+  display: flex;
+  justify-content: center; 
+  width: 100%;
+  background-color: #f0f2f5;
+}
+
+.newsfeed-wrapper {
+  width: 600px;
+  padding: 20px 20px 0 20px;
+  min-height: calc(100vh - 50px);
+}
