@@ -1,0 +1,20 @@
+// Миксин для медиа-запросов
+@mixin respond($breakpoint) {
+    @if $breakpoint == phone {
+      @media (max-width: 600px) { @content; }
+    }
+    @if $breakpoint == tablet {
+      @media (max-width: 900px) { @content; }
+    }
+    @if $breakpoint == desktop {
+      @media (min-width: 901px) { @content; }
+    }
+  }
+  
+  // Миксин для центрирования Flex
+  @mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  

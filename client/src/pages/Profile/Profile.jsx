@@ -1,3 +1,4 @@
+import "./Profile.scss"; // Подключим SCSS
 import React, { useContext, useEffect, useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import coverImage from "./assets/coverImage.jpg";
@@ -77,72 +78,70 @@ const Profile = () => {
   };
 
   return (
-    <div>
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <div style={{ flex: 9 }}>
-          <div>
-            <div className="h-[350px] relative">
-              <img
-                src={user.coverPicture || coverImage}
-                alt="cover picture"
-                className="w-full h-[250px] object-cover"
-              />
-              <img
-                src={previewImage || user.profilePicture || noProfilePic}
-                alt="profile picture"
-                className="w-[150px] h-[150px] rounded-full object-cover absolute left-0 right-0 m-auto top-[150px] border-[3px] border-white"
-              />
-            </div>
-            <div className="flex flex-col items-center">
-              <h1 className="font-bold text-2xl">{user.username}</h1>
-              <span>{user.desc || "I am new here!"}</span>
-              {username === currentUser?.username && (
+  <div className="profile-page">
+    <Navbar />
+    <div className="profile-wrapper">
+      <Sidebar />
+      <div className="profile-content">
+        <div className="profile-top">
+          <img
+            src={user.coverPicture || coverImage}
+            alt="cover"
+            className="profile-cover-img"
+          />
+          <img
+            src={previewImage || user.profilePicture || noProfilePic}
+            alt="profile"
+            className="profile-user-img"
+          />
+        </div>
+        <div className="profile-info">
+          <h1 className="profile-username">{user.username}</h1>
+          <span className="profile-desc">{user.desc || "I am new here!"}</span>
+          {username === currentUser?.username && (
+            <>
+              {editMode ? (
                 <>
-                  {editMode ? (
-                    <>
-                      <button
-                        onClick={handleSave}
-                        className="bg-green-600 mt-2.5 px-5 py-2 text-white rounded-md hover:bg-green-700 transition"
-                      >
-                        {loading ? "Saving Changes" : "Save Changes"}
-                      </button>
-                      <button
-                        onClick={handleCancel}
-                        className="bg-red-500 mt-2.5 px-5 py-2 text-white rounded-md hover:bg-red-600 transition"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <label
-                        htmlFor="profilePicture"
-                        className="text-white self-center cursor-pointer bg-green-600 mt-2.5 px-5 py-2 rounded-md hover:bg-green-700 transition"
-                      >
-                        Edit Profile
-                      </label>
-                      <input
-                        type="file"
-                        id="profilePicture"
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-                    </>
-                  )}
+                  <button
+                    onClick={handleSave}
+                    className="profile-save-btn"
+                  >
+                    {loading ? "Saving Changes" : "Save Changes"}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="profile-cancel-btn"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <label
+                    htmlFor="profilePicture"
+                    className="profile-edit-btn"
+                  >
+                    Edit Profile
+                  </label>
+                  <input
+                    type="file"
+                    id="profilePicture"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </>
               )}
-            </div>
-          </div>
-          <div className="flex">
-            <NewsFeed userPosts />
-            <Rightbar user={user} />
-          </div>
+            </>
+          )}
+        </div>
+        <div className="profile-bottom flex">
+          <NewsFeed userPosts />
+          <Rightbar user={user} />
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default Profile;
