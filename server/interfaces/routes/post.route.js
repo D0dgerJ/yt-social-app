@@ -1,37 +1,27 @@
 import express from "express";
 import {
   createPostController,
-  deletePostController,
-  getAllPostsController,
-  getPostController,
-  getTimelinePostsController,
-  likeAndDislikeController,
   updatePostController,
+  deletePostController,
+  getPostByIdController,
+  getUserPostsController,
+  getAllPostsController,
+  likePostController,
+  savePostController,
+  unsavePostController,
 } from "../controllers/post.controller.js";
-import { parser } from "../config/cloudinary.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Только авторизованный пользователь может создать пост
-router.post("/create-post", verifyToken, parser.single("img"), createPostController);
-
-// Только авторизованный пользователь может обновить пост
-router.put("/update-post/:id", verifyToken, updatePostController);
-
-// Только авторизованный пользователь может удалить пост
-router.delete("/delete-post/:id", verifyToken, deletePostController);
-
-// Только авторизованный пользователь может лайкать/дизлайкать
-router.put("/like-post/:id", verifyToken, likeAndDislikeController);
-
-// Получить конкретный пост (без токена)
-router.get("/get-post/:id", getPostController);
-
-// Получить все посты (без токена)
+router.post("/", authMiddleware, createPostController);
+router.put("/:id", authMiddleware, updatePostController);
+router.delete("/:id", authMiddleware, deletePostController);
+router.get("/:id", getPostByIdController);
+router.get("/user/:userId", getUserPostsController);
 router.get("/", getAllPostsController);
-
-// Получить таймлайн постов (без токена)
-router.get("/get-timeline-posts/:username", getTimelinePostsController);
+router.put("/:id/like", authMiddleware, likePostController);
+router.put("/:id/save", authMiddleware, savePostController);
+router.put("/:id/unsave", authMiddleware, unsavePostController);
 
 export default router;

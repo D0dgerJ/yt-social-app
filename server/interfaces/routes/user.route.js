@@ -1,44 +1,30 @@
 import express from "express";
 import {
-  deleteUserController,
-  followUserController,
-  getUserController,
-  getUserFriendsController,
+  getUserByIdController,
   getUserProfileController,
-  unfollowUserController,
-  updateProfilePictureController,
   updateUserController,
+  deleteUserController,
+  updateProfilePictureController,
+  followUserController,
+  unfollowUserController,
+  getUserFriendsController,
 } from "../controllers/user.controller.js";
-import { parser } from "../config/cloudinary.js";
+import { verifyToken } from "../../infrastructure/middleware/authMiddleware.js";
 
 const router = express.Router();
 
-//update USER
+// Публичные маршруты
+router.get("/:id", getUserByIdController);
+router.get("/profile/:username", getUserProfileController);
+
+// Защищённые маршруты
+router.use(verifyToken);
+
 router.put("/:id", updateUserController);
-
-//update profile Picture
-router.put(
-  "/:id/profile-picture",
-  parser.single("profilePicture"),
-  updateProfilePictureController
-);
-
-//delete user
 router.delete("/:id", deleteUserController);
-
-//get a user
-router.get("/:id", getUserController);
-
-//get User Profile
-router.get("/", getUserProfileController);
-
-//follow a user
-router.put("/follow/:id", followUserController);
-
-//unfollow User
-router.put("/unfollow/:id", unfollowUserController);
-
-//getFriends
-router.get("/friends/:userId", getUserFriendsController);
+router.put("/:id/profile-picture", updateProfilePictureController);
+router.put("/:id/follow", followUserController);
+router.put("/:id/unfollow", unfollowUserController);
+router.get("/:id/friends", getUserFriendsController);
 
 export default router;
