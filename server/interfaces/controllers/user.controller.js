@@ -1,126 +1,88 @@
-import {
-  deleteUser,
-  followUser,
-  getUser,
-  getUserFriends,
-  getUserProfile,
-  unfollowUser,
-  updateProfilePicture,
-  updateUser,
-} from "../services/user.service.js";
+import { getUserById } from "../../application/use-cases/user/getUserById.js";
+import { getUserProfile } from "../../application/use-cases/user/getUserProfile.js";
+import { updateUser } from "../../application/use-cases/user/updateUser.js";
+import { deleteUser } from "../../application/use-cases/user/deleteUser.js";
+import { updateProfilePicture } from "../../application/use-cases/user/updateProfilePicture.js";
+import { followUser } from "../../application/use-cases/user/followUser.js";
+import { unfollowUser } from "../../application/use-cases/user/unfollowUser.js";
+import { getUserFriends } from "../../application/use-cases/user/getUserFriends.js";
 
-export const updateUserController = async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
-    try {
-      const user = await updateUser(req.params.id, req.body);
-      res.status(200).json({
-        user,
-        message: "Account has been updated Successfully",
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json(err);
-    }
-  } else {
-    res.status(500).json("you can only update your account");
-  }
-};
-
-export const updateProfilePictureController = async (req, res) => {
-    try {
-      const user = await updateProfilePicture(req.params.id, req.file.path);
-      res.status(200).json({
-        user,
-        message: "Profile Picture has been updated Successfully",
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json(err);
-    }
-};
-
-
-
-
-export const deleteUserController = async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
-    try {
-      await deleteUser(req.params.id);
-      res.status(200).json({
-        message: "Account has been deleted Successfully",
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json(err);
-    }
-  } else {
-    res.status(500).json("you can only delete your account");
-  }
-};
-
-export const getUserController = async (req, res) => {
+// Получить пользователя по ID
+export const getUserByIdController = async (req, res) => {
   try {
-    const user = await getUser(req.params.id);
-    const { password, ...data } = user;
-    res.status(200).json({
-      userInfo: data,
-      message: "Account has been fetched Successfully",
-    });
+    const user = await getUserById(req.params.id);
+    res.json(user);
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
+// Получить профиль по username
 export const getUserProfileController = async (req, res) => {
   try {
-    const user = await getUserProfile(req.query);
-    const { password, ...data } = user;
-    res.status(200).json({
-      userInfo: data,
-      message: "Account has been fetched Successfully",
-    });
+    const user = await getUserProfile({ username: req.params.username });
+    res.json(user);
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
+// Обновить данные пользователя
+export const updateUserController = async (req, res) => {
+  try {
+    const updatedUser = await updateUser(req.params.id, req.body);
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Удалить пользователя
+export const deleteUserController = async (req, res) => {
+  try {
+    await deleteUser(req.params.id);
+    res.json({ message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Обновить аватар
+export const updateProfilePictureController = async (req, res) => {
+  try {
+    const updated = await updateProfilePicture(req.params.id, req.body.profilePicture);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Подписаться
 export const followUserController = async (req, res) => {
   try {
-    const data = await followUser(req.body, req.params);
-    res.status(200).json({
-      data,
-      message: "Follow User Successfully",
-    });
+    await followUser({ userId: req.user.id }, { id: req.params.id });
+    res.json({ message: "Followed successfully" });
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.status(400).json({ message: err.message });
   }
 };
 
+// Отписаться
 export const unfollowUserController = async (req, res) => {
   try {
-    const data = await unfollowUser(req.body, req.params);
-    res.status(200).json({
-      data,
-      message: "UnFollow User Successfully",
-    });
+    await unfollowUser({ userId: req.user.id }, { id: req.params.id });
+    res.json({ message: "Unfollowed successfully" });
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.status(400).json({ message: err.message });
   }
 };
 
+// Получить друзей
 export const getUserFriendsController = async (req, res) => {
   try {
-    const friends = await getUserFriends(req.params);
-    res.status(200).json({
-      friends,
-      message: "Friends have fetched Successfully!",
-    });
+    const friends = await getUserFriends({ userId: req.params.id });
+    res.json(friends);
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.status(500).json({ message: err.message });
   }
 };

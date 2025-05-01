@@ -34,6 +34,8 @@ model User {
   notificationsTo   Notification[] @relation("NotificationTo")
   followedBy     Follow[]    @relation("FollowedBy")
   following      Follow[]    @relation("Following")
+  storyViews  StoryView[]
+  participants   Participant[] 
 }
 
 model Post {
@@ -76,25 +78,6 @@ model Follow {
   following   User @relation("FollowedBy", fields: [followingId], references: [id])
 }
 
-model Conversation {
-  id        Int       @id @default(autoincrement())
-  userOneId Int
-  userTwoId Int
-  messages  Message[]
-  createdAt DateTime  @default(now())
-}
-
-model Message {
-  id             Int          @id @default(autoincrement())
-  conversationId Int
-  senderId       Int
-  content        String
-  mediaUrl       String?
-  sender         User         @relation(fields: [senderId], references: [id])
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  createdAt      DateTime     @default(now())
-}
-
 model Notification {
   id         Int      @id @default(autoincrement())
   type       String   // 'like', 'comment', 'follow', etc.
@@ -123,4 +106,49 @@ model Story {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   expiresAt DateTime
+  views      StoryView[]
+}
+
+model StoryView {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  storyId   Int
+  createdAt DateTime @default(now())
+
+  user   User  @relation(fields: [userId], references: [id])
+  story  Story @relation(fields: [storyId], references: [id])
+
+  @@unique([userId, storyId])
+}
+
+model Conversation {
+  id           Int             @id @default(autoincrement())
+  name         String?         // Название беседы (только для групп)
+  isGroup      Boolean         @default(false)
+  participants Participant[]   // Участники беседы
+  messages     Message[]
+  createdAt    DateTime        @default(now())
+}
+
+model Participant {
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  conversationId Int
+  user           User          @relation(fields: [userId], references: [id])
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  joinedAt       DateTime      @default(now())
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id             Int            @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  content        String?
+  mediaUrl       String?        // Фото/видео
+  createdAt      DateTime       @default(now())
+  
+  conversation   Conversation   @relation(fields: [conversationId], references: [id])
+  sender         User           @relation(fields: [senderId], references: [id])
 }

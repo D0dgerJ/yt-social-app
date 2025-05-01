@@ -1,121 +1,99 @@
-import {
-  createPost,
-  deletePost,
-  getAllPosts,
-  getPost,
-  getTimelinePosts,
-  likeAndDislike,
-  updatePost,
-} from "../services/post.service.js";
+import { createPost } from "../../application/use-cases/post/createPost.js";
+import { updatePost } from "../../application/use-cases/post/updatePost.js";
+import { deletePost } from "../../application/use-cases/post/deletePost.js";
+import { getPostById } from "../../application/use-cases/post/getPostById.js";
+import { getUserPosts } from "../../application/use-cases/post/getUserPosts.js";
+import { getAllPosts } from "../../application/use-cases/post/getAllPosts.js";
+import { likePost } from "../../application/use-cases/post/likePost.js";
+import { savePost } from "../../application/use-cases/post/savePost.js";
+import { unsavePost } from "../../application/use-cases/post/unsavePost.js";
 
+// Создать пост
 export const createPostController = async (req, res) => {
   try {
-    const newPost = await createPost(req.user.id, req.body, req.file?.path);
-    res.status(200).json({
-      newPost,
-      message: "Post has been created Successfully",
-    });
+    const newPost = await createPost({ userId: req.user.id, ...req.body });
+    res.status(201).json(newPost);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Post creation Failed",
-      err,
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
+// Обновить пост
 export const updatePostController = async (req, res) => {
   try {
-    const updatedPost = await updatePost(req.params, req.body);
-    res.status(200).json({
-      updatedPost,
-      message: "Post has been updated Successfully",
-    });
+    const post = await updatePost(req.params.id, req.user.id, req.body);
+    res.json(post);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Post update failed",
-      err,
-    });
+    res.status(403).json({ message: err.message });
   }
 };
 
+// Удалить пост
 export const deletePostController = async (req, res) => {
   try {
-    const deletedPost = await deletePost(req.params, req.body);
-    res.status(200).json({
-      deletedPost,
-      message: "Post has been deleted Successfully",
-    });
+    await deletePost(req.params.id, req.user.id);
+    res.json({ message: "Post deleted" });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Post deletion failed",
-      err,
-    });
+    res.status(403).json({ message: err.message });
   }
 };
 
-export const likeAndDislikeController = async (req, res) => {
+// Получить пост по ID
+export const getPostByIdController = async (req, res) => {
   try {
-    const post = await likeAndDislike(req.params, req.body);
-    res.status(200).json({
-      post,
-      message: "Post like or dislike action has been completed",
-    });
+    const post = await getPostById(req.params.id);
+    res.json(post);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Post Like or dislike action failed",
-      err,
-    });
+    res.status(404).json({ message: err.message });
   }
 };
 
-export const getPostController = async (req, res) => {
+// Получить посты пользователя
+export const getUserPostsController = async (req, res) => {
   try {
-    const post = await getPost(req.params);
-    res.status(200).json({
-      post,
-      message: "Post has been fetched Successfully",
-    });
+    const posts = await getUserPosts(req.params.userId);
+    res.json(posts);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Post fetch failed",
-      err,
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
-export const getTimelinePostsController = async (req, res) => {
-  try {
-    const posts = await getTimelinePosts(req.params);
-    res.status(200).json({
-      posts,
-      message: "Timeline Post fetched Successfully",
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Post fetch failed",
-      err,
-    });
-  }
-};
-
+// Получить все посты
 export const getAllPostsController = async (req, res) => {
   try {
     const posts = await getAllPosts();
-    res.status(200).json({
-      posts,
-      message: "Posts have been fetched Successfully",
-    });
+    res.json(posts);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      message: "Posts fetch failed",
-      err,
-    });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Лайкнуть пост
+export const likePostController = async (req, res) => {
+  try {
+    await likePost(req.params.id, req.user.id);
+    res.json({ message: "Post liked/unliked" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Сохранить пост
+export const savePostController = async (req, res) => {
+  try {
+    await savePost(req.params.id, req.user.id);
+    res.json({ message: "Post saved" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Удалить из сохранённых
+export const unsavePostController = async (req, res) => {
+  try {
+    await unsavePost(req.params.id, req.user.id);
+    res.json({ message: "Post unsaved" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
