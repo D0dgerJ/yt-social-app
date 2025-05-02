@@ -7,6 +7,11 @@ import { unfollowUser } from "../../application/use-cases/user/unfollowUser.js";
 import { getUserFriends } from "../../application/use-cases/user/getUserFriends.js";
 import { followUser } from "../../application/use-cases/user/followUser.js";
 import { notify } from "../../application/services/notificationService.js";
+import {
+  updateUserSchema,
+  updateProfilePictureSchema,
+} from "../../validation/userSchemas.js";
+
 
 // Получить пользователя по ID
 export const getUserByIdController = async (req, res, next) => {
@@ -31,6 +36,8 @@ export const getUserProfileController = async (req, res, next) => {
 // Обновить данные пользователя
 export const updateUserController = async (req, res, next) => {
   try {
+    updateUserSchema.parse(req.body);
+
     const updatedUser = await updateUser(req.user.id, req.body);
     res.json(updatedUser);
   } catch (err) {
@@ -51,6 +58,8 @@ export const deleteUserController = async (req, res, next) => {
 // Обновить аватар
 export const updateProfilePictureController = async (req, res, next) => {
   try {
+    updateProfilePictureSchema.parse({ avatarUrl: req.body.profilePicture });
+    
     const updated = await updateProfilePicture(req.user.id, req.body.profilePicture);
     res.json(updated);
   } catch (err) {

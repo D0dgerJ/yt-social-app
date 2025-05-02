@@ -3,9 +3,13 @@ import getUserStories from "../../application/use-cases/story/getUserStories.js"
 import getFeedStories from "../../application/use-cases/story/getFeedStories.js";
 import deleteStory from "../../application/use-cases/story/deleteStory.js";
 import { getFriendStories, viewStory } from "./../application/use-cases/story/getFriendStories.js";
+import { createStorySchema } from "../../validation/storySchemas.js";
+
 
 export const createStoryController = async (req, res) => {
   try {
+    createStorySchema.parse(req.body);
+
     const newStory = await createStory(req.user.id, req.body);
     res.status(201).json(newStory);
   } catch (err) {

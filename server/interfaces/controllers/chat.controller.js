@@ -3,9 +3,16 @@ import { getUserConversations } from "../../application/use-cases/chat/getUserCo
 import { sendMessage } from "../../application/use-cases/chat/sendMessage.js";
 import { addParticipant } from "../../application/use-cases/chat/addParticipant.js";
 import prisma from "../../infrastructure/database/prismaClient.js";
+import {
+  createChatSchema,
+  sendMessageSchema,
+} from "../../validation/chatSchemas.js";
+
 
 export const createChat = async (req, res) => {
   try {
+    createChatSchema.parse(req.body);
+
     const { userIds, name } = req.body;
     const conversation = await createChatUseCase({ creatorId: req.user.id, userIds, name });
     res.status(201).json(conversation);
@@ -26,6 +33,8 @@ export const getConversations = async (req, res) => {
 
 export const sendChatMessage = async (req, res) => {
   try {
+    sendMessageSchema.parse(req.body);
+    
     const { conversationId, content, mediaUrl } = req.body;
     const message = await sendMessage({ conversationId, senderId: req.user.id, content, mediaUrl });
     res.status(201).json(message);

@@ -1,21 +1,26 @@
 import { loginUser } from "../../application/use-cases/auth/loginUser.js";
 import { registerUser } from "../../application/use-cases/auth//registerUser.js";
+import { registerSchema, loginSchema } from "../../validation/authSchemas.js";
 
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
+    registerSchema.parse(req.body);
+
     const user = await registerUser(req.body);
-    res.status(201).json({ message: "User created successfully", user });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(201).json(user);
+  } catch (err) {
+    next(err);
   }
 };
 
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
-    const { token, user } = await loginUser(req.body);
-    res.status(200).json({ message: "Login successful", token, user });
-  } catch (error) {
-    res.status(401).json({ message: error.message });
+    loginSchema.parse(req.body);
+
+    const data = await loginUser(req.body);
+    res.json(data);
+  } catch (err) {
+    next(err);
   }
 };
 
