@@ -2,17 +2,26 @@ import { createComment } from "../../application/use-cases/comment/createComment
 import { deleteComment } from "../../application/use-cases/comment/deleteComment.js";
 import { getPostComments } from "../../application/use-cases/comment/getPostComments.js";
 import { updateComment } from "../../application/use-cases/comment/updateComment.js";
+import { notify } from "../../application/services/notificationService.js";
 
-export const create = async (req, res) => {
+export const create = async (req, res, next) => {
   try {
     const comment = await createComment({
       userId: req.user.id,
       postId: req.body.postId,
       content: req.body.content,
     });
+
+    await notify({
+      fromUserId: req.user.id,
+      toUserId: comment.postUserId,
+      type: "comment",
+      content: `New comment: "${req.body.content}"`,
+    });
+
     res.status(201).json(comment);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    next(err);
   }
 };
 

@@ -6,8 +6,8 @@ import prisma from "../../infrastructure/database/prismaClient.js";
 
 export const createChat = async (req, res) => {
   try {
-    const { creatorId, userIds, name } = req.body;
-    const conversation = await createChatUseCase({ creatorId, userIds, name });
+    const { userIds, name } = req.body;
+    const conversation = await createChatUseCase({ creatorId: req.user.id, userIds, name });
     res.status(201).json(conversation);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -26,8 +26,8 @@ export const getConversations = async (req, res) => {
 
 export const sendChatMessage = async (req, res) => {
   try {
-    const { conversationId, senderId, content, mediaUrl } = req.body;
-    const message = await sendMessage({ conversationId, senderId, content, mediaUrl });
+    const { conversationId, content, mediaUrl } = req.body;
+    const message = await sendMessage({ conversationId, senderId: req.user.id, content, mediaUrl });
     res.status(201).json(message);
   } catch (err) {
     res.status(400).json({ error: err.message });
