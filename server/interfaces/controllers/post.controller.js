@@ -8,11 +8,18 @@ import { likePost } from "../../application/use-cases/post/likePost.js";
 import { savePost } from "../../application/use-cases/post/savePost.js";
 import { unsavePost } from "../../application/use-cases/post/unsavePost.js";
 import { notify } from "../../application/services/notificationService.js";
+import { createPostSchema } from "../../validation/postSchemas.js";
 
 // Создать пост
 export const createPostController = async (req, res, next) => {
   try {
-    const newPost = await createPost({ userId: req.user.id, ...req.body });
+    createPostSchema.parse(req.body); // Валидация
+
+    const newPost = await createPost({
+      userId: req.user.id,
+      ...req.body,
+    });
+
     res.status(201).json(newPost);
   } catch (err) {
     next(err);

@@ -3,9 +3,12 @@ import { deleteComment } from "../../application/use-cases/comment/deleteComment
 import { getPostComments } from "../../application/use-cases/comment/getPostComments.js";
 import { updateComment } from "../../application/use-cases/comment/updateComment.js";
 import { notify } from "../../application/services/notificationService.js";
+import { createCommentSchema } from "../../validation/commentSchemas.js";
 
 export const create = async (req, res, next) => {
   try {
+    createCommentSchema.parse(req.body);
+    
     const comment = await createComment({
       userId: req.user.id,
       postId: req.body.postId,

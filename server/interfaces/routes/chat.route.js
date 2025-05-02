@@ -10,6 +10,9 @@ import {
   removeMessage,
 } from "../controllers/chat.controller.js";
 import { verifyToken } from "../../infrastructure/middleware/authMiddleware.js";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
+import prisma from "../../infrastructure/database/prismaClient.js";
+
 
 const router = express.Router();
 
@@ -32,9 +35,29 @@ router.post("/conversations/:conversationId/participants", verifyToken, addChatP
 router.delete("/:conversationId/leave", verifyToken, leaveChat);
 
 // Обновить сообщение
-router.put("/message/:messageId", verifyToken, editMessage);
+router.put(
+  "/message/:messageId",
+  verifyToken,
+ checkOwnership(async (req) => {
+   const message = await prisma.message.findUnique({
+     where: { id: Number(req.params.messageId) },
+   });
+   return message?.senderId;
+ }),
+  editMessage
+);
 
 // Удалить сообщение
-router.delete("/message/:messageId", verifyToken, removeMessage);
+router.delete(
+  "/message/:messageId",
+  verifyToken,
+ checkOwnership(async (req) => {
+   const message = await prisma.message.findUnique({
+     where: { id: Number(req.params.messageId) },
+   });
+   return message?.senderId;
+ }),
+  removeMessage
+);
 
 export default router;
