@@ -7,19 +7,20 @@ import { getAllPosts } from "../../application/use-cases/post/getAllPosts.js";
 import { likePost } from "../../application/use-cases/post/likePost.js";
 import { savePost } from "../../application/use-cases/post/savePost.js";
 import { unsavePost } from "../../application/use-cases/post/unsavePost.js";
+import { notify } from "../../application/services/notificationService.js";
 
 // Создать пост
-export const createPostController = async (req, res) => {
+export const createPostController = async (req, res, next) => {
   try {
     const newPost = await createPost({ userId: req.user.id, ...req.body });
     res.status(201).json(newPost);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // Обновить пост
-export const updatePostController = async (req, res) => {
+export const updatePostController = async (req, res, next) => {
   try {
     const post = await updatePost(req.params.id, req.user.id, req.body);
     res.json(post);
@@ -29,7 +30,7 @@ export const updatePostController = async (req, res) => {
 };
 
 // Удалить пост
-export const deletePostController = async (req, res) => {
+export const deletePostController = async (req, res, next) => {
   try {
     await deletePost(req.params.id, req.user.id);
     res.json({ message: "Post deleted" });
@@ -39,7 +40,7 @@ export const deletePostController = async (req, res) => {
 };
 
 // Получить пост по ID
-export const getPostByIdController = async (req, res) => {
+export const getPostByIdController = async (req, res, next) => {
   try {
     const post = await getPostById(req.params.id);
     res.json(post);
@@ -49,51 +50,73 @@ export const getPostByIdController = async (req, res) => {
 };
 
 // Получить посты пользователя
-export const getUserPostsController = async (req, res) => {
+export const getUserPostsController = async (req, res, next) => {
   try {
     const posts = await getUserPosts(req.params.userId);
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // Получить все посты
-export const getAllPostsController = async (req, res) => {
+export const getAllPostsController = async (req, res, next) => {
   try {
     const posts = await getAllPosts();
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // Лайкнуть пост
-export const likePostController = async (req, res) => {
+export const likePostController = async (req, res, next) => {
   try {
-    await likePost(req.params.id, req.user.id);
-    res.json({ message: "Post liked/unliked" });
+    const { postUserId } = await likePost({
+      userId: req.user.id,
+      postId: req.params.id,
+    });
+
+    await notify({
+      fromUserId: req.user.id,
+      toUserId: postUserId,
+      type: "like",
+      content: `${req.user.username} liked your post`,
+    });
+
+    res.json({ message: "Post liked" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // Сохранить пост
-export const savePostController = async (req, res) => {
+export const savePostController = async (req, res, next) => {
   try {
-    await savePost(req.params.id, req.user.id);
+    const { postUserId } = await savePost({
+      userId: req.user.id,
+      postId: req.params.id,
+    });
+
+    await notify({
+      fromUserId: req.user.id,
+      toUserId: postUserId,
+      type: "save",
+      content: `${req.user.username} saved your post`,
+    });
+
     res.json({ message: "Post saved" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };
 
 // Удалить из сохранённых
-export const unsavePostController = async (req, res) => {
+export const unsavePostController = async (req, res, next) => {
   try {
     await unsavePost(req.params.id, req.user.id);
     res.json({ message: "Post unsaved" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    next(err);
   }
 };

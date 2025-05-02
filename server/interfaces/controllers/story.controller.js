@@ -33,7 +33,7 @@ export const getFeedStoriesController = async (req, res) => {
 
 export const deleteStoryController = async (req, res) => {
   try {
-    await deleteStory(req.user.id, Number(req.params.storyId));
+    await deleteStory(Number(req.params.storyId), req.user.id);
     res.status(200).json({ message: "Story deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

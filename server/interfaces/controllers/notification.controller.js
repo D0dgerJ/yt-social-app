@@ -8,7 +8,7 @@ export const create = async (req, res) => {
     const { toUserId, type, content } = req.body;
     const fromUserId = req.user.id;
 
-    const notification = await createNotification(fromUserId, toUserId, type, content);
+    const notification = await createNotification(req.user.id, toUserId, type, content);
     res.status(201).json(notification);
   } catch (err) {
     res.status(500).json({ error: err.message });
