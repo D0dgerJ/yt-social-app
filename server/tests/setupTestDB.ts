@@ -1,21 +1,23 @@
 import { PrismaClient } from '@prisma/client';
-import { beforeEach, afterAll } from '@jest/globals';
+import { afterEach, afterAll } from '@jest/globals';
 
 const prisma = new PrismaClient();
 
-beforeEach(async () => {
-  await prisma.storyView.deleteMany();
-  await prisma.story.deleteMany();
-  await prisma.savedPost.deleteMany();
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.message.deleteMany();
-  await prisma.participant.deleteMany();
-  await prisma.conversation.deleteMany();
-  await prisma.follow.deleteMany();
-  await prisma.user.deleteMany();
+afterEach(async () => {
+  await prisma.$transaction([
+    prisma.storyView.deleteMany(),
+    prisma.story.deleteMany(),
+    prisma.savedPost.deleteMany(),
+    prisma.like.deleteMany(),
+    prisma.comment.deleteMany(),
+    prisma.post.deleteMany(),
+    prisma.notification.deleteMany(),
+    prisma.message.deleteMany(),
+    prisma.participant.deleteMany(),
+    prisma.conversation.deleteMany(),
+    prisma.follow.deleteMany(),
+    prisma.user.deleteMany(),
+  ]);
 });
 
 afterAll(async () => {
