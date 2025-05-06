@@ -34,17 +34,36 @@ describe('createChat use-case', () => {
     await prisma.$disconnect();
   });
 
-  it('should create a new chat between two users', async () => {
-    const conversation = await createChat(user1.id, user2.id);
+  it('should create a one-on-one chat between two users', async () => {
+    const conversation = await createChat({ userIds: [user1.id, user2.id] });
 
     expect(conversation).toHaveProperty('id');
+    expect(conversation.isGroup).toBe(false);
     expect(conversation.participants.length).toBe(2);
   });
 
-  it('should return existing chat if it already exists', async () => {
-    const firstChat = await createChat(user1.id, user2.id);
-    const secondChat = await createChat(user1.id, user2.id);
+  it('should create a group chat with a name and multiple users', async () => {
+    const user3 = await prisma.user.create({
+      data: {
+        email: 'user3@example.com',
+        username: 'user3',
+        password: 'password3',
+      },
+    });
 
-    expect(secondChat.id).toBe(firstChat.id);
+    const conversation = await createChat({
+      userIds: [user1.id, user2.id, user3.id],
+      name: 'Project Group',
+    });
+
+    expect(conversation.isGroup).toBe(true);
+    expect(conversation.name).toBe('Project Group');
+    expect(conversation.participants.length).toBe(3);
+  });
+
+  it('should throw error if fewer than two users provided', async () => {
+    await expect(createChat({ userIds: [user1.id] })).rejects.toThrow(
+      'At least two users are required to start a chat'
+    );
   });
 });
