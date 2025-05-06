@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { deleteMessage } from '../../../application/use-cases/chat/deleteMessage';
 import { createChat } from '../../../application/use-cases/chat/createChat';
 import { sendMessage } from '../../../application/use-cases/chat/sendMessage';
+import { updateMessage } from '../../../application/use-cases/chat/updateMessage';
 
 const prisma = new PrismaClient();
 
-describe('deleteMessage use-case', () => {
-  let user: any;
+describe('updateMessage use-case', () => {
+  let user1: any;
   let user2: any;
   let conversation: any;
   let message: any;
@@ -17,11 +17,11 @@ describe('deleteMessage use-case', () => {
     await prisma.conversation.deleteMany();
     await prisma.user.deleteMany();
 
-    user = await prisma.user.create({
+    user1 = await prisma.user.create({
       data: {
-        email: 'user@example.com',
-        username: 'user',
-        password: 'password',
+        email: 'user1@example.com',
+        username: 'user1',
+        password: 'pass',
       },
     });
 
@@ -34,13 +34,13 @@ describe('deleteMessage use-case', () => {
     });
 
     conversation = await createChat({
-      userIds: [user.id, user2.id],
+      userIds: [user1.id, user2.id],
     });
 
     message = await sendMessage({
       conversationId: conversation.id,
-      senderId: user.id,
-      content: 'Hello there!',
+      senderId: user1.id,
+      content: 'Original message',
     });
   });
 
@@ -48,17 +48,20 @@ describe('deleteMessage use-case', () => {
     await prisma.$disconnect();
   });
 
-  it('should delete a message by ID', async () => {
-    await deleteMessage(message.id);
-
-    const deleted = await prisma.message.findUnique({
-      where: { id: message.id },
+  it('should update the content of a message', async () => {
+    const updated = await updateMessage({
+      messageId: message.id,
+      content: 'Updated message content',
     });
 
-    expect(deleted).toBeNull();
+    expect(updated.id).toBe(message.id);
+    expect(updated.content).toBe('Updated message content');
   });
 
   it('should throw if message does not exist', async () => {
-    await expect(deleteMessage(999999)).rejects.toThrow();
+    await expect(updateMessage({
+      messageId: 999999,
+      content: 'Text',
+    })).rejects.toThrow();
   });
 });
