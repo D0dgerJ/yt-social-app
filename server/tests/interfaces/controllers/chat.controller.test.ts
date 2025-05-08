@@ -1,6 +1,14 @@
 import * as chatController from '../../../interfaces/controllers/chat.controller';
-import * as chatUseCases from '../../../application/use-cases/chat';
+import { createChat } from '../../../application/use-cases/chat/createChat';
+import { sendMessage } from '../../../application/use-cases/chat/sendMessage';
+import { getUserConversations } from '../../../application/use-cases/chat/getUserConversations';
+import { updateMessage } from '../../../application/use-cases/chat/updateMessage';
+import { deleteMessage } from '../../../application/use-cases/chat/deleteMessage';
+import { deleteConversationIfEmpty } from '../../../application/use-cases/chat/deleteConversationIfEmpty';
+import { leaveConversation } from '../../../application/use-cases/chat/leaveConversation';
+import { addParticipant } from '../../../application/use-cases/chat/addParticipant';
 import prisma from '../../../infrastructure/database/prismaClient';
+import { Request, Response } from 'express';
 
 jest.mock('../../../application/use-cases/chat/createChat');
 jest.mock('../../../application/use-cases/chat/sendMessage');
@@ -20,7 +28,7 @@ const mockRes = {
   status: jest.fn().mockReturnThis(),
   json: jest.fn(),
   send: jest.fn(),
-};
+} as unknown as Response;
 
 describe('Chat Controller', () => {
   beforeEach(() => {
@@ -28,8 +36,8 @@ describe('Chat Controller', () => {
   });
 
   it('should create a chat', async () => {
-    const mockReq = { body: { userIds: [1, 2], name: 'Group' } } as any;
-    (chatUseCases.createChat as jest.Mock).mockResolvedValue({ id: 1, name: 'Group' });
+    const mockReq = { body: { userIds: [1, 2], name: 'Group' } } as Request;
+    (createChat as jest.Mock).mockResolvedValue({ id: 1, name: 'Group' });
 
     await chatController.create(mockReq, mockRes);
 
@@ -38,8 +46,11 @@ describe('Chat Controller', () => {
   });
 
   it('should send a message', async () => {
-    const mockReq = { user: { id: 1 }, body: { conversationId: 2, content: 'Hello' } } as any;
-    (chatUseCases.sendMessage as jest.Mock).mockResolvedValue({ id: 10, content: 'Hello' });
+    const mockReq = {
+      user: { id: 1 },
+      body: { conversationId: 2, content: 'Hello' },
+    } as unknown as Request;
+    (sendMessage as jest.Mock).mockResolvedValue({ id: 10, content: 'Hello' });
 
     await chatController.send(mockReq, mockRes);
 
@@ -48,8 +59,8 @@ describe('Chat Controller', () => {
   });
 
   it('should get user conversations', async () => {
-    const mockReq = { user: { id: 1 } } as any;
-    (chatUseCases.getUserConversations as jest.Mock).mockResolvedValue([{ id: 1 }]);
+    const mockReq = { user: { id: 1 } } as unknown as Request;
+    (getUserConversations as jest.Mock).mockResolvedValue([{ id: 1 }]);
 
     await chatController.getConversations(mockReq, mockRes);
 
@@ -58,8 +69,8 @@ describe('Chat Controller', () => {
   });
 
   it('should update a message', async () => {
-    const mockReq = { body: { messageId: 1, content: 'Updated' } } as any;
-    (chatUseCases.updateMessage as jest.Mock).mockResolvedValue({ id: 1, content: 'Updated' });
+    const mockReq = { body: { messageId: 1, content: 'Updated' } } as Request;
+    (updateMessage as jest.Mock).mockResolvedValue({ id: 1, content: 'Updated' });
 
     await chatController.update(mockReq, mockRes);
 
@@ -68,30 +79,30 @@ describe('Chat Controller', () => {
   });
 
   it('should delete a message and maybe the conversation', async () => {
-    const mockReq = { body: { messageId: 1, conversationId: 2 } } as any;
+    const mockReq = { body: { messageId: 1, conversationId: 2 } } as Request;
 
     await chatController.remove(mockReq, mockRes);
 
-    expect(chatUseCases.deleteMessage).toHaveBeenCalledWith(1);
-    expect(chatUseCases.deleteConversationIfEmpty).toHaveBeenCalledWith(2);
+    expect(deleteMessage).toHaveBeenCalledWith(1);
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith(2);
     expect(mockRes.status).toHaveBeenCalledWith(204);
     expect(mockRes.send).toHaveBeenCalled();
   });
 
   it('should leave conversation and check deletion', async () => {
-    const mockReq = { user: { id: 5 }, body: { conversationId: 2 } } as any;
+    const mockReq = { user: { id: 5 }, body: { conversationId: 2 } } as unknown as Request;
 
     await chatController.leave(mockReq, mockRes);
 
-    expect(chatUseCases.leaveConversation).toHaveBeenCalledWith({ conversationId: 2, userId: 5 });
-    expect(chatUseCases.deleteConversationIfEmpty).toHaveBeenCalledWith(2);
+    expect(leaveConversation).toHaveBeenCalledWith({ conversationId: 2, userId: 5 });
+    expect(deleteConversationIfEmpty).toHaveBeenCalledWith(2);
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(mockRes.json).toHaveBeenCalledWith({ message: 'Left the conversation' });
   });
 
   it('should add participant to chat', async () => {
-    const mockReq = { body: { conversationId: 2, userId: 3 } } as any;
-    (chatUseCases.addParticipant as jest.Mock).mockResolvedValue({ id: 10 });
+    const mockReq = { body: { conversationId: 2, userId: 3 } } as Request;
+    (addParticipant as jest.Mock).mockResolvedValue({ id: 10 });
 
     await chatController.add(mockReq, mockRes);
 
@@ -100,7 +111,7 @@ describe('Chat Controller', () => {
   });
 
   it('should get messages from a conversation', async () => {
-    const mockReq = { params: { conversationId: '3' } } as any;
+    const mockReq = { params: { conversationId: '3' } } as unknown as Request;
     (prisma.message.findMany as jest.Mock).mockResolvedValue([{ id: 1 }]);
 
     await chatController.getConversationMessages(mockReq, mockRes);

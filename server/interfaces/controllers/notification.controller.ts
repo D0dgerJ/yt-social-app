@@ -25,9 +25,16 @@ export const markAsRead = async (req: Request, res: Response) => {
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const senderId = req.user!.id;
-    const { receiverId, type } = req.body;
-    const notification = await createNotification({ senderId, receiverId, type });
+    const fromUserId = req.user!.id;
+    const { receiverId: toUserId, type, content } = req.body;
+
+    const notification = await createNotification({
+      fromUserId,
+      toUserId,
+      type,
+      content,
+    });
+
     res.status(201).json(notification);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
