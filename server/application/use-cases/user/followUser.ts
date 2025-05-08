@@ -5,11 +5,21 @@ interface FollowUserInput {
   followingId: number;
 }
 
-export const followUser = async ({
-  followerId,
-  followingId,
-}: FollowUserInput) => {
-  return await prisma.follow.create({
+export const followUser = async ({ followerId, followingId }: FollowUserInput) => {
+  const existingFollow = await prisma.follow.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId,
+        followingId,
+      },
+    },
+  });
+
+  if (existingFollow) {
+    throw new Error('You already follow this user');
+  }
+
+  return prisma.follow.create({
     data: {
       followerId,
       followingId,

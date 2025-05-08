@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createComment } from "../../application/use-cases/notification/createComment";
+import { createComment } from "../../application/use-cases/comment/createComment";
 import { deleteComment } from "../../application/use-cases/comment/deleteComment";
 import { updateComment } from "../../application/use-cases/comment/updateComment";
 import { getPostComments } from "../../application/use-cases/comment/getPostComments";
@@ -8,8 +8,8 @@ import prisma from "../../infrastructure/database/prismaClient";
 export const create = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { postId, content } = req.body;
-    const comment = await createComment({ userId, postId, content });
+    const { postId, content, files = [], images = [], videos = [] } = req.body;
+    const comment = await createComment({ userId, postId, content, files, images, videos });
     res.status(201).json(comment);
   } catch (error: any) {
     res.status(400).json({ message: error.message });

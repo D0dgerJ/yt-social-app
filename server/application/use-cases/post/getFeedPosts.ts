@@ -9,8 +9,18 @@ export const getFeedPosts = async (userId: number) => {
   const followingIds = following.map(f => f.followingId);
 
   return prisma.post.findMany({
-    where: { userId: { in: followingIds } },
+    where: {
+      OR: [
+        { userId },
+        { userId: { in: followingIds } },
+      ],
+    },
     orderBy: { createdAt: 'desc' },
-    include: { user: true, likes: true, comments: true },
+    include: {
+      user: true,
+      comments: true,
+      likes: true,
+      savedBy: true,
+    },
   });
 };

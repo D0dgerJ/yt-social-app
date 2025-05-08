@@ -6,10 +6,21 @@ interface LikePostInput {
 }
 
 export const likePost = async ({ userId, postId }: LikePostInput) => {
-  return prisma.like.create({
-    data: {
-      userId,
-      postId,
-    },
-  });
+  try {
+    return await prisma.like.create({
+      data: {
+        userId,
+        postId,
+      },
+    });
+  } catch (error: any) {
+    if (
+      error.code === 'P2002' &&
+      error.meta?.target?.includes('userId_postId')
+    ) {
+      throw new Error('User already liked this post');
+    }
+
+    throw error;
+  }
 };
