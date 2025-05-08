@@ -3,17 +3,25 @@ import prisma from '../../../infrastructure/database/prismaClient';
 interface CreatePostInput {
   userId: number;
   desc?: string;
-  mediaUrl?: string;
-  mediaType?: string;
+  images?: string[];
+  videos?: string[];
+  files?: string[];
 }
 
-export const createPost = async ({ userId, desc, mediaUrl, mediaType = 'image' }: CreatePostInput) => {
+export const createPost = async ({
+  userId,
+  desc,
+  images = [],
+  videos = [],
+  files = [],
+}: CreatePostInput) => {
   return prisma.post.create({
     data: {
       userId,
       desc,
-      mediaUrl,
-      mediaType,
+      images,
+      videos,
+      files,
     },
   });
 };

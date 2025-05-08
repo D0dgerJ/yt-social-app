@@ -50,6 +50,10 @@ model Post {
   savedBy    SavedPost[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+
+  images     String[]    @default([]) // массив URL-ов к изображениям
+  videos     String[]    @default([]) // массив URL-ов к видео
+  files      String[]    @default([]) // любые другие файлы
 }
 
 model Like {
@@ -58,16 +62,22 @@ model Like {
   postId Int
   user   User @relation(fields: [userId], references: [id])
   post   Post @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId], name: "userId_postId")
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  content   String
-  userId    Int
   postId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
+  userId    Int
+  content   String
+  images    String[] @default([]) // массив URL-ов к изображениям
+  videos    String[] @default([]) // массив URL-ов к видео
+  files     String[] @default([]) // любые другие файлы
   createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Follow {
@@ -76,6 +86,8 @@ model Follow {
   followingId Int
   follower    User @relation("Following", fields: [followerId], references: [id])
   following   User @relation("FollowedBy", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId], name: "followerId_followingId")
 }
 
 model Notification {

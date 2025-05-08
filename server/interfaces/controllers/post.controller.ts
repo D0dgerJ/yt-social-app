@@ -11,22 +11,24 @@ import { unsavePost } from "../../application/use-cases/post/unsavePost";
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
-    const { desc, mediaUrl, mediaType } = req.body;
-    const post = await createPost({ userId, desc, mediaUrl, mediaType });
+    const { userId, desc, images, videos, files } = req.body;
+    const post = await createPost({ userId, desc, images, videos, files });
     res.status(201).json(post);
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
 export const update = async (req: Request, res: Response) => {
   try {
-    const { postId, desc, mediaUrl, mediaType } = req.body;
-    const updated = await updatePost({ postId, desc, mediaUrl, mediaType });
-    res.status(200).json(updated);
+    const postId = Number(req.params.id);
+    const userId = Number(req.body.userId);
+    const { desc, images, videos, files } = req.body;
+
+    const post = await updatePost({ postId, userId, desc, images, videos, files });
+    res.status(200).json(post);
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 

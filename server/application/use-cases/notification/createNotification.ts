@@ -1,17 +1,24 @@
 import prisma from '../../../infrastructure/database/prismaClient';
 
 interface CreateNotificationInput {
-  receiverId: number;
-  senderId: number;
+  fromUserId: number;
+  toUserId: number;
   type: string;
+  content?: string;
 }
 
-export const createNotification = async ({ receiverId, senderId, type }: CreateNotificationInput) => {
+export const createNotification = async ({
+  fromUserId,
+  toUserId,
+  type,
+  content,
+}: CreateNotificationInput) => {
   return prisma.notification.create({
     data: {
-      toUserId: receiverId,
-      fromUserId: senderId,
+      fromUserId,
+      toUserId,
       type,
+      content,
     },
   });
 };

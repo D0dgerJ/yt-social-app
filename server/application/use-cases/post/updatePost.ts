@@ -2,18 +2,36 @@ import prisma from '../../../infrastructure/database/prismaClient';
 
 interface UpdatePostInput {
   postId: number;
+  userId: number;
   desc?: string;
-  mediaUrl?: string;
-  mediaType?: string;
+  images?: string[];
+  videos?: string[];
+  files?: string[];
 }
 
-export const updatePost = async ({ postId, desc, mediaUrl, mediaType }: UpdatePostInput) => {
+export const updatePost = async ({
+  postId,
+  userId,
+  desc,
+  images,
+  videos,
+  files,
+}: UpdatePostInput) => {
+  const existingPost = await prisma.post.findUnique({
+    where: { id: postId },
+  });
+
+  if (!existingPost || existingPost.userId !== userId) {
+    throw new Error('Post not found or user is not the owner');
+  }
+
   return prisma.post.update({
     where: { id: postId },
     data: {
       desc,
-      mediaUrl,
-      mediaType,
+      images,
+      videos,
+      files,
     },
   });
 };

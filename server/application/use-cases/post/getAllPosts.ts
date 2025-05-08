@@ -9,6 +9,7 @@ export const getAllPosts = async () => {
       user: true,
       comments: true,
       likes: true,
+      savedBy: true,
     },
   });
 };
