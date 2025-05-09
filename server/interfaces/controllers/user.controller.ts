@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
-import { deleteUser } from "../../application/use-cases/user/deleteUser";
-import { followUser } from "../../application/use-cases/user/followUser";
-import { getUserById } from "../../application/use-cases/user/getUserById";
-import { getUserFriends } from "../../application/use-cases/user/getUserFriends";
-import { getUserProfile } from "../../application/use-cases/user/getUserProfile";
-import { unfollowUser } from "../../application/use-cases/user/unfollowUser";
-import { updateUser } from "../../application/use-cases/user/updateUser";
-import { updateProfilePicture } from "../../application/use-cases/user/updateProfilePicture";
+import {
+  deleteUser,
+  followUser,
+  getUserById,
+  getUserFriends,
+  getUserProfile,
+  unfollowUser,
+  updateUser,
+  updateProfilePicture,
+} from '../../application/use-cases/user';
+
 
 export const getById = async (req: Request, res: Response) => {
   try {

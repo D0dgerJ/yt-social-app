@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
-import { createStory } from "../../application/use-cases/story/createStory";
-import { deleteStory } from "../../application/use-cases/story/deleteStory";
-import { getFriendStories } from "../../application/use-cases/story/getFriendStories";
-import { getStoryById } from "../../application/use-cases/story/getStoryById";
-import { getUserStories } from "../../application/use-cases/story/getUserStories";
-import { viewStory } from "../../application/use-cases/story/viewStory";
-import { getFeedStories } from "../../application/use-cases/story/getFeedStories";
+import {
+  createStory,
+  deleteStory,
+  getFeedStories,
+  getFriendStories,
+  getStoryById,
+  getUserStories,
+  viewStory,
+} from '../../application/use-cases/story';
 
 export const create = async (req: Request, res: Response) => {
   try {
