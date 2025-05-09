@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
-import { createPost } from "../../application/use-cases/post/createPost";
-import { deletePost } from "../../application/use-cases/post/deletePost";
-import { getUserPosts } from "../../application/use-cases/post/getUserPosts";
-import { toggleLike } from "../../application/use-cases/post/toggleLike";
-import { updatePost } from "../../application/use-cases/post/updatePost";
-import { savePost } from "../../application/use-cases/post/savePost";
-import { getFeedPosts } from "../../application/use-cases/post/getFeedPosts";
-import { getPostById } from "../../application/use-cases/post/getPostById";
-import { unsavePost } from "../../application/use-cases/post/unsavePost";
+import {
+  createPost,
+  deletePost,
+  getUserPosts,
+  toggleLike,
+  updatePost,
+  savePost,
+  getFeedPosts,
+  getPostById,
+  unsavePost,
+} from '../../application/use-cases/post';
 
 export const create = async (req: Request, res: Response) => {
   try {
