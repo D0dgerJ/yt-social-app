@@ -1,18 +1,22 @@
 import React, { useContext, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { loginAuth } from "../../utils/api/auth.api";
+import { loginUser } from "../../utils/api/auth.api";
 import "./Login.scss";
 
-const Login = () => {
-  const [auth, setAuth] = useState({
-    email: "",
-    password: "",
-  });
+const Login: React.FC = () => {
+  const [auth, setAuth] = useState({ email: "", password: "" });
+
   const { user, isFetching, error, dispatch } = useContext(AuthContext);
 
-  const handleLogin = (e) => {
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    loginAuth({ email: auth.email, password: auth.password }, dispatch);
+    loginUser({ email: auth.email, password: auth.password })
+  .then((data) => {
+    dispatch({ type: 'LOGIN_SUCCESS', payload: data });
+  })
+  .catch((err) => {
+    dispatch({ type: 'LOGIN_FAILURE', payload: err.message });
+  });
   };
 
   return (
@@ -28,26 +32,28 @@ const Login = () => {
               type="email"
               placeholder="Email"
               className="login-input"
-              onChange={(e) => {
-                setAuth({ ...auth, email: e.target.value });
-              }}
+              value={auth.email}
+              onChange={(e) =>
+                setAuth({ ...auth, email: e.target.value })
+              }
               required
             />
             <input
               type="password"
               placeholder="Password"
               className="login-input"
-              onChange={(e) => {
-                setAuth({ ...auth, password: e.target.value });
-              }}
+              value={auth.password}
+              onChange={(e) =>
+                setAuth({ ...auth, password: e.target.value })
+              }
               required
               minLength={3}
             />
-            <button className="login-button">
+            <button className="login-button" disabled={isFetching}>
               {isFetching ? "Logging In" : "Login"}
             </button>
             <span className="forgot-password">Forgot password?</span>
-            <button className="register-button">
+            <button className="register-button" type="button">
               Create A New Account
             </button>
           </form>
