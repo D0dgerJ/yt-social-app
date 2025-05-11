@@ -7,3 +7,4 @@ export * from './savePost';
 export * from './getFeedPosts';
 export * from './getPostById';
 export * from './unsavePost';
+export * from './getUserPostsByUsername';

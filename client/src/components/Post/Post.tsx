@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { MdOutlineMoreVert } from "react-icons/md";
-import { getUserData, likeAndDislikePost } from "../../utils/api/api";
+import { toggleLike } from "../../utils/api/post.api";
+import { getUserById } from "../../utils/api/user.api";
 import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -10,22 +11,42 @@ import heartIcon from "../../assets/heart.png";
 import userPic from "./assets/user.png";
 import "./Post.scss";
 
-const Post = ({ post }) => {
-  const [like, setLike] = useState(post.likes?.length);
-  const [isLiked, setIsLiked] = useState(false);
-  const [user, setUser] = useState({});
+interface PostProps {
+  post: {
+    id: number;
+    userId: number;
+    desc?: string;
+    createdAt: string;
+    img?: string;
+    likes: number[];
+    comment?: number;
+  };
+}
+
+interface UserInfo {
+  username: string;
+  profilePicture?: string;
+  id: number;
+}
+
+const Post: React.FC<PostProps> = ({ post }) => {
+  const [like, setLike] = useState<number>(post.likes?.length || 0);
+  const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
   const { user: currentUser } = useContext(AuthContext);
 
   useEffect(() => {
-    setIsLiked(post.likes?.includes(currentUser._id));
-  }, [currentUser?._id, post.likes]);
+    if (currentUser) {
+      setIsLiked(post.likes.includes(currentUser.id));
+    }
+  }, [currentUser?.id, post.likes]);
 
   useEffect(() => {
     const getUserInfo = async () => {
       try {
-        const res = await getUserData(post.userId);
-        setUser(res.data.userInfo);
-      } catch (error) {
+        const res = await getUserById(post.userId);
+        setUser(res);
+      } catch (error: any) {
         console.log(error);
       }
     };
@@ -34,13 +55,13 @@ const Post = ({ post }) => {
 
   const handleLike = async () => {
     try {
-      await likeAndDislikePost(post.id);
-    } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message);
+      await toggleLike (post.id);
+      setLike((prev) => (isLiked ? prev - 1 : prev + 1));
+      setIsLiked(!isLiked);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Like failed");
     }
-    setLike(isLiked ? like - 1 : like + 1);
-    setIsLiked(!isLiked);
   };
 
   return (
@@ -48,12 +69,12 @@ const Post = ({ post }) => {
       <div className="post-top">
         <div className="post-user">
           <img
-            src={user.profilePicture || userPic}
+            src={user?.profilePicture || userPic}
             alt="Profile"
             className="post-avatar"
           />
-          <Link to={`/profile/${user.username}`}>
-            <span className="post-username">{user.username}</span>
+          <Link to={`/profile/${user?.username}`}>
+            <span className="post-username">{user?.username}</span>
           </Link>
           <span className="post-time">{moment(post.createdAt).fromNow()}</span>
         </div>
@@ -88,7 +109,7 @@ const Post = ({ post }) => {
           <span>{like} likes</span>
         </div>
         <div className="comment-section">
-          <span>{post.comment} comments</span>
+          <span>{post.comment || 0} comments</span>
         </div>
       </div>
     </div>

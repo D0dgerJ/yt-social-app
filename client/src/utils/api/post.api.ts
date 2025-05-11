@@ -7,8 +7,10 @@ interface PostPayload {
   files?: string[];
 }
 
-export const createPost = async (payload: PostPayload) => {
-  const response = await axios.post('/posts', payload);
+export const createPost = async (formData: FormData) => {
+  const response = await axios.post('/posts', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 };
 
@@ -49,5 +51,10 @@ export const getFeedPosts = async () => {
 
 export const getPostById = async (id: number) => {
   const response = await axios.get(`/posts/${id}`);
+  return response.data;
+};
+
+export const getUserPostsByUsername = async (username: string) => {
+  const response = await axios.get(`/posts/user/${username}`);
   return response.data;
 };

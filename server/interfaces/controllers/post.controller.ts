@@ -9,6 +9,7 @@ import {
   getFeedPosts,
   getPostById,
   unsavePost,
+  getUserPostsByUsername,
 } from '../../application/use-cases/post';
 
 export const create = async (req: Request, res: Response) => {
@@ -104,5 +105,15 @@ export const unsave = async (req: Request, res: Response) => {
     res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getByUsername = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const posts = await getUserPostsByUsername(username);
+    res.status(200).json(posts);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
   }
 };

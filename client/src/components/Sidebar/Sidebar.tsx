@@ -9,11 +9,17 @@ import {
 } from "react-icons/io5";
 import { BsFillQuestionSquareFill } from "react-icons/bs";
 import { FaUserGraduate, FaCalendarDay } from "react-icons/fa";
-import { Friends } from "../../data/dummyData";
+import { Friends } from "../../data/dummyData"; //эта информация является пустышкой для макета! настоящие нормальная информация должна браться с сервера
 import FriendsList from "../FriendsList/FriendsList";
 import "./Sidebar.scss";
 
-const Sidebar = () => {
+interface FriendType {
+  id: number;
+  username: string;
+  profilePicture: string;
+}
+
+const Sidebar: React.FC = () => {
   return (
     <div className="sidebar">
       <div className="sidebar-wrapper">
@@ -63,7 +69,7 @@ const Sidebar = () => {
         <hr className="sidebar-hr" />
 
         <ul className="sidebar-friends-list">
-          {Friends.map((friend) => (
+          {Friends.map((friend: FriendType) => (
             <FriendsList key={friend.id} friend={friend} />
           ))}
         </ul>
