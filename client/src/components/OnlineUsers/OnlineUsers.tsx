@@ -1,7 +1,14 @@
 import React from "react";
 import "./OnlineUsers.scss";
 
-const OnlineUsers = ({ user }) => {
+interface OnlineUserProps {
+  user: {
+    username: string;
+    profilePicture?: string;
+  };
+}
+
+const OnlineUsers: React.FC<OnlineUserProps> = ({ user }) => {
   return (
     <li className="online-user">
       <div className="user-image-wrapper">

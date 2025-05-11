@@ -2,12 +2,12 @@ import React, { useContext } from "react";
 import { IoSearch, IoPersonSharp, IoChatboxEllipses } from "react-icons/io5";
 import { IoIosNotifications } from "react-icons/io";
 import Logo from "../Logo/Logo";
-import noProfile from "../../pages/Profile/assets/user.png";
+import noProfile from "../../assets/profile/user.png";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import "./Navbar.scss";
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
 
   return (
@@ -49,7 +49,7 @@ const Navbar = () => {
         <div className="profile-pic-div">
           <Link to={`/profile/${user?.username}`}>
             <img
-              src={user?.profilePicture ? user?.profilePicture : noProfile}
+              src={user?.profilePicture || noProfile}
               alt="A user Profile Picture"
               className="profile-pic"
             />

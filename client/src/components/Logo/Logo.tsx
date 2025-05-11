@@ -1,7 +1,7 @@
 import React from "react";
 import "./Logo.scss";
 
-const Logo = () => {
+const Logo: React.FC = () => {
   return (
     <h1 className="logo">Solu Social</h1>
   );

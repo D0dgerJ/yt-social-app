@@ -1,7 +1,17 @@
 import React from "react";
 import "./FriendsList.scss";
 
-const FriendsList = ({ friend }) => {
+interface Friend {
+  id: number;
+  username: string;
+  profilePicture: string;
+}
+
+interface FriendsListProps {
+  friend: Friend;
+}
+
+const FriendsList: React.FC<FriendsListProps> = ({ friend }) => {
   return (
     <li className="friend-item">
       <img

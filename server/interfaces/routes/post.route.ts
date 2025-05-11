@@ -1,14 +1,15 @@
 import express from "express";
 import {
-  createPostController,
-  updatePostController,
-  deletePostController,
-  getPostByIdController,
-  getUserPostsController,
-  getAllPostsController,
-  likePostController,
-  savePostController,
-  unsavePostController,
+  create,
+  update,
+  remove,
+  getById,
+  getUser,
+  getFeed,
+  like,
+  save,
+  unsave,
+  getByUsername,
 } from "../controllers/post.controller.js";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
@@ -16,7 +17,7 @@ import prisma from "../../infrastructure/database/prismaClient.js";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createPostController);
+router.post("/", authMiddleware, create);
 router.put(
   "/:id",
   authMiddleware,
@@ -26,7 +27,7 @@ router.put(
     });
     return post?.userId;
   }),
-  updatePostController
+  update
 );
 
 router.delete(
@@ -38,13 +39,14 @@ router.delete(
     });
     return post?.userId;
   }),
-  deletePostController
+  remove
 );
-router.get("/:id", getPostByIdController);
-router.get("/user/:userId", getUserPostsController);
-router.get("/", getAllPostsController);
-router.put("/:id/like", authMiddleware, likePostController);
-router.put("/:id/save", authMiddleware, savePostController);
-router.put("/:id/unsave", authMiddleware, unsavePostController);
+router.get("/:id", getById);
+router.get("/user/:userId", getUser);
+router.get("/", getFeed);
+router.put("/:id/like", authMiddleware, like);
+router.put("/:id/save", authMiddleware, save);
+router.put("/:id/unsave", authMiddleware, unsave);
+router.get("/username/:username", getByUsername);
 
 export default router;

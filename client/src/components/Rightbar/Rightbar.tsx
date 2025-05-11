@@ -3,16 +3,35 @@ import birthdayIcon from "../../assets/gift.png";
 import adImage from "../../assets/ad.jpg";
 import profilePic from "./assets/no-profile-image.png";
 import OnlineUsers from "../OnlineUsers/OnlineUsers";
-import { Users } from "../../data/dummyData";
-import { followUser, getUserFriends, unfollowUser } from "../../utils/api/api";
+import { Users } from "../../data/dummyData"; //эта информация является пустышкой для макета! настоящие нормальная информация должна браться с сервера
+import {
+  followUser,
+  getUserFriends,
+  unfollowUser,
+} from "../../utils/api/user.api";
 import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import "./Rightbar.scss";
 
-const Rightbar = ({ user }) => {
-  const [friends, setFriends] = useState([]);
+interface User {
+  _id: number;
+  id?: number;
+  username: string;
+  city?: string;
+  from?: string;
+  relationship?: number;
+  profilePicture?: string;
+  followings?: number[];
+}
+
+interface RightbarProps {
+  user?: User;
+}
+
+const Rightbar: React.FC<RightbarProps> = ({ user }) => {
+  const [friends, setFriends] = useState<User[]>([]);
   const { user: currentUser, dispatch } = useContext(AuthContext);
-  const [isFollowed, setIsFollowed] = useState(false);
+  const [isFollowed, setIsFollowed] = useState<boolean>(false);
 
   useEffect(() => {
     if (currentUser?.followings && user?._id) {
@@ -25,7 +44,7 @@ const Rightbar = ({ user }) => {
       if (user?._id) {
         try {
           const res = await getUserFriends(user._id);
-          setFriends(res.data.friends);
+          setFriends(res);
         } catch (error) {
           console.log(error);
         }
@@ -37,16 +56,16 @@ const Rightbar = ({ user }) => {
   const handleFollow = async () => {
     try {
       if (isFollowed) {
-        await unfollowUser(user._id);
-        dispatch({ type: "UNFOLLOW", payload: user._id });
+        await unfollowUser(user!._id);
+        dispatch({ type: "UNFOLLOW", payload: user!._id });
       } else {
-        await followUser(user._id);
-        dispatch({ type: "FOLLOW", payload: user._id });
+        await followUser(user!._id);
+        dispatch({ type: "FOLLOW", payload: user!._id });
       }
+      setIsFollowed(!isFollowed);
     } catch (error) {
       console.log(error);
     }
-    setIsFollowed(!isFollowed);
   };
 
   const RightBarHome = () => (
@@ -69,7 +88,7 @@ const Rightbar = ({ user }) => {
 
   const RightBarProfile = () => (
     <>
-      {user.username !== currentUser?.username && (
+      {user?.username !== currentUser?.username && (
         <button className="follow-button" onClick={handleFollow}>
           {isFollowed ? "Following" : "Follow"}
         </button>
@@ -78,18 +97,18 @@ const Rightbar = ({ user }) => {
       <div className="user-info">
         <div className="info-item">
           <span>City:</span>
-          <span>{user.city}</span>
+          <span>{user?.city}</span>
         </div>
         <div className="info-item">
           <span>From:</span>
-          <span>{user.from}</span>
+          <span>{user?.from}</span>
         </div>
         <div className="info-item">
           <span>Relationship:</span>
           <span>
-            {user.relationship === 1
+            {user?.relationship === 1
               ? "Single"
-              : user.relationship === 2
+              : user?.relationship === 2
               ? "Married"
               : "It's Complicated"}
           </span>
@@ -98,7 +117,7 @@ const Rightbar = ({ user }) => {
       <h1 className="friends-title">Friends</h1>
       <div className="friends-grid">
         {friends.map((friend) => (
-          <Link to={`/profile/${friend?.username}`} key={friend._id}>
+          <Link to={`/profile/${friend.username}`} key={friend._id}>
             <div className="friend-card">
               <img
                 src={friend.profilePicture || profilePic}
