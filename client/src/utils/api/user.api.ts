@@ -19,8 +19,12 @@ export const updateUser = async (data: {
   return response.data;
 };
 
-export const updateProfilePicture = async (profilePicture: string) => {
-  const response = await axios.put('/users/profile-picture', { profilePicture });
+export const updateProfilePicture = async (formData: FormData) => {
+  const response = await axios.put('/users/profile-picture', formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 };
 
@@ -41,5 +45,10 @@ export const getUserProfile = async () => {
 
 export const getUserFriends = async (userId: number) => {
   const response = await axios.get(`/users/friends/${userId}`);
+  return response.data;
+};
+
+export const getUserByUsername = async (username: string) => {
+  const response = await axios.get(`/users/username/${username}`);
   return response.data;
 };

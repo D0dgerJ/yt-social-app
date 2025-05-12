@@ -1,5 +1,4 @@
-import * as express from 'express';
-import type { Express } from 'express';
+import express, { Express } from 'express';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';

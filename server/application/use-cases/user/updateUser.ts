@@ -9,6 +9,7 @@ interface UpdateUserInput {
     city?: string;
     relationship?: number;
     coverPicture?: string;
+    desc?: string;
   };
 }
 

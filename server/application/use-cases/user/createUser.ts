@@ -9,6 +9,7 @@ interface CreateUserInput {
   from?: string;
   city?: string;
   relationship?: number;
+  desc?: string;
 }
 
 export const createUser = async ({
@@ -20,6 +21,7 @@ export const createUser = async ({
   from,
   city,
   relationship,
+  desc,
 }: CreateUserInput) => {
   return await prisma.user.create({
     data: {
@@ -31,6 +33,7 @@ export const createUser = async ({
       from,
       city,
       relationship,
+      desc,
     },
   });
 };
