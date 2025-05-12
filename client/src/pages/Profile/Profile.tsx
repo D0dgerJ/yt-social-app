@@ -49,7 +49,7 @@ const Profile = () => {
       formData.append("profilePicture", profileImage);
       try {
         const res = await API.put(
-          `/users/${currentUser._id}/profile-picture`,
+          `/users/${currentUser.id}/profile-picture`,
           formData,
           {
             headers: {
