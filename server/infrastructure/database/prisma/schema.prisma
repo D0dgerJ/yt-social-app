@@ -20,6 +20,7 @@ model User {
   password       String
   profilePicture String?     // Cloudinary URL
   coverPicture   String?     // Cloudinary URL
+  desc           String?     @default("")
   isAdmin        Boolean     @default(false)
   from           String?     @default("Ghana")
   city           String?     @default("Accra")

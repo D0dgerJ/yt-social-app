@@ -7,3 +7,4 @@ export * from './getUserProfile';
 export * from './unfollowUser';
 export * from './updateUser';
 export * from './updateProfilePicture';
+export * from './getUserByUsername';

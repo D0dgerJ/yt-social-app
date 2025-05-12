@@ -8,11 +8,13 @@ import {
   follow as followUserController,
   unfollow as unfollowUserController,
   friends as getUserFriendsController,
+  getByUsername as getUserByUsernameController,
 } from "../controllers/user.controller";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware";
 
 const router = express.Router();
 
+router.get("/username/:username", getUserByUsernameController);
 router.get("/:id", getUserByIdController);
 router.get("/profile/:username", getUserProfileController);
 

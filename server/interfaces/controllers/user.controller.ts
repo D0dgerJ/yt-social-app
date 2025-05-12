@@ -8,6 +8,7 @@ import {
   unfollowUser,
   updateUser,
   updateProfilePicture,
+  getUserByUsername,
 } from '../../application/use-cases/user';
 
 
@@ -94,3 +95,13 @@ export const friends = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const getByUsername = async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+    const user = await getUserByUsername(username);
+    res.status(200).json(user);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+}
