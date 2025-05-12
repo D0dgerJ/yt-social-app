@@ -1,5 +1,6 @@
 import React from "react";
 import "./OnlineUsers.scss";
+import profilePic from "./assets/no-profile-image.png";
 
 interface OnlineUserProps {
   user: {
@@ -13,7 +14,7 @@ const OnlineUsers: React.FC<OnlineUserProps> = ({ user }) => {
     <li className="online-user">
       <div className="user-image-wrapper">
         <img
-          src={user.profilePicture}
+          src={user.profilePicture || profilePic}
           alt="profile picture"
           className="user-image"
         />

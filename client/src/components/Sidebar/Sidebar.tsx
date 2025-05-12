@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { SiFeedly } from "react-icons/si";
 import { BiSolidVideos } from "react-icons/bi";
 import { MdGroups } from "react-icons/md";
@@ -9,8 +9,9 @@ import {
 } from "react-icons/io5";
 import { BsFillQuestionSquareFill } from "react-icons/bs";
 import { FaUserGraduate, FaCalendarDay } from "react-icons/fa";
-import { Friends } from "../../data/dummyData"; //эта информация является пустышкой для макета! настоящие нормальная информация должна браться с сервера
 import FriendsList from "../FriendsList/FriendsList";
+import { getUserFriends } from "../../utils/api/user.api";
+import { AuthContext } from "../../context/AuthContext";
 import "./Sidebar.scss";
 
 interface FriendType {
@@ -20,6 +21,24 @@ interface FriendType {
 }
 
 const Sidebar: React.FC = () => {
+  const { user } = useContext(AuthContext);
+  const [friends, setFriends] = useState<FriendType[]>([]);
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        if (user?.id) {
+          const data = await getUserFriends(user.id);
+          setFriends(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch friends", error);
+      }
+    };
+
+    fetchFriends();
+  }, [user?.id]);
+
   return (
     <div className="sidebar">
       <div className="sidebar-wrapper">
@@ -69,7 +88,7 @@ const Sidebar: React.FC = () => {
         <hr className="sidebar-hr" />
 
         <ul className="sidebar-friends-list">
-          {Friends.map((friend: FriendType) => (
+          {friends.map((friend) => (
             <FriendsList key={friend.id} friend={friend} />
           ))}
         </ul>

@@ -3,7 +3,6 @@ import birthdayIcon from "../../assets/gift.png";
 import adImage from "../../assets/ad.jpg";
 import profilePic from "./assets/no-profile-image.png";
 import OnlineUsers from "../OnlineUsers/OnlineUsers";
-import { Users } from "../../data/dummyData"; //эта информация является пустышкой для макета! настоящие нормальная информация должна браться с сервера
 import {
   followUser,
   getUserFriends,
@@ -13,9 +12,14 @@ import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import "./Rightbar.scss";
 
+interface Friend {
+  id: number;
+  username: string;
+  profilePicture?: string;
+}
+
 interface User {
-  _id: number;
-  id?: number;
+  id: number;
   username: string;
   city?: string;
   from?: string;
@@ -29,42 +33,45 @@ interface RightbarProps {
 }
 
 const Rightbar: React.FC<RightbarProps> = ({ user }) => {
-  const [friends, setFriends] = useState<User[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const { user: currentUser, dispatch } = useContext(AuthContext);
   const [isFollowed, setIsFollowed] = useState<boolean>(false);
 
   useEffect(() => {
-    if (currentUser?.followings && user?._id) {
-      setIsFollowed(currentUser.followings.includes(user._id));
+    if (currentUser?.followings && user?.id) {
+      setIsFollowed(currentUser.followings.includes(user.id));
     }
   }, [currentUser, user]);
 
   useEffect(() => {
     const getFriends = async () => {
-      if (user?._id) {
-        try {
-          const res = await getUserFriends(user._id);
-          setFriends(res);
-        } catch (error) {
-          console.log(error);
-        }
+      const targetId = user?.id ?? currentUser?.id;
+      if (!targetId) return;
+
+      try {
+        const res = await getUserFriends(targetId);
+        setFriends(res);
+      } catch (error) {
+        console.error("Failed to fetch friends", error);
       }
     };
     getFriends();
-  }, [user?._id]);
+  }, [user?.id, currentUser?.id]);
 
   const handleFollow = async () => {
+    if (!user?.id ) return;
+
     try {
       if (isFollowed) {
-        await unfollowUser(user!._id);
-        dispatch({ type: "UNFOLLOW", payload: user!._id });
+        await unfollowUser(user.id );
+        dispatch({ type: "UNFOLLOW", payload: user.id  });
       } else {
-        await followUser(user!._id);
-        dispatch({ type: "FOLLOW", payload: user!._id });
+        await followUser(user.id );
+        dispatch({ type: "FOLLOW", payload: user.id  });
       }
       setIsFollowed(!isFollowed);
     } catch (error) {
-      console.log(error);
+      console.error("Failed to follow/unfollow", error);
     }
   };
 
@@ -79,7 +86,7 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
       <img src={adImage} alt="Advert" className="advert-image" />
       <h1 className="online-title">Online</h1>
       <ul className="online-users">
-        {Users.map((user) => (
+        {friends.map((user) => (
           <OnlineUsers key={user.id} user={user} />
         ))}
       </ul>
@@ -117,7 +124,7 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
       <h1 className="friends-title">Friends</h1>
       <div className="friends-grid">
         {friends.map((friend) => (
-          <Link to={`/profile/${friend.username}`} key={friend._id}>
+          <Link to={`/profile/${friend.username}`} key={friend.id}>
             <div className="friend-card">
               <img
                 src={friend.profilePicture || profilePic}
