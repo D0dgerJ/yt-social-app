@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient";
+import prisma from "../../../infrastructure/database/prismaClient.ts";
 
 export const getUserPostsByUsername = async (username: string) => {
   const user = await prisma.user.findUnique({

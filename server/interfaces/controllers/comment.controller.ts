@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { createComment } from "../../application/use-cases/comment/createComment";
-import { deleteComment } from "../../application/use-cases/comment/deleteComment";
-import { updateComment } from "../../application/use-cases/comment/updateComment";
-import { getPostComments } from "../../application/use-cases/comment/getPostComments";
-import prisma from "../../infrastructure/database/prismaClient";
+import { createComment } from "../../application/use-cases/comment/createComment.ts";
+import { deleteComment } from "../../application/use-cases/comment/deleteComment.ts";
+import { updateComment } from "../../application/use-cases/comment/updateComment.ts";
+import { getPostComments } from "../../application/use-cases/comment/getPostComments.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 export const create = async (req: Request, res: Response) => {
   try {

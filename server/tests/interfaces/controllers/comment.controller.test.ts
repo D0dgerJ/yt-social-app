@@ -1,5 +1,5 @@
 import * as commentController from '../../../interfaces/controllers/comment.controller';
-import prisma from '../../../infrastructure/database/prismaClient';
+import prisma from '../../../infrastructure/database/prismaClient.ts';
 
 import { createComment } from '../../../application/use-cases/comment/createComment';
 import { updateComment } from '../../../application/use-cases/comment/updateComment';
@@ -11,7 +11,7 @@ jest.mock('../../../application/use-cases/comment/createComment');
 jest.mock('../../../application/use-cases/comment/updateComment');
 jest.mock('../../../application/use-cases/comment/deleteComment');
 jest.mock('../../../application/use-cases/comment/getPostComments');
-jest.mock('../../../infrastructure/database/prismaClient', () => ({
+jest.mock('../../../infrastructure/database/prismaClient.ts', () => ({
   comment: {
     findMany: jest.fn(),
   },

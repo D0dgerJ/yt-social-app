@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { cleanExpiredStories } from '../../../cron/storyCleaner';
+import { cleanExpiredStories } from '../../../cron/storyCleaner.ts';
 
 const prisma = new PrismaClient();
 

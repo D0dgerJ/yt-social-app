@@ -1,12 +1,10 @@
-import { Request, Response } from 'express';
 import { getUserByUsername } from '../../../application/use-cases/user/getUserByUsername';
-import prisma from "../../../infrastructure/database/prismaClient";
+import prisma from "../../../infrastructure/database/prismaClient.ts";
 
-jest.mock('../../../infrastructure/database/prismaClient'); 
+jest.mock("../../../infrastructure/database/prismaClient.ts");
 
-describe('getUserByUsername', () => {
-  it('should return user data for a valid username', async () => {
-    // Мокируем успешный запрос, когда пользователь найден
+describe('getUserByUsername (use-case)', () => {
+  it('должен вернуть данные пользователя по валидному username', async () => {
     const mockUser = {
       id: 1,
       username: 'testuser',
@@ -18,13 +16,7 @@ describe('getUserByUsername', () => {
 
     (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
-    const req = { params: { username: 'testuser' } } as Request;
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    } as unknown as Response;
-
-    await getUserByUsername(req, res);
+    const result = await getUserByUsername('testuser');
 
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { username: 'testuser' },
@@ -38,39 +30,18 @@ describe('getUserByUsername', () => {
       },
     });
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(mockUser);
+    expect(result).toEqual(mockUser);
   });
 
-  it('should return 404 if user is not found', async () => {
-    // Мокируем случай, когда пользователь не найден
+  it('должен выбросить ошибку, если пользователь не найден', async () => {
     (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
-    const req = { params: { username: 'nonexistentuser' } } as Request;
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    } as unknown as Response;
-
-    await getUserByUsername(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: 'User not found' });
+    await expect(getUserByUsername('nonexistentuser')).rejects.toThrow('User not found');
   });
 
-  it('should return 500 if there is an internal server error', async () => {
-    // Мокируем ошибку сервера
+  it('должен выбросить ошибку при внутренней ошибке', async () => {
     (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('Some error'));
 
-    const req = { params: { username: 'testuser' } } as Request;
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    } as unknown as Response;
-
-    await getUserByUsername(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Internal server error' });
+    await expect(getUserByUsername('testuser')).rejects.toThrow('Some error');
   });
 });

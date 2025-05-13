@@ -7,7 +7,7 @@ import { deleteMessage } from '../../../application/use-cases/chat/deleteMessage
 import { deleteConversationIfEmpty } from '../../../application/use-cases/chat/deleteConversationIfEmpty';
 import { leaveConversation } from '../../../application/use-cases/chat/leaveConversation';
 import { addParticipant } from '../../../application/use-cases/chat/addParticipant';
-import prisma from '../../../infrastructure/database/prismaClient';
+import prisma from '../../../infrastructure/database/prismaClient.ts';
 import { Request, Response } from 'express';
 
 jest.mock('../../../application/use-cases/chat/createChat');
@@ -18,7 +18,7 @@ jest.mock('../../../application/use-cases/chat/deleteMessage');
 jest.mock('../../../application/use-cases/chat/deleteConversationIfEmpty');
 jest.mock('../../../application/use-cases/chat/leaveConversation');
 jest.mock('../../../application/use-cases/chat/addParticipant');
-jest.mock('../../../infrastructure/database/prismaClient', () => ({
+jest.mock('../../../infrastructure/database/prismaClient.ts', () => ({
   message: {
     findMany: jest.fn(),
   },

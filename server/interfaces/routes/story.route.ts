@@ -7,10 +7,10 @@ import {
   view as handleViewStory,
   getFeed as getFeedStoriesController,
   getById as getStoryByIdController,
-} from "../controllers/story.controller";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership";
-import prisma from "../../infrastructure/database/prismaClient";
+} from "../controllers/story.controller.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { getUserNotifications } from "../../application/use-cases/notification/getUserNotifications";
-import { markNotificationAsRead } from "../../application/use-cases/notification/markNotificationAsRead";
-import { createNotification } from "../../application/use-cases/notification/createNotification";
+import { getUserNotifications } from "../../application/use-cases/notification/getUserNotifications.ts";
+import { markNotificationAsRead } from "../../application/use-cases/notification/markNotificationAsRead.ts";
+import { createNotification } from "../../application/use-cases/notification/createNotification.ts";
 
 export const getNotifications = async (req: Request, res: Response) => {
   try {

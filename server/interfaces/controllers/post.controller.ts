@@ -10,7 +10,7 @@ import {
   getPostById,
   unsavePost,
   getUserPostsByUsername,
-} from '../../application/use-cases/post';
+} from '../../application/use-cases/post/index.ts';
 
 export const create = async (req: Request, res: Response) => {
   try {
@@ -90,6 +90,10 @@ export const getFeed = async (req: Request, res: Response) => {
 export const getById = async (req: Request, res: Response) => {
   try {
     const postId = Number(req.params.id);
+    if (isNaN(postId)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+
     const post = await getPostById(postId);
     res.status(200).json(post);
   } catch (error: any) {
