@@ -22,7 +22,7 @@ router.post("/", authMiddleware, create);
 router.put(
   "/:id",
   authMiddleware,
-  checkOwnership(async (req) => {
+  checkOwnership(async (req: express.Request): Promise<number | undefined> => {
     const post = await prisma.post.findUnique({
       where: { id: Number(req.params.id) },
     });
@@ -34,7 +34,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  checkOwnership(async (req) => {
+  checkOwnership(async (req: express.Request): Promise<number | undefined> => {
     const post = await prisma.post.findUnique({
       where: { id: Number(req.params.id) },
     });
