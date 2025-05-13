@@ -9,8 +9,8 @@ import {
   unfollow as unfollowUserController,
   friends as getUserFriendsController,
   getByUsername as getUserByUsernameController,
-} from "../controllers/user.controller";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware";
+} from "../controllers/user.controller.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 
 const router = express.Router();
 

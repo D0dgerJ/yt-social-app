@@ -1,8 +1,8 @@
 import express from "express";
-import * as controller from "../controllers/comment.controller";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership";
-import prisma from "../../infrastructure/database/prismaClient";
+import * as controller from "../controllers/comment.controller.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 

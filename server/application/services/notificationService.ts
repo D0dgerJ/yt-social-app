@@ -1,4 +1,4 @@
-import prisma from '../../infrastructure/database/prismaClient';
+import prisma from '../../infrastructure/database/prismaClient.ts';
 
 export const sendNotification = async (receiverId: number, type: string, senderId: number) => {
   const notification = await prisma.notification.create({

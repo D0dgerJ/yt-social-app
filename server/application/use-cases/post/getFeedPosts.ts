@@ -1,4 +1,4 @@
-import prisma from '../../../infrastructure/database/prismaClient';
+import prisma from '../../../infrastructure/database/prismaClient.ts';
 
 export const getFeedPosts = async (userId: number) => {
   const following = await prisma.follow.findMany({

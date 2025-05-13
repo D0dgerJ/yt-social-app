@@ -1,3 +1,3 @@
-export * from './getUserNotifications';
-export * from './markNotificationAsRead';
-export * from './createNotification';
+export * from './getUserNotifications.ts';
+export * from './markNotificationAsRead.ts';
+export * from './createNotification.ts';

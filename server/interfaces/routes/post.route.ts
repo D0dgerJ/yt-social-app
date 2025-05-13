@@ -10,10 +10,10 @@ import {
   save,
   unsave,
   getByUsername,
-} from "../controllers/post.controller.js";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
-import prisma from "../../infrastructure/database/prismaClient.js";
+} from "../controllers/post.controller.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 

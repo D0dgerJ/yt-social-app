@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { createChat } from "../../application/use-cases/chat/createChat";
-import { sendMessage } from "../../application/use-cases/chat/sendMessage";
-import { getUserConversations } from "../../application/use-cases/chat/getUserConversations";
-import { deleteMessage } from "../../application/use-cases/chat/deleteMessage";
-import { updateMessage } from "../../application/use-cases/chat/updateMessage";
-import { leaveConversation } from "../../application/use-cases/chat/leaveConversation";
-import { addParticipant } from "../../application/use-cases/chat/addParticipant";
-import { deleteConversationIfEmpty } from "../../application/use-cases/chat/deleteConversationIfEmpty";
-import prisma from "../../infrastructure/database/prismaClient";
+import { createChat } from "../../application/use-cases/chat/createChat.ts";
+import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
+import { getUserConversations } from "../../application/use-cases/chat/getUserConversations.ts";
+import { deleteMessage } from "../../application/use-cases/chat/deleteMessage.ts";
+import { updateMessage } from "../../application/use-cases/chat/updateMessage.ts";
+import { leaveConversation } from "../../application/use-cases/chat/leaveConversation.ts";
+import { addParticipant } from "../../application/use-cases/chat/addParticipant.ts";
+import { deleteConversationIfEmpty } from "../../application/use-cases/chat/deleteConversationIfEmpty.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 export const create = async (req: Request, res: Response) => {
   try {

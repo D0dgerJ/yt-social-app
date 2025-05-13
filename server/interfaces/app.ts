@@ -1,23 +1,30 @@
 import express, { Express } from 'express';
 import dotenv from 'dotenv';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import cors from 'cors';
 
-import routes from './routes/routes';
-import { errorHandler } from '../infrastructure/middleware/errorHandler';
-import '../cron/storyCleaner';
+let app: Express;
 
-dotenv.config();
+try {
+  dotenv.config();
 
-const app: Express = express();
+  const helmet = await import('helmet').then(mod => mod.default);
+  const morgan = await import('morgan').then(mod => mod.default);
+  const cors = await import('cors').then(mod => mod.default);
+  const routes = await import('./routes/routes.js').then(mod => mod.default);
+  const { errorHandler } = await import('../infrastructure/middleware/errorHandler.js');
+  await import('../cron/storyCleaner.js');
 
-app.use(helmet());
-app.use(morgan('common'));
-app.use(cors());
-app.use(express.json());
+  app = express();
 
-app.use('/api/v1', routes);
-app.use(errorHandler);
+  app.use(helmet());
+  app.use(morgan('common'));
+  app.use(cors());
+  app.use(express.json());
 
-export default app;
+  app.use('/api/v1', routes);
+  app.use(errorHandler);
+} catch (error) {
+  console.error('❌ Ошибка при инициализации app.ts:', error);
+  throw error;
+}
+
+export default app!;

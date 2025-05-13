@@ -8,10 +8,10 @@ import {
   leave,
   update,
   remove,
-} from "../controllers/chat.controller";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership";
-import prisma from "../../infrastructure/database/prismaClient";
+} from "../controllers/chat.controller.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 

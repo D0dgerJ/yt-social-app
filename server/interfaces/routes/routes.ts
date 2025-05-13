@@ -9,10 +9,10 @@ import {
     getFeed as getAllPostsController,
     getById as getPostByIdController,
     unsave as unsavePostController,
-  } from "../controllers/post.controller";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership";
-import prisma from "../../infrastructure/database/prismaClient";
+  } from "../controllers/post.controller.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 

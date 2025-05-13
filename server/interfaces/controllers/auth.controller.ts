@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { registerUser } from "../../application/use-cases/auth/registerUser";
-import { loginUser } from "../../application/use-cases/auth/loginUser";
+import { registerUser } from "../../application/use-cases/auth/registerUser.ts";
+import { loginUser } from "../../application/use-cases/auth/loginUser.ts";
 
 export const register = async (req: Request, res: Response) => {
   try {

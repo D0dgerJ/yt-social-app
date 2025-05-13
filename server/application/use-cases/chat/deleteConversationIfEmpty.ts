@@ -1,4 +1,4 @@
-import prisma from '../../../infrastructure/database/prismaClient';
+import prisma from '../../../infrastructure/database/prismaClient.ts';
 
 export const deleteConversationIfEmpty = async (conversationId: number) => {
   const participants = await prisma.participant.findMany({
