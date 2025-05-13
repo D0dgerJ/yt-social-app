@@ -1,37 +1,21 @@
 import express from "express";
-import {
-    create as createPostController,
-    update as updatePostController,
-    remove as deletePostController,
-    like as likePostController,
-    save as savePostController,
-    getUser as getUserPostsController,
-    getFeed as getAllPostsController,
-    getById as getPostByIdController,
-    unsave as unsavePostController,
-  } from "../controllers/post.controller.ts";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
-import prisma from "../../infrastructure/database/prismaClient.ts";
+
+import authRoutes from "./auth.route.ts";
+import postRoutes from "./post.route.ts";
+import userRoutes from "./user.route.ts";
+import storyRoutes from "./story.route.ts";
+import commentRoutes from "./comment.route.ts";
+import notificationRoutes from "./notification.route.ts";
+import chatRoutes from "./chat.route.ts";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createPostController);
-router.put("/:id", authMiddleware,
-  checkOwnership(async (req) => {
-    const post = await prisma.post.findUnique({ where: { id: Number(req.params.id) }});
-    return post?.userId;
-  }), updatePostController);
-router.delete("/:id", authMiddleware,
-  checkOwnership(async (req) => {
-    const post = await prisma.post.findUnique({ where: { id: Number(req.params.id) }});
-    return post?.userId;
-  }), deletePostController);
-router.get("/:id", getPostByIdController);
-router.get("/user/:userId", getUserPostsController);
-router.get("/", getAllPostsController);
-router.put("/:id/like", authMiddleware, likePostController);
-router.put("/:id/save", authMiddleware, savePostController);
-router.put("/:id/unsave", authMiddleware, unsavePostController);
+router.use("/auth", authRoutes);
+router.use("/posts", postRoutes);
+router.use("/users", userRoutes);
+router.use("/stories", storyRoutes);
+router.use("/comments", commentRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/chats", chatRoutes);
 
 export default router;

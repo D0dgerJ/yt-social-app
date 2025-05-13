@@ -18,6 +18,7 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 const router = express.Router();
 
 router.post("/", authMiddleware, create);
+
 router.put(
   "/:id",
   authMiddleware,
@@ -41,12 +42,14 @@ router.delete(
   }),
   remove
 );
+
 router.get("/:id", getById);
 router.get("/user/:userId", getUser);
+router.get("/username/:username", getByUsername);
 router.get("/", getFeed);
+
 router.put("/:id/like", authMiddleware, like);
 router.put("/:id/save", authMiddleware, save);
 router.put("/:id/unsave", authMiddleware, unsave);
-router.get("/username/:username", getByUsername);
 
 export default router;
