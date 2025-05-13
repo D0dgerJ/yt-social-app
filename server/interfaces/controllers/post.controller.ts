@@ -87,11 +87,12 @@ export const getFeed = async (req: Request, res: Response) => {
   }
 };
 
-export const getById = async (req: Request, res: Response) => {
+export const getById = async (req: Request, res: Response): Promise<void> => {
   try {
     const postId = Number(req.params.id);
     if (isNaN(postId)) {
-      return res.status(400).json({ message: "Invalid post ID" });
+      res.status(400).json({ message: "Invalid post ID" });
+      return;
     }
 
     const post = await getPostById(postId);
