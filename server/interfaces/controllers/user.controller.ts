@@ -9,7 +9,7 @@ import {
   updateUser,
   updateProfilePicture,
   getUserByUsername,
-} from '../../application/use-cases/user';
+} from '../../application/use-cases/user/index.ts';
 
 
 export const getById = async (req: Request, res: Response) => {
