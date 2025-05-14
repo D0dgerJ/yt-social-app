@@ -9,9 +9,9 @@ try {
   const helmet = await import('helmet').then(mod => mod.default);
   const morgan = await import('morgan').then(mod => mod.default);
   const cors = await import('cors').then(mod => mod.default);
-  const routes = await import('./routes/routes.js').then(mod => mod.default);
-  const { errorHandler } = await import('../infrastructure/middleware/errorHandler.js');
-  await import('../cron/storyCleaner.js');
+  const routes = await import('./routes/routes.ts').then(mod => mod.default);
+  const { errorHandler } = await import('../infrastructure/middleware/errorHandler.ts');
+  await import('../cron/storyCleaner.ts');
 
   app = express();
 
