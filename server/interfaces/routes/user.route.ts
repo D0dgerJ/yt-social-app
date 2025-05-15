@@ -14,10 +14,15 @@ import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.t
 
 const router = express.Router();
 
-router.get("/username/:username", getUserByUsernameController);
-router.get("/:id", getUserByIdController);
-router.get("/profile/:username", getUserProfileController);
+// ⚠️ Порядок имеет значение!
+// Более специфичные маршруты должны быть выше
 
+router.get("/username/:username", getUserByUsernameController);
+router.get("/profile/:username", getUserProfileController);
+router.get("/:id/friends", authMiddleware, getUserFriendsController);
+router.get("/:id", getUserByIdController); // должен быть в самом конце
+
+// ⬇️ Всё, что требует авторизации — ниже
 router.use(authMiddleware);
 
 router.put("/:id", updateUserController);
@@ -25,6 +30,5 @@ router.delete("/:id", deleteUserController);
 router.put("/:id/profile-picture", updateProfilePictureController);
 router.put("/:id/follow", followUserController);
 router.put("/:id/unfollow", unfollowUserController);
-router.get("/:id/friends", getUserFriendsController);
 
 export default router;

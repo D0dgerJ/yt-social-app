@@ -15,15 +15,25 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 const router = express.Router();
 
 router.post("/", authMiddleware, createStoryController);
+
 router.get("/user/:userId", authMiddleware, getUserStoriesController);
-router.get("/feed", authMiddleware, getFeedStoriesController);
+
 router.get("/friends", authMiddleware, getStoriesOfFriendsController);
-router.get("/:storyId", authMiddleware, getStoryByIdController);
+
+router.get("/feed", authMiddleware, getFeedStoriesController);
+
 router.post("/view/:storyId", authMiddleware, handleViewStory);
+
+router.get("/:storyId", authMiddleware, getStoryByIdController);
+
 router.delete("/:storyId", authMiddleware,
   checkOwnership(async (req) => {
-    const story = await prisma.story.findUnique({ where: { id: Number(req.params.storyId) } });
+    const story = await prisma.story.findUnique({
+      where: { id: Number(req.params.storyId) }
+    });
     return story?.userId;
-  }), deleteStoryController);
+  }),
+  deleteStoryController
+);
 
 export default router;

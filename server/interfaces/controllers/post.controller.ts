@@ -122,3 +122,13 @@ export const getByUsername = async (req: Request, res: Response) => {
     res.status(404).json({ message: error.message });
   }
 };
+
+export const getFeedById = async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params.id);
+    const posts = await getFeedPosts(userId);
+    res.status(200).json(posts);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

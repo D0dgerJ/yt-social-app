@@ -7,16 +7,31 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 const router = express.Router();
 
 router.post("/", authMiddleware, controller.create);
-router.get("/:postId", controller.getByPost);
-router.delete("/:commentId", authMiddleware,
+
+router.get("/post/:postId", controller.getByPost);
+
+router.put(
+  "/:commentId",
+  authMiddleware,
   checkOwnership(async (req) => {
-    const comment = await prisma.comment.findUnique({ where: { id: Number(req.params.commentId) }});
+    const comment = await prisma.comment.findUnique({
+      where: { id: Number(req.params.commentId) },
+    });
     return comment?.userId;
-  }), controller.remove);
-router.put("/:commentId", authMiddleware,
+  }),
+  controller.update
+);
+
+router.delete(
+  "/:commentId",
+  authMiddleware,
   checkOwnership(async (req) => {
-    const comment = await prisma.comment.findUnique({ where: { id: Number(req.params.commentId) }});
+    const comment = await prisma.comment.findUnique({
+      where: { id: Number(req.params.commentId) },
+    });
     return comment?.userId;
-  }), controller.update);
+  }),
+  controller.remove
+);
 
 export default router;
