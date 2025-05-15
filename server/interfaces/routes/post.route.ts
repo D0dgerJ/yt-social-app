@@ -10,6 +10,7 @@ import {
   save,
   unsave,
   getByUsername,
+  getFeedById,
 } from "../controllers/post.controller.ts";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
@@ -43,10 +44,11 @@ router.delete(
   remove
 );
 
-router.get("/:id", getById);
+router.get("/feed/:id", getFeedById);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
 router.get("/", getFeed);
+router.get("/:id", getById); 
 
 router.put("/:id/like", authMiddleware, like);
 router.put("/:id/save", authMiddleware, save);

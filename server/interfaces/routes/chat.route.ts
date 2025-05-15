@@ -9,32 +9,41 @@ import {
   update,
   remove,
 } from "../controllers/chat.controller.ts";
+
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 
+// Conversations
 router.post("/conversations", authMiddleware, create);
 router.get("/conversations", authMiddleware, getConversations);
-router.post("/messages", authMiddleware, send);
 router.get("/conversations/:conversationId/messages", authMiddleware, getConversationMessages);
 router.post("/conversations/:conversationId/participants", authMiddleware, add);
-router.delete("/:conversationId/leave", authMiddleware, leave);
-router.put("/message/:messageId", authMiddleware,
+router.delete("/conversations/:conversationId/leave", authMiddleware, leave);
+
+// Messages
+router.post("/messages", authMiddleware, send);
+
+router.put(
+  "/messages/:messageId",
+  authMiddleware,
   checkOwnership(async (req) => {
     const message = await prisma.message.findUnique({
-      where: { id: Number(req.params.messageId) }
+      where: { id: Number(req.params.messageId) },
     });
     return message?.senderId;
   }),
   update
 );
 
-router.delete("/message/:messageId", authMiddleware,
+router.delete(
+  "/messages/:messageId",
+  authMiddleware,
   checkOwnership(async (req) => {
     const message = await prisma.message.findUnique({
-      where: { id: Number(req.params.messageId) }
+      where: { id: Number(req.params.messageId) },
     });
     return message?.senderId;
   }),
