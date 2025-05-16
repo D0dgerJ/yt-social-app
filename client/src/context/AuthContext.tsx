@@ -1,6 +1,6 @@
-import { createContext, useReducer, ReactNode } from 'react';
+import { createContext, useReducer, ReactNode, useEffect } from 'react';
 import AuthReducer from './AuthReducer';
-import { AuthState, AuthAction, User } from './types';
+import { AuthState, AuthAction } from './types';
 
 const INITIAL_STATE: AuthState = {
   user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -19,6 +19,16 @@ export const AuthContext = createContext<AuthContextProps>({
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
+
+  useEffect(() => {
+    if (state.user) {
+      localStorage.setItem('user', JSON.stringify(state.user));
+      localStorage.setItem('token', state.user.token);
+    } else {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+  }, [state.user]);
 
   return (
     <AuthContext.Provider
