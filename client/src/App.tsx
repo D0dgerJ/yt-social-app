@@ -1,22 +1,47 @@
 import "./App.scss";
 import Home from "./pages/Home/Home";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Profile from "./pages/Profile/Profile";
 import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./context/AuthContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getUserProfile } from "./utils/api/user.api";
+import { logoutUser } from "./utils/auth";
+import axios from "axios";
 
 function App(): JSX.Element {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [isAppReady, setIsAppReady] = useState(false);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        if (user) {
+          await getUserProfile();
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          logoutUser(navigate);
+        }
+      } finally {
+        setIsAppReady(true);
+      }
+    };
+
+    checkUser();
+  }, [user, navigate]);
+
+  if (!isAppReady) return <div className="loader">Loading...</div>;
 
   return (
     <>
       <ToastContainer />
       <Routes>
-        <Route path="/" element={user ? <Home /> : <Register />} />
+        <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route
           path="/register"

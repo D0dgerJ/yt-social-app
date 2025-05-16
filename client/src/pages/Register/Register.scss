@@ -70,8 +70,11 @@
   }
   
   .register-login-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 50px;
-    width: 50%;
+    width: 100%;
     background-color: #2563eb;
     color: white;
     font-size: 16px;
@@ -79,14 +82,10 @@
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    align-self: center;
     transition: background-color 0.3s;
-  
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-  
+    text-align: center;
+    text-decoration: none;
+
     &:hover {
       background-color: #1d4ed8;
     }

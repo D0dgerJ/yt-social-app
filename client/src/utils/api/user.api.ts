@@ -1,5 +1,10 @@
 import axios from './axiosInstance';
 
+export const createUser = async (user: { username: string; email: string }) => {
+  const response = await axios.post("/users", user);
+  return response.data;
+};
+
 export const getUserById = async (id: number) => {
   const response = await axios.get(`/users/${id}`);
   return response.data;

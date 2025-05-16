@@ -1,8 +1,10 @@
+import axios from "axios";
 import "./Register.scss";
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { toast } from "react-toastify";
 import { registerUser } from "../../utils/api/auth.api";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 
 interface AuthData {
   username: string;
@@ -19,6 +21,7 @@ const Register: React.FC = () => {
     confirmPassword: "",
   });
 
+  const { dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -30,17 +33,27 @@ const Register: React.FC = () => {
     }
 
     try {
-      await registerUser({
+      const user = await registerUser({
         username: auth.username,
         email: auth.email,
         password: auth.password,
       });
 
-      toast.success("Registration successful");
-      navigate("/login");
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Something went wrong");
+      localStorage.setItem("accessToken", user.token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      dispatch({ type: "LOGIN_SUCCESS", payload: user });
+
+      toast.success(`Welcome, ${user.username}!`);
+      navigate("/");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Registration error:", error.response?.data);
+        toast.error(error.response?.data?.message || "Something went wrong");
+      } else {
+        console.error("Unknown error:", error);
+        toast.error("Something went wrong");
+      }
     }
   };
 
@@ -99,8 +112,8 @@ const Register: React.FC = () => {
             <button type="submit" className="register-submit-btn">
               Sign Up
             </button>
-            <Link to="/login" className="register-login-btn">
-              Login Into Your Account
+            <Link className="register-login-btn" to="/login">
+              Already have an account? Login
             </Link>
           </form>
         </div>
