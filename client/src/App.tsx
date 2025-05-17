@@ -18,22 +18,25 @@ function App(): JSX.Element {
   const [isAppReady, setIsAppReady] = useState(false);
 
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        if (user) {
-          await getUserProfile();
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          logoutUser(navigate);
-        }
-      } finally {
-        setIsAppReady(true);
+  const checkUser = async () => {
+    try {
+      console.log("Checking user profile...");
+      if (user) {
+        const profile = await getUserProfile();
+        console.log("PROFILE OK", profile);
       }
-    };
+    } catch (error) {
+      console.error("❌ PROFILE ERROR:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        logoutUser(navigate);
+      }
+    } finally {
+      setIsAppReady(true);
+    }
+  };
 
-    checkUser();
-  }, [user, navigate]);
+  checkUser();
+}, [user, navigate]);
 
   if (!isAppReady) return <div className="loader">Loading...</div>;
 

@@ -47,7 +47,7 @@ router.delete(
 router.get("/feed/:id", getFeedById);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
-router.get("/", getFeed);
+router.get("/", authMiddleware, getFeed);
 router.get("/:id", getById); 
 
 router.put("/:id/like", authMiddleware, like);
