@@ -39,8 +39,8 @@ const Register: React.FC = () => {
         password: auth.password,
       });
 
-      localStorage.setItem("accessToken", user.token);
-      localStorage.setItem("user", JSON.stringify(user));
+      
+      console.log("REGISTER RESPONSE:", user);
 
       dispatch({ type: "LOGIN_SUCCESS", payload: user });
 

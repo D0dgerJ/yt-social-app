@@ -18,7 +18,7 @@ const router = express.Router();
 // Более специфичные маршруты должны быть выше
 
 router.get("/username/:username", getUserByUsernameController);
-router.get("/profile/:username", getUserProfileController);
+router.get("/profile", authMiddleware, getUserProfileController);
 router.get("/:id/friends", authMiddleware, getUserFriendsController);
 router.get("/:id", getUserByIdController); // должен быть в самом конце
 

@@ -10,18 +10,20 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction
 ): void => {
-  const token = req.headers.authorization?.split(" ")[1];
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ message: "Access Denied. No token provided." });
     return;
   }
+
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     req.user = { id: decoded.id };
     next();
   } catch (error) {
-    res.status(400).json({ message: "Invalid token." });
+    res.status(401).json({ message: "Invalid token." });
   }
 };
