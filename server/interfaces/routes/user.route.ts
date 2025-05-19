@@ -19,7 +19,7 @@ const router = express.Router();
 
 router.get("/username/:username", getUserByUsernameController);
 router.get("/profile", authMiddleware, getUserProfileController);
-router.get("/:id/friends", authMiddleware, getUserFriendsController);
+router.get("/friends/:id", authMiddleware, getUserFriendsController);
 router.get("/:id", getUserByIdController); // должен быть в самом конце
 
 // ⬇️ Всё, что требует авторизации — ниже
