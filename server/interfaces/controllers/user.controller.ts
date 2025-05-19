@@ -89,7 +89,8 @@ export const profile = async (req: Request, res: Response) => {
 export const friends = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    const friends = await getUserFriends(id);
+    const follows = await getUserFriends(id);
+    const friends = follows.map(f => f.following);
     res.status(200).json(friends);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
