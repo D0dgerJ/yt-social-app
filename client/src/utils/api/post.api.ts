@@ -2,15 +2,13 @@ import axios from './axiosInstance';
 
 interface PostPayload {
   desc: string;
-  images?: string[];
-  videos?: string[];
-  files?: string[];
+  images: string[];
+  videos: string[];
+  files: string[];
 }
 
-export const createPost = async (formData: FormData) => {
-  const response = await axios.post('/posts', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+export const createPost = async (payload: PostPayload) => {
+  const response = await axios.post('/posts', payload);
   return response.data;
 };
 
@@ -45,7 +43,7 @@ export const getUserPosts = async () => {
 };
 
 export const getFeedPosts = async () => {
-  const response = await axios.get('/posts/feed');
+  const response = await axios.get('/posts');
   return response.data;
 };
 

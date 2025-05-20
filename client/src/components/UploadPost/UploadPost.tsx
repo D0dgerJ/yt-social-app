@@ -5,7 +5,7 @@ import {
   MdEmojiEmotions,
   MdLocationPin,
 } from "react-icons/md";
-import { createPost } from "../../utils/api/index"
+import { createPost } from "../../utils/api/index";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import userPic from "../Post/assets/user.png";
@@ -18,26 +18,40 @@ const UploadPost: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const { user } = useContext(AuthContext);
 
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "yt-social-app");
+    formData.append("cloud_name", "di1pka45a");
+
+    const res = await fetch("https://api.cloudinary.com/v1_1/di1pka45a/image/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    return data.secure_url;
+  };
+
   const handlePostUpload = async () => {
     if (!user?.id) return;
 
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("desc", desc);
+      let imageUrl = "";
 
       if (file) {
-        const type = file.type;
-        if (type.startsWith("image/")) {
-          formData.append("images", file);
-        } else if (type.startsWith("video/")) {
-          formData.append("videos", file);
-        } else {
-          formData.append("files", file);
-        }
+        imageUrl = await uploadToCloudinary(file);
       }
 
-      const res = await createPost(formData);
+      const payload = {
+        desc,
+        images: imageUrl ? [imageUrl] : [],
+        videos: [],
+        files: [],
+      };
+
+      const res = await createPost(payload);
       toast.success("Post has been uploaded successfully!");
       setFile(null);
       setPreview(null);

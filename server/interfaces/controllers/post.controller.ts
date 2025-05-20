@@ -14,10 +14,13 @@ import {
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const { userId, desc, images, videos, files } = req.body;
+    const userId = req.user!.id;
+    const { desc, images, videos, files } = req.body;
+
     const post = await createPost({ userId, desc, images, videos, files });
     res.status(201).json(post);
   } catch (error: any) {
+    console.error("Post creation error:", error);
     res.status(500).json({ error: error.message });
   }
 };
