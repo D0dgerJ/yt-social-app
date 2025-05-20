@@ -6,20 +6,27 @@ import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import moment from "moment";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
 import likeIcon from "../../assets/like.png";
 import heartIcon from "../../assets/heart.png";
 import userPic from "./assets/user.png";
 import "./Post.scss";
 
 interface PostProps {
+  
   post: {
     id: number;
     userId: number;
     desc?: string;
     createdAt: string;
-    img?: string;
     likes: number[];
     comment?: number;
+    images?: string[];
+    videos?: string[];
+    files?: string[];
   };
 }
 
@@ -33,13 +40,20 @@ const Post: React.FC<PostProps> = ({ post }) => {
   const [like, setLike] = useState<number>(post.likes?.length || 0);
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const { user: currentUser } = useContext(AuthContext);
 
+  const userId = currentUser?.id;
+  const images = post.images ?? [];
+  const videos = post.videos ?? [];
+  const files = post.files ?? [];
+
   useEffect(() => {
-    if (currentUser) {
-      setIsLiked(post.likes.includes(currentUser.id));
+    if (userId) {
+      setIsLiked(post.likes.includes(userId));
     }
-  }, [currentUser?.id, post.likes]);
+  }, [userId, post.likes]);
 
   useEffect(() => {
     const getUserInfo = async () => {
@@ -54,10 +68,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
   }, [post.userId]);
 
   const handleLike = async () => {
+    if (!userId || isLiked) return;
+
     try {
-      await toggleLike (post.id);
-      setLike((prev) => (isLiked ? prev - 1 : prev + 1));
-      setIsLiked(!isLiked);
+      await toggleLike(post.id);
+      setLike((prev) => prev + 1);
+      setIsLiked(true);
     } catch (error: any) {
       console.error(error);
       toast.error(error.response?.data?.message || "Like failed");
@@ -82,28 +98,75 @@ const Post: React.FC<PostProps> = ({ post }) => {
       </div>
 
       <div className="post-content">
-        <span>{post?.desc}</span>
-        {post.img && (
-          <img
-            src={post.img}
-            alt="Post Content"
-            className="post-image"
-          />
+        {post.desc && <span>{post.desc}</span>}
+
+        {/* Изображения */}
+        {images.length > 0 && (
+          <div className="post-image-grid">
+            {images.map((url, index) => (
+              <img
+                key={index}
+                src={url}
+                alt={`Post image ${index + 1}`}
+                className="post-image-thumb"
+                onClick={() => {
+                  setLightboxIndex(index);
+                  setIsLightboxOpen(true);
+                }}
+              />
+            ))}
+          </div>
         )}
+
+        {/* Видео */}
+        {videos.length > 0 &&
+          videos.map((url, index) => (
+            <video key={index} controls className="post-video">
+              <source src={url} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ))}
+
+        {/* Файлы */}
+       {files.length > 0 &&
+        files.map((url, index) => (
+          <a
+            key={index}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="post-file"
+          >
+            📎 File {index + 1}
+          </a>
+        ))}
       </div>
+
+      {/* Lightbox */}
+      {isLightboxOpen && post.images && (
+        <Lightbox
+          open={isLightboxOpen}
+          close={() => setIsLightboxOpen(false)}
+          slides={post.images.map((url) => ({ src: url }))}
+          index={lightboxIndex}
+          render={{ buttonClose: () => null }}
+          on={{ view: ({ index }) => setLightboxIndex(index) }}
+          plugins={[Thumbnails]}
+        />
+      )}
 
       <div className="post-bottom">
         <div className="like-section">
           <img
             src={likeIcon}
             alt="Like"
-            className="like-icon"
+            className={`like-icon ${isLiked ? "liked" : ""}`}
             onClick={handleLike}
           />
           <img
             src={heartIcon}
             alt="Heart"
-            className="like-icon"
+            className={`like-icon ${isLiked ? "liked" : ""}`}
             onClick={handleLike}
           />
           <span>{like} likes</span>
