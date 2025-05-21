@@ -55,6 +55,9 @@ model Post {
   images     String[]    @default([]) // массив URL-ов к изображениям
   videos     String[]    @default([]) // массив URL-ов к видео
   files      String[]    @default([]) // любые другие файлы
+
+  tags       String[]    @default([]) // новый массив тегов
+  location   String?                  // необязательная строка (город, страна и т.п.)
 }
 
 model Like {

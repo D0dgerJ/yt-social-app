@@ -12,7 +12,6 @@ export const getPostById = async (postId: number) => {
         select: {
           id: true,
           username: true,
-          profilePicture: true,
         },
       },
     },
