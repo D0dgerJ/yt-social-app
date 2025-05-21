@@ -128,18 +128,25 @@ const Post: React.FC<PostProps> = ({ post }) => {
           ))}
 
         {/* Файлы */}
-       {files.length > 0 &&
-        files.map((url, index) => (
-          <a
-            key={index}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="post-file"
-          >
-            📎 File {index + 1}
-          </a>
-        ))}
+       {files.length > 0 && (
+          <div className="post-files">
+            {files.map((url, index) => {
+              const fileName = url.split("/").pop();
+              return (
+                <div className="post-file-wrapper" key={index}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="post-file-link"
+                  >
+                    📎 {fileName}
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Lightbox */}
@@ -147,11 +154,21 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <Lightbox
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
-          slides={post.images.map((url) => ({ src: url }))}
+          slides={post.images.map((url, index) => ({ src: url, key: `slide-${index}` }))}
           index={lightboxIndex}
-          render={{ buttonClose: () => null }}
           on={{ view: ({ index }) => setLightboxIndex(index) }}
           plugins={[Thumbnails]}
+          render={{
+            buttonClose: () => (
+              <button
+                className="lightbox-close-button"
+                onClick={() => setIsLightboxOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+            ),
+          }}
         />
       )}
 
