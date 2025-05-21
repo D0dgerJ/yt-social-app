@@ -11,70 +11,131 @@ import { toast } from "react-toastify";
 import userPic from "../Post/assets/user.png";
 import "./UploadPost.scss";
 
+const MAX_FILES = 10;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
 const UploadPost: React.FC = () => {
   const [desc, setDesc] = useState<string>("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{ url: string; type: string; name?: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [preview, setPreview] = useState<string | null>(null);
   const { user } = useContext(AuthContext);
 
-  const uploadToCloudinary = async (file: File): Promise<string> => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files ?? []);
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "video/mp4",
+      "application/pdf",
+      "application/zip",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+      "text/plain",
+    ];
+
+    const validFiles = selectedFiles.filter(file => {
+      if (!allowedTypes.includes(file.type)) {
+        toast.warn(`Файл ${file.name} имеет неподдерживаемый формат`);
+        return false;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.warn(`Файл ${file.name} превышает 100MB и будет отклонён`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length + files.length > MAX_FILES) {
+      toast.error(`Можно загрузить максимум ${MAX_FILES} файлов`);
+      return;
+    }
+
+    setFiles(prev => [...prev, ...validFiles]);
+
+    const newPreviews = validFiles.map(file => {
+      let type = "file";
+      if (file.type.startsWith("image/")) type = "image";
+      else if (file.type.startsWith("video/")) type = "video";
+
+      return {
+        url: type !== "file" ? URL.createObjectURL(file) : "",
+        type,
+        name: file.name,
+      };
+    });
+
+    setPreviews(prev => [...prev, ...newPreviews]);
+    e.target.value = "";
+  };
+
+  const uploadToCloudinary = async (file: File): Promise<{ url: string; type: "image" | "video" | "file" }> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "yt-social-app");
     formData.append("cloud_name", "di1pka45a");
 
-    const res = await fetch("https://api.cloudinary.com/v1_1/di1pka45a/image/upload", {
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    const resourceType = isImage ? "image" : isVideo ? "video" : "raw";
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/di1pka45a/${resourceType}/upload`, {
       method: "POST",
       body: formData,
     });
 
     const data = await res.json();
-    return data.secure_url;
+    return {
+      url: data.secure_url,
+      type: isImage ? "image" : isVideo ? "video" : "file",
+    };
   };
 
   const handlePostUpload = async () => {
     if (!user?.id) return;
 
+    if (files.length === 0 && !desc.trim()) {
+      toast.error("Нельзя отправить пустой пост");
+      return;
+    }
+
     setLoading(true);
     try {
-      let imageUrl = "";
+      const imageUrls: string[] = [];
+      const videoUrls: string[] = [];
+      const fileUrls: string[] = [];
 
-      if (file) {
-        imageUrl = await uploadToCloudinary(file);
+      for (const file of files) {
+        const { url, type } = await uploadToCloudinary(file);
+        if (type === "image") imageUrls.push(url);
+        else if (type === "video") videoUrls.push(url);
+        else fileUrls.push(url);
       }
 
       const payload = {
         desc,
-        images: imageUrl ? [imageUrl] : [],
-        videos: [],
-        files: [],
+        images: imageUrls,
+        videos: videoUrls,
+        files: fileUrls,
       };
 
       const res = await createPost(payload);
-      toast.success("Post has been uploaded successfully!");
-      setFile(null);
-      setPreview(null);
+      toast.success("Пост успешно опубликован!");
+      setFiles([]);
+      setPreviews([]);
       setDesc("");
       console.log(res);
     } catch (error: any) {
       console.error(error);
-      toast.error("Post upload failed");
+      toast.error("Ошибка при публикации поста");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
-
-    if (selectedFile) {
-      const url = URL.createObjectURL(selectedFile);
-      setPreview(url);
-    } else {
-      setPreview(null);
-    }
+  const removePreview = (index: number) => {
+    setPreviews(previews.filter((_, i) => i !== index));
+    setFiles(files.filter((_, i) => i !== index));
   };
 
   return (
@@ -93,25 +154,55 @@ const UploadPost: React.FC = () => {
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
           />
-          {preview && (
-            <img
-              src={preview}
-              alt="Preview"
-              className="upload-post__preview"
-            />
-          )}
         </div>
+
+        {previews.length > 0 && (
+          <div className="upload-post__preview-list">
+            <div className="upload-post__preview-images">
+              {previews.map((p, idx) =>
+                p.type === "image" ? (
+                  <div className="upload-post__preview-wrapper" key={idx}>
+                    <img src={p.url} className="upload-post__preview" />
+                    <button onClick={() => removePreview(idx)} className="upload-post__remove">✕</button>
+                  </div>
+                ) : null
+              )}
+            </div>
+            <div className="upload-post__preview-videos">
+              {previews.map((p, idx) =>
+                p.type === "video" ? (
+                  <div className="upload-post__preview-wrapper" key={idx}>
+                    <video controls src={p.url} className="upload-post__preview-video" />
+                    <button onClick={() => removePreview(idx)} className="upload-post__remove">✕</button>
+                  </div>
+                ) : null
+              )}
+            </div>
+            <div className="upload-post__preview-files">
+              {previews.map((p, idx) =>
+                p.type === "file" ? (
+                  <div className="upload-post__file-wrapper" key={idx}>
+                    <span className="upload-post__file-name">{p.name}</span>
+                    <button onClick={() => removePreview(idx)} className="upload-post__remove">✕</button>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </div>
+        )}
+
         <hr className="upload-post__divider" />
         <div className="upload-post__bottom">
           <div className="upload-post__options">
             <label htmlFor="file" className="upload-post__option">
               <MdPermMedia className="upload-post__icon upload-post__icon--orange" />
-              <span>Photo or Video</span>
+              <span>Photo / Video / File</span>
               <input
                 type="file"
                 id="file"
                 onChange={handleFileChange}
-                accept=".png, .jpg, .jpeg"
+                accept=".png,.jpg,.jpeg,.mp4,.pdf,.zip,.doc,.docx,.txt"
+                multiple
                 hidden
               />
             </label>
@@ -133,7 +224,7 @@ const UploadPost: React.FC = () => {
             onClick={handlePostUpload}
             className="upload-post__button"
           >
-            {loading ? "Uploading" : "Upload"}
+            {loading ? "Uploading..." : "Upload"}
           </button>
         </div>
       </div>

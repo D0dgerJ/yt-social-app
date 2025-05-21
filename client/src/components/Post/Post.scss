@@ -75,15 +75,35 @@
       border-radius: 6px;
     }
 
-    .post-file {
-      display: block;
-      margin-top: 8px;
-      color: #007bff;
-      text-decoration: underline;
+    .post-files {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
 
-      &:hover {
+    .post-file-wrapper {
+      display: flex;
+      align-items: center;
+      background-color: #f9fafb;
+      padding: 6px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      max-width: 300px;
+
+      .post-file-link {
+        color: #2563eb;
+        font-size: 14px;
         text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 260px;
+
+        &:hover {
+          text-decoration: underline;
+        }
       }
+    }
     }
   }
 
@@ -113,5 +133,28 @@
       font-size: 0.875rem;
       cursor: pointer;
     }
+  }
+}
+
+.lightbox-close-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 28px;
+  border: none;
+  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
   }
 }
