@@ -6,6 +6,8 @@ interface CreatePostInput {
   images?: string[];
   videos?: string[];
   files?: string[];
+  tags?: string[];
+  location?: string;
 }
 
 export const createPost = async ({
@@ -14,6 +16,8 @@ export const createPost = async ({
   images = [],
   videos = [],
   files = [],
+  tags = [],
+  location = "",
 }: CreatePostInput) => {
   return prisma.post.create({
     data: {
@@ -22,6 +26,8 @@ export const createPost = async ({
       images,
       videos,
       files,
+      tags,
+      location,
     },
   });
 };

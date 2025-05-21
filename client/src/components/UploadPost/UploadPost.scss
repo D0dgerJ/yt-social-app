@@ -202,3 +202,70 @@
     }
   }
 }
+
+.upload-post__tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+
+  input {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    outline: none;
+    width: 100%;
+  }
+
+  .upload-post__tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .upload-post__tag {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    padding: 4px 8px;
+    border-radius: 16px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+
+    button {
+      margin-left: 6px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      color: #0369a1;
+      line-height: 1;
+    }
+  }
+}
+
+.upload-post__location {
+  margin: 10px 0;
+
+  input {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+  }
+}
+
+.upload-post__emoji-picker {
+  margin: 10px 0;
+  max-width: 320px;
+  z-index: 10;
+
+  .EmojiPickerReact {
+    width: 100% !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+  }
+}

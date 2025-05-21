@@ -1,4 +1,5 @@
 import React, { useContext, useState, ChangeEvent } from "react";
+import EmojiPicker from "emoji-picker-react";
 import {
   MdLabel,
   MdPermMedia,
@@ -17,9 +18,17 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const UploadPost: React.FC = () => {
   const [desc, setDesc] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<{ url: string; type: string; name?: string }[]>([]);
+  const [previews, setPreviews] = useState<
+    { url: string; type: string; name?: string }[]
+  >([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { user } = useContext(AuthContext);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [showTags, setShowTags] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files ?? []);
@@ -34,7 +43,7 @@ const UploadPost: React.FC = () => {
       "text/plain",
     ];
 
-    const validFiles = selectedFiles.filter(file => {
+    const validFiles = selectedFiles.filter((file) => {
       if (!allowedTypes.includes(file.type)) {
         toast.warn(`Файл ${file.name} имеет неподдерживаемый формат`);
         return false;
@@ -51,9 +60,9 @@ const UploadPost: React.FC = () => {
       return;
     }
 
-    setFiles(prev => [...prev, ...validFiles]);
+    setFiles((prev) => [...prev, ...validFiles]);
 
-    const newPreviews = validFiles.map(file => {
+    const newPreviews = validFiles.map((file) => {
       let type = "file";
       if (file.type.startsWith("image/")) type = "image";
       else if (file.type.startsWith("video/")) type = "video";
@@ -65,11 +74,13 @@ const UploadPost: React.FC = () => {
       };
     });
 
-    setPreviews(prev => [...prev, ...newPreviews]);
+    setPreviews((prev) => [...prev, ...newPreviews]);
     e.target.value = "";
   };
 
-  const uploadToCloudinary = async (file: File): Promise<{ url: string; type: "image" | "video" | "file" }> => {
+  const uploadToCloudinary = async (
+    file: File
+  ): Promise<{ url: string; type: "image" | "video" | "file" }> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "yt-social-app");
@@ -79,10 +90,13 @@ const UploadPost: React.FC = () => {
     const isVideo = file.type.startsWith("video/");
     const resourceType = isImage ? "image" : isVideo ? "video" : "raw";
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/di1pka45a/${resourceType}/upload`, {
-      method: "POST",
-      body: formData,
-    });
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/di1pka45a/${resourceType}/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
     const data = await res.json();
     return {
@@ -117,6 +131,8 @@ const UploadPost: React.FC = () => {
         images: imageUrls,
         videos: videoUrls,
         files: fileUrls,
+        tags,
+        location,
       };
 
       const res = await createPost(payload);
@@ -124,6 +140,9 @@ const UploadPost: React.FC = () => {
       setFiles([]);
       setPreviews([]);
       setDesc("");
+      setTags([]);
+      setTagInput("");
+      setLocation("");
       console.log(res);
     } catch (error: any) {
       console.error(error);
@@ -136,6 +155,22 @@ const UploadPost: React.FC = () => {
   const removePreview = (index: number) => {
     setPreviews(previews.filter((_, i) => i !== index));
     setFiles(files.filter((_, i) => i !== index));
+  };
+
+  const handleAddTag = () => {
+    const cleanTag = tagInput.trim();
+    if (cleanTag && !tags.includes(cleanTag)) {
+      setTags([...tags, cleanTag]);
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (index: number) => {
+    setTags(tags.filter((_, i) => i !== index));
+  };
+
+  const handleEmojiClick = (emojiData: any) => {
+    setDesc((prev) => prev + emojiData.emoji);
   };
 
   return (
@@ -156,6 +191,45 @@ const UploadPost: React.FC = () => {
           />
         </div>
 
+        {showTags && (
+          <div className="upload-post__tags">
+            <input
+              type="text"
+              placeholder="Add a tag and press Enter"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+            />
+            <div className="upload-post__tag-list">
+              {tags.map((tag, index) => (
+                <span key={index} className="upload-post__tag">
+                  #{tag}
+                  <button type="button" onClick={() => handleRemoveTag(index)}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showLocation && (
+          <div className="upload-post__location">
+            <input
+              type="text"
+              placeholder="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
+        )}
+
+        {showEmojiPicker && (
+          <div className="upload-post__emoji-picker">
+            <EmojiPicker onEmojiClick={handleEmojiClick} />
+          </div>
+        )}
+
         {previews.length > 0 && (
           <div className="upload-post__preview-list">
             <div className="upload-post__preview-images">
@@ -163,7 +237,12 @@ const UploadPost: React.FC = () => {
                 p.type === "image" ? (
                   <div className="upload-post__preview-wrapper" key={idx}>
                     <img src={p.url} className="upload-post__preview" />
-                    <button onClick={() => removePreview(idx)} className="upload-post__remove">✕</button>
+                    <button
+                      onClick={() => removePreview(idx)}
+                      className="upload-post__remove"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ) : null
               )}
@@ -172,8 +251,17 @@ const UploadPost: React.FC = () => {
               {previews.map((p, idx) =>
                 p.type === "video" ? (
                   <div className="upload-post__preview-wrapper" key={idx}>
-                    <video controls src={p.url} className="upload-post__preview-video" />
-                    <button onClick={() => removePreview(idx)} className="upload-post__remove">✕</button>
+                    <video
+                      controls
+                      src={p.url}
+                      className="upload-post__preview-video"
+                    />
+                    <button
+                      onClick={() => removePreview(idx)}
+                      className="upload-post__remove"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ) : null
               )}
@@ -183,7 +271,12 @@ const UploadPost: React.FC = () => {
                 p.type === "file" ? (
                   <div className="upload-post__file-wrapper" key={idx}>
                     <span className="upload-post__file-name">{p.name}</span>
-                    <button onClick={() => removePreview(idx)} className="upload-post__remove">✕</button>
+                    <button
+                      onClick={() => removePreview(idx)}
+                      className="upload-post__remove"
+                    >
+                      ✕
+                    </button>
                   </div>
                 ) : null
               )}
@@ -206,15 +299,24 @@ const UploadPost: React.FC = () => {
                 hidden
               />
             </label>
-            <div className="upload-post__option">
+            <div
+              className="upload-post__option"
+              onClick={() => setShowTags((prev) => !prev)}
+            >
               <MdLabel className="upload-post__icon upload-post__icon--blue" />
               <span>Tags</span>
             </div>
-            <div className="upload-post__option">
+            <div
+              className="upload-post__option"
+              onClick={() => setShowEmojiPicker((prev) => !prev)}
+            >
               <MdEmojiEmotions className="upload-post__icon upload-post__icon--yellow" />
               <span>Emoji</span>
             </div>
-            <div className="upload-post__option">
+            <div
+              className="upload-post__option"
+              onClick={() => setShowLocation((prev) => !prev)}
+            >
               <MdLocationPin className="upload-post__icon upload-post__icon--green" />
               <span>Location</span>
             </div>

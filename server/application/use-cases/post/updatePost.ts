@@ -7,6 +7,8 @@ interface UpdatePostInput {
   images?: string[];
   videos?: string[];
   files?: string[];
+  tags?: string[];
+  location?: string;
 }
 
 export const updatePost = async ({
@@ -16,6 +18,8 @@ export const updatePost = async ({
   images,
   videos,
   files,
+  tags,
+  location,
 }: UpdatePostInput) => {
   const existingPost = await prisma.post.findUnique({
     where: { id: postId },
@@ -32,6 +36,8 @@ export const updatePost = async ({
       images,
       videos,
       files,
+      tags,
+      location,
     },
   });
 };

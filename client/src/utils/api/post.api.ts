@@ -5,6 +5,8 @@ interface PostPayload {
   images: string[];
   videos: string[];
   files: string[];
+  tags: string[];
+  location: string;
 }
 
 export const createPost = async (payload: PostPayload) => {

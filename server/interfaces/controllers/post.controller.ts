@@ -15,9 +15,9 @@ import {
 export const create = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { desc, images, videos, files } = req.body;
+    const { desc, images, videos, files, tags, location } = req.body;
 
-    const post = await createPost({ userId, desc, images, videos, files });
+    const post = await createPost({ userId, desc, images, videos, files, tags, location });
     res.status(201).json(post);
   } catch (error: any) {
     console.error("Post creation error:", error);
@@ -29,9 +29,9 @@ export const update = async (req: Request, res: Response) => {
   try {
     const postId = Number(req.params.id);
     const userId = Number(req.body.userId);
-    const { desc, images, videos, files } = req.body;
+    const { desc, images, videos, files, tags, location } = req.body;
 
-    const post = await updatePost({ postId, userId, desc, images, videos, files });
+    const post = await updatePost({ postId, userId, desc, images, videos, files, tags, location });
     res.status(200).json(post);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
