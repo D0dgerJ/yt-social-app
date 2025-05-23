@@ -269,3 +269,28 @@
     border-radius: 12px;
   }
 }
+
+.upload-post__tag-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  background-color: white;
+  width: 100%;
+}
+
+.upload-post__tag-prefix {
+  margin-right: 4px;
+  color: #6b7280;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.upload-post__tag-input {
+  border: none;
+  outline: none;
+  flex-grow: 1;
+  font-size: 14px;
+}

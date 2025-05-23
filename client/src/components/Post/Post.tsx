@@ -185,7 +185,9 @@
           {post.tags && post.tags.length > 0 && (
             <div className="post-tags">
               {post.tags.map((tag, index) => (
-                <span key={index} className="post-tag">#{tag}</span>
+                <Link to={`/tags/${encodeURIComponent(tag)}`} key={index} className="post-tag">
+                  #{tag}
+                </Link>
               ))}
             </div>
           )}
