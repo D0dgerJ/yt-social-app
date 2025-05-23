@@ -25,7 +25,7 @@ export const deletePost = async (postId: number) => {
 };
 
 export const toggleLike = async (postId: number) => {
-  const response = await axios.post('/posts/like', { postId });
+  const response = await axios.put(`/posts/${postId}/like`);
   return response.data;
 };
 

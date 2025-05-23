@@ -51,7 +51,7 @@ export const remove = async (req: Request, res: Response) => {
 export const like = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { postId } = req.body;
+    const postId = Number(req.params.id);
     const result = await toggleLike({ postId, userId });
     res.status(200).json(result);
   } catch (error: any) {
