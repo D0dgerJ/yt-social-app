@@ -149,14 +149,6 @@
                 })}
               </div>
             )}
-            {/* Теги */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="post-tags">
-              {post.tags.map((tag, index) => (
-                <span key={index} className="post-tag">#{tag}</span>
-              ))}
-            </div>
-          )}
 
           {/* Локация */}
           {post.location && (
@@ -188,6 +180,15 @@
             }}
           />
         )}
+
+        {/* Теги */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="post-tags">
+              {post.tags.map((tag, index) => (
+                <span key={index} className="post-tag">#{tag}</span>
+              ))}
+            </div>
+          )}
 
         <div className="post-bottom">
           <div className="like-section">
