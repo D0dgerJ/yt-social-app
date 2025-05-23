@@ -16,7 +16,6 @@
   import "./Post.scss";
 
   interface PostProps {
-    
     post: {
       id: number;
       userId: number;
@@ -29,6 +28,9 @@
       files?: string[];
       tags?: string[];
       location?: string;
+      _count?: {
+        likes: number;
+      };
     };
   }
 
@@ -39,7 +41,7 @@
   }
 
   const Post: React.FC<PostProps> = ({ post }) => {
-    const [like, setLike] = useState<number>(post.likes?.length || 0);
+    const [like, setLike] = useState<number>(post._count?.likes || 0);
     const [isLiked, setIsLiked] = useState<boolean>(false);
     const [user, setUser] = useState<UserInfo | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState<number>(0);
@@ -56,6 +58,7 @@
         setIsLiked(post.likes.includes(userId));
       }
     }, [userId, post.likes]);
+
 
     useEffect(() => {
       const getUserInfo = async () => {

@@ -10,6 +10,7 @@ import {
   getPostById,
   unsavePost,
   getUserPostsByUsername,
+  getAllPosts 
 } from '../../application/use-cases/post/index.ts';
 
 export const create = async (req: Request, res: Response) => {
@@ -82,8 +83,9 @@ export const getUser = async (req: Request, res: Response) => {
 
 export const getFeed = async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
-    const posts = await getFeedPosts(userId);
+    // const userId = req.user!.id;
+    // const posts = await getFeedPosts(userId);
+    const posts = await getAllPosts();
     res.status(200).json(posts);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -133,5 +135,14 @@ export const getFeedById = async (req: Request, res: Response) => {
     res.status(200).json(posts);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getAll = async (req: Request, res: Response) => {
+  try {
+    const posts = await getAllPosts();
+    res.status(200).json(posts);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };

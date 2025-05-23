@@ -11,6 +11,7 @@ import {
   unsave,
   getByUsername,
   getFeedById,
+  getAll,
 } from "../controllers/post.controller.ts";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
@@ -44,11 +45,12 @@ router.delete(
   remove
 );
 
+router.get("/", getAll);
+router.get("/feed", authMiddleware, getFeed);
 router.get("/feed/:id", getFeedById);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
-router.get("/", authMiddleware, getFeed);
-router.get("/:id", getById); 
+router.get("/:id", getById);
 
 router.put("/:id/like", authMiddleware, like);
 router.put("/:id/save", authMiddleware, save);
