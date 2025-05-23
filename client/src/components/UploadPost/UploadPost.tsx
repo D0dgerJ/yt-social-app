@@ -193,13 +193,30 @@ const UploadPost: React.FC = () => {
 
         {showTags && (
           <div className="upload-post__tags">
-            <input
-              type="text"
-              placeholder="Add a tag and press Enter"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-            />
+            <div className="upload-post__tag-input-wrapper">
+              <span className="upload-post__tag-prefix">#</span>
+              <input
+                type="text"
+                placeholder="place your tag and press enter"
+                value={tagInput}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/^#/, "");
+                  setTagInput(value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const cleanTag = tagInput.trim().replace(/^#/, "");
+                    if (cleanTag && !tags.includes(cleanTag)) {
+                      setTags([...tags, cleanTag]);
+                    }
+                    setTagInput("");
+                  }
+                }}
+                className="upload-post__tag-input"
+              />
+            </div>
+
             <div className="upload-post__tag-list">
               {tags.map((tag, index) => (
                 <span key={index} className="upload-post__tag">
