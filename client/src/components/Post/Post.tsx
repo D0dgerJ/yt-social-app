@@ -70,12 +70,17 @@
     }, [post.userId]);
 
     const handleLike = async () => {
-      if (!userId || isLiked) return;
+      if (!userId) return;
 
       try {
-        await toggleLike(post.id);
-        setLike((prev) => prev + 1);
-        setIsLiked(true);
+        const res = await toggleLike(post.id);
+        if (res.liked) {
+          setLike((prev) => prev + 1);
+          setIsLiked(true);
+        } else {
+          setLike((prev) => Math.max(prev - 1, 0));
+          setIsLiked(false);
+        }
       } catch (error: any) {
         console.error(error);
         toast.error(error.response?.data?.message || "Like failed");
