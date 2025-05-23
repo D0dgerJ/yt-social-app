@@ -14,6 +14,9 @@ export const getPostById = async (postId: number) => {
           username: true,
         },
       },
+      _count: {
+        select: { likes: true }
+      }
     },
   });
 };

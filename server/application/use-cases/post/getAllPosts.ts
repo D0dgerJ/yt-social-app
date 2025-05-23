@@ -6,10 +6,17 @@ export const getAllPosts = async () => {
       createdAt: 'desc',
     },
     include: {
-      user: true,
-      comments: true,
+      user: {
+        select: {
+          id: true,
+          username: true,
+          profilePicture: true,
+        },
+      },
       likes: true,
-      savedBy: true,
+      _count: {
+        select: { likes: true },
+      },
     },
   });
 };
