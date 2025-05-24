@@ -15,7 +15,10 @@ export const getAllPosts = async () => {
       },
       likes: true,
       _count: {
-        select: { likes: true },
+        select: {
+          likes: true,
+          comments: true,
+        },
       },
     },
   });

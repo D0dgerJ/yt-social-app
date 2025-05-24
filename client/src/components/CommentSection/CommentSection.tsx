@@ -1,9 +1,18 @@
 import React, { useEffect, useState, useContext, ChangeEvent } from "react";
-import { getPostComments, createComment, toggleCommentLike } from "../../utils/api/comment.api";
+import {
+  getPostComments,
+  createComment,
+  toggleCommentLike,
+  deleteComment,
+  updateComment,
+  getCommentReplies,
+  createReply
+} from "../../utils/api/comment.api";
 import { AuthContext } from "../../context/AuthContext";
 import moment from "moment";
 import likeIcon from "../../assets/like.png";
 import EmojiPicker from "emoji-picker-react";
+import ReplySection from "./ReplySection";
 import "./CommentSection.scss";
 
 interface Comment {
@@ -11,6 +20,7 @@ interface Comment {
   userId: number;
   content: string;
   createdAt: string;
+  images?: string[];
   user: {
     id: number;
     username: string;
@@ -26,6 +36,9 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   const [newComment, setNewComment] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editedContent, setEditedContent] = useState("");
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
 
   const fetchComments = async () => {
     try {
@@ -51,27 +64,28 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   const handleLike = async (commentId: number) => {
     try {
       await toggleCommentLike(commentId);
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === commentId
-            ? {
-                ...c,
-                _count: {
-                  likes: c._count?.likes
-                    ? c.likes?.some((l) => l.userId === currentUser?.id)
-                      ? c._count.likes - 1
-                      : c._count.likes + 1
-                    : 1,
-                },
-                likes: c.likes?.some((l) => l.userId === currentUser?.id)
-                  ? c.likes?.filter((l) => l.userId !== currentUser?.id)
-                  : [...(c.likes || []), { userId: currentUser!.id }],
-              }
-            : c
-        )
-      );
+      fetchComments();
     } catch (err) {
       console.error("Failed to like comment", err);
+    }
+  };
+
+  const handleDelete = async (commentId: number) => {
+    try {
+      await deleteComment(commentId);
+      fetchComments();
+    } catch (err) {
+      console.error("Failed to delete comment", err);
+    }
+  };
+
+  const handleUpdate = async (commentId: number) => {
+    try {
+      await updateComment({ commentId, content: editedContent });
+      setEditingCommentId(null);
+      fetchComments();
+    } catch (err) {
+      console.error("Failed to update comment", err);
     }
   };
 
@@ -109,7 +123,28 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
           <img src={comment.user.profilePicture || "/default-avatar.png"} alt="user" />
           <div className="comment-body">
             <span className="username">{comment.user.username}</span>
-            <span className="content">{comment.content}</span>
+
+            {editingCommentId === comment.id ? (
+              <>
+                <input
+                  type="text"
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                />
+                <button onClick={() => handleUpdate(comment.id)}>Save</button>
+              </>
+            ) : (
+              <span className="content">{comment.content}</span>
+            )}
+
+            {comment.images && comment.images.length > 0 && (
+              <div className="comment-images">
+                {comment.images.map((img, idx) => (
+                  <img key={idx} src={img} alt="attachment" className="comment-img" />
+                ))}
+              </div>
+            )}
+
             <div className="meta">
               <span className="time">{moment(comment.createdAt).fromNow()}</span>
               <img
@@ -119,7 +154,25 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
                 alt="like"
               />
               <span>{comment._count?.likes || 0}</span>
+              {currentUser?.id === comment.userId && (
+                <>
+                  <button onClick={() => setEditingCommentId(comment.id)}>Edit</button>
+                  <button onClick={() => handleDelete(comment.id)}>Delete</button>
+                </>
+              )}
+              <button onClick={() => setReplyingTo(comment.id)}>Reply</button>
             </div>
+
+            {replyingTo === comment.id && (
+              <ReplySection
+                postId={postId}
+                parentId={comment.id}
+                onReply={() => {
+                  setReplyingTo(null);
+                  fetchComments();
+                }}
+              />
+            )}
           </div>
         </div>
       ))}

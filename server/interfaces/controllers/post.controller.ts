@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import prisma from '../../infrastructure/database/prismaClient.ts';
 import {
   createPost,
   deletePost,
@@ -13,7 +14,7 @@ import {
   getAllPosts 
 } from '../../application/use-cases/post/index.ts';
 
-export const create = async (req: Request, res: Response) => {
+export const create = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { desc, images, videos, files, tags, location } = req.body;
@@ -39,7 +40,7 @@ export const update = async (req: Request, res: Response) => {
   }
 };
 
-export const remove = async (req: Request, res: Response) => {
+export const remove = async (req: Request, res: Response): Promise<void> => {
   try {
     const { postId } = req.body;
     await deletePost(postId);

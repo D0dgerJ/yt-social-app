@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient";
+import prisma from '../../../infrastructure/database/prismaClient.ts';
 import { extractMentions } from "./extractMentions";
 
 export const notifyMentions = async ({
