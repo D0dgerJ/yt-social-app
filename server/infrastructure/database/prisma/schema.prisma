@@ -28,6 +28,7 @@ model User {
   posts          Post[]
   likes          Like[]
   comments       Comment[]
+  commentLikes   CommentLike[]
   messages       Message[]
   savedPosts     SavedPost[]
   stories        Story[]
@@ -71,17 +72,39 @@ model Like {
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
-  postId    Int
-  userId    Int
-  content   String
-  images    String[] @default([]) // массив URL-ов к изображениям
-  videos    String[] @default([]) // массив URL-ов к видео
-  files     String[] @default([]) // любые другие файлы
-  createdAt DateTime @default(now())
+  id         Int            @id @default(autoincrement())
+  postId     Int
+  userId     Int
+  content    String
+  images     String[]       @default([])
+  videos     String[]       @default([])
+  files      String[]       @default([])
+  createdAt  DateTime       @default(now())
 
-  post Post @relation(fields: [postId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  // 💬 Replies
+  parentId   Int?
+  parent     Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    Comment[]      @relation("CommentReplies")
+
+  // 🔗 Relations
+  post       Post           @relation(fields: [postId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+  likes      CommentLike[]
+
+  // track who was mentioned
+  // mentions   User[] @relation("CommentMentions", references: [id])
+}
+
+model CommentLike {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  commentId  Int
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  comment    Comment  @relation(fields: [commentId], references: [id])
+
+  @@unique([userId, commentId], name: "userId_commentId")
 }
 
 model Follow {

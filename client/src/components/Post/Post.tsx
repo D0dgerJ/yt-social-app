@@ -14,6 +14,7 @@
   import heartIcon from "../../assets/heart.png";
   import userPic from "./assets/user.png";
   import "./Post.scss";
+  import CommentSection from "../CommentSection/CommentSection";
 
   interface PostProps {
     post: {
@@ -30,6 +31,7 @@
       location?: string;
       _count?: {
         likes: number;
+        comments: number;
       };
     };
   }
@@ -47,6 +49,7 @@
     const [lightboxIndex, setLightboxIndex] = useState<number>(0);
     const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
     const { user: currentUser } = useContext(AuthContext);
+    const [showComments, setShowComments] = useState(false);
 
     const userId = currentUser?.id;
     const images = post.images ?? [];
@@ -216,9 +219,15 @@
             />
             <span>{like} likes</span>
           </div>
-          <div className="comment-section">
-            <span>{post.comment || 0} comments</span>
+          <div
+            className="comment-section"
+            onClick={() => setShowComments((prev) => !prev)}
+          >
+            <span>{post._count?.comments || 0} comments</span>
           </div>
+          {showComments && (
+            <CommentSection postId={post.id} />
+          )}
         </div>
       </div>
     );
