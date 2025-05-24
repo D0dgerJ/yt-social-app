@@ -1,22 +1,24 @@
 import prisma from "../../../infrastructure/database/prismaClient";
 
-interface CreateCommentParams {
+interface CreateReplyParams {
   postId: number;
   userId: number;
+  parentId: number;
   content: string;
   images?: string[];
   videos?: string[];
   files?: string[];
 }
 
-export const createComment = async ({
+export const createReply = async ({
   postId,
   userId,
+  parentId,
   content,
   images = [],
   videos = [],
   files = [],
-}: CreateCommentParams) => {
+}: CreateReplyParams) => {
   const postExists = await prisma.post.findUnique({
     where: { id: postId },
     select: { id: true },
@@ -26,10 +28,20 @@ export const createComment = async ({
     throw new Error("Post does not exist.");
   }
 
-  const comment = await prisma.comment.create({
+  const parentCommentExists = await prisma.comment.findUnique({
+    where: { id: parentId },
+    select: { id: true },
+  });
+
+  if (!parentCommentExists) {
+    throw new Error("Parent comment does not exist.");
+  }
+
+  const reply = await prisma.comment.create({
     data: {
       postId,
       userId,
+      parentId,
       content,
       images,
       videos,
@@ -52,5 +64,5 @@ export const createComment = async ({
     },
   });
 
-  return comment;
+  return reply;
 };
