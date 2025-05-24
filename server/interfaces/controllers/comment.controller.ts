@@ -5,6 +5,11 @@ import { updateComment } from "../../application/use-cases/comment/updateComment
 import { getPostComments } from "../../application/use-cases/comment/getPostComments.ts";
 import { toggleCommentLike } from "../../application/use-cases/comment/toggleCommentLike.ts";
 import { getCommentReplies } from "../../application/use-cases/comment/getCommentReplies.ts";
+import { createReply } from "../../application/use-cases/comment/createReply.ts";
+import { updateCommentReply } from "../../application/use-cases/comment/updateCommentReply.ts";
+import { deleteCommentReply } from "../../application/use-cases/comment/deleteCommentReply.ts";
+import { getCommentById } from "../../application/use-cases/comment/getCommentById.ts";
+import { getRepliesCountForMany } from "../../application/use-cases/comment/getRepliesCountForMany.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 export const create = async (req: Request, res: Response) => {
@@ -21,7 +26,7 @@ export const create = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const commentId = Number(req.params.commentId);
-    const { content, files, images, videos } = req.body;
+    const { content } = req.body;
     const updated = await updateComment({ commentId, content });
     res.status(200).json(updated);
   } catch (error: any) {
@@ -49,29 +54,6 @@ export const getComments = async (req: Request, res: Response) => {
   }
 };
 
-export const getByPost = async (req: Request, res: Response) => {
-  try {
-    const postId = Number(req.params.postId);
-    const comments = await prisma.comment.findMany({
-      where: { postId },
-      orderBy: { createdAt: "asc" },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
-          },
-        },
-      },
-    });
-
-    res.status(200).json(comments);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 export const likeComment = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
@@ -89,6 +71,58 @@ export const getReplies = async (req: Request, res: Response) => {
     const commentId = Number(req.params.commentId);
     const replies = await getCommentReplies(commentId);
     res.status(200).json(replies);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const reply = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { postId, parentId, content, images = [], videos = [], files = [] } = req.body;
+    const created = await createReply({ postId, parentId, userId, content, images, videos, files });
+    res.status(201).json(created);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const updateReply = async (req: Request, res: Response) => {
+  try {
+    const replyId = Number(req.params.replyId);
+    const { content } = req.body;
+    const updated = await updateCommentReply({ commentId: replyId, content });
+    res.status(200).json(updated);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const removeReply = async (req: Request, res: Response) => {
+  try {
+    const replyId = Number(req.params.replyId);
+    await deleteCommentReply(replyId);
+    res.status(204).send();
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getById = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.commentId);
+    const comment = await getCommentById(id);
+    res.status(200).json(comment);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getRepliesCountForManyHandler = async (req: Request, res: Response) => {
+  try {
+    const ids = req.body.ids as number[];
+    const result = await getRepliesCountForMany(ids);
+    res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
