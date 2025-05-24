@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient";
+import prisma from '../../../infrastructure/database/prismaClient.ts';
 
 export const getCommentById = async (commentId: number) => {
   return await prisma.comment.findUnique({
