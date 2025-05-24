@@ -29,3 +29,8 @@ export const getPostComments = async (postId: number) => {
   const response = await axios.get(`/comments/post/${postId}`);
   return response.data;
 };
+
+export const toggleCommentLike = async (commentId: number) => {
+  const response = await axios.put(`/comments/${commentId}/like`);
+  return response.data;
+};
