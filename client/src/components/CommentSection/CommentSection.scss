@@ -1,43 +1,49 @@
 .comment-section {
-  padding: 0 12px;
+  padding: 0 16px;
   margin-top: 16px;
+  font-family: 'Helvetica', 'Arial', sans-serif;
 
   .comment-input {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+    position: relative;
 
     input[type="text"] {
       flex: 1;
-      padding: 8px 12px;
-      border-radius: 20px;
-      border: 1px solid #ccc;
+      padding: 8px 14px;
+      border-radius: 22px;
+      border: 1px solid #dbdbdb;
       font-size: 14px;
       outline: none;
+      background-color: #fafafa;
     }
 
     input[type="file"] {
       display: none;
     }
 
-    button {
-      background-color: #0095f6;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
+    .emoji-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
       cursor: pointer;
+    }
 
-      &:first-of-type {
-        background-color: transparent;
-        font-size: 18px;
-      }
+    button {
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      color: #0095f6;
+      font-size: 16px;
+      padding: 4px;
     }
 
     .emoji-picker-react {
       position: absolute;
+      bottom: 40px;
+      left: 0;
       z-index: 100;
     }
   }
@@ -47,43 +53,121 @@
     align-items: flex-start;
     margin-bottom: 14px;
 
-    img {
-      width: 32px;
-      height: 32px;
+    .avatar {
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       object-fit: cover;
       margin-right: 10px;
     }
 
-    .comment-body {
+    .comment-content {
       background-color: #f0f2f5;
       padding: 10px 14px;
       border-radius: 18px;
       max-width: 100%;
+      position: relative;
 
-      .username {
-        font-weight: 500;
-        margin-right: 5px;
-        font-size: 14px;
-        color: #050505;
-      }
-
-      .content {
-        font-size: 14px;
-        color: #1c1e21;
-      }
-
-      .meta {
-        margin-top: 6px;
-        font-size: 12px;
-        color: #65676b;
+      .comment-header {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
+        margin-bottom: 4px;
 
-        .like-icon {
-          width: 16px;
-          height: 16px;
+        .username {
+          font-weight: 600;
+          font-size: 14px;
+          color: #262626;
+        }
+
+        .text {
+          font-size: 14px;
+          color: #262626;
+        }
+
+        .mention {
+          color: #00376b;
+          font-weight: 500;
+        }
+
+        .hashtag {
+          color: #00376b;
+        }
+
+        .more-icon {
+          margin-left: auto;
+          cursor: pointer;
+          color: #8e8e8e;
+        }
+      }
+
+      .comment-images {
+        margin-top: 8px;
+
+        .comment-img {
+          width: 100px;
+          height: 100px;
+          border-radius: 8px;
+          object-fit: cover;
+          margin-right: 6px;
+        }
+      }
+
+      .comment-meta {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #8e8e8e;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .like-btn {
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 13px;
+          color: #ed4956;
+        }
+
+        .comment-actions {
+          display: flex;
+          gap: 6px;
+
+          button {
+            background: none;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            color: #262626;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+
+      .edit-box {
+        margin-top: 6px;
+        display: flex;
+        gap: 6px;
+
+        input {
+          flex: 1;
+          padding: 6px 10px;
+          border-radius: 18px;
+          border: 1px solid #dbdbdb;
+          font-size: 14px;
+        }
+
+        button {
+          background-color: #0095f6;
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 18px;
+          font-size: 14px;
           cursor: pointer;
         }
       }

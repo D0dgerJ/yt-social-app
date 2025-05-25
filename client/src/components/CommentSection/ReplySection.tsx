@@ -1,7 +1,13 @@
 import React, { useEffect, useState, useContext } from "react";
 import moment from "moment";
 import { AuthContext } from "../../context/AuthContext";
-import { getCommentReplies, createReply, toggleCommentLike } from "../../utils/api/comment.api";
+import {
+  getCommentReplies,
+  createReply,
+  toggleCommentLike,
+  deleteComment,
+  updateComment,
+} from "../../utils/api/comment.api";
 import likeIcon from "../../assets/like.png";
 import "./ReplySection.scss";
 
@@ -31,6 +37,8 @@ const ReplySection: React.FC<ReplySectionProps> = ({ parentId, postId, onReply }
   const { user: currentUser } = useContext(AuthContext);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [newReply, setNewReply] = useState("");
+  const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
+  const [editedContent, setEditedContent] = useState("");
 
   const fetchReplies = async () => {
     try {
@@ -44,9 +52,10 @@ const ReplySection: React.FC<ReplySectionProps> = ({ parentId, postId, onReply }
   const handleReplySubmit = async () => {
     if (!newReply.trim()) return;
     try {
-      await createReply({ postId, parentId: parentId, content: newReply });
+      await createReply({ postId, parentId, content: newReply });
       setNewReply("");
       fetchReplies();
+      onReply(); // уведомление родителя
     } catch (err) {
       console.error("Failed to post reply", err);
     }
@@ -58,6 +67,26 @@ const ReplySection: React.FC<ReplySectionProps> = ({ parentId, postId, onReply }
       fetchReplies();
     } catch (err) {
       console.error("Failed to like reply", err);
+    }
+  };
+
+  const handleDelete = async (replyId: number) => {
+    try {
+      await deleteComment(replyId);
+      fetchReplies();
+    } catch (err) {
+      console.error("Failed to delete reply", err);
+    }
+  };
+
+  const handleUpdate = async (replyId: number) => {
+    try {
+      await updateComment({ commentId: replyId, content: editedContent });
+      setEditingReplyId(null);
+      setEditedContent("");
+      fetchReplies();
+    } catch (err) {
+      console.error("Failed to update reply", err);
     }
   };
 
@@ -77,8 +106,21 @@ const ReplySection: React.FC<ReplySectionProps> = ({ parentId, postId, onReply }
           <div className="reply-body">
             <div className="reply-header">
               <span className="reply-username">{reply.user.username}</span>
-              <span className="reply-content">{reply.content}</span>
+
+              {editingReplyId === reply.id ? (
+                <div className="reply-edit-box">
+                  <input
+                    type="text"
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                  />
+                  <button onClick={() => handleUpdate(reply.id)}>Save</button>
+                </div>
+              ) : (
+                <span className="reply-content">{reply.content}</span>
+              )}
             </div>
+
             <div className="reply-meta">
               <span className="reply-time">{moment(reply.createdAt).fromNow()}</span>
               <img
@@ -88,6 +130,13 @@ const ReplySection: React.FC<ReplySectionProps> = ({ parentId, postId, onReply }
                 onClick={() => handleLike(reply.id)}
               />
               <span className="reply-like-count">{reply._count?.likes || 0}</span>
+
+              {currentUser?.id === reply.userId && (
+                <>
+                  <button onClick={() => setEditingReplyId(reply.id)}>Edit</button>
+                  <button onClick={() => handleDelete(reply.id)}>Delete</button>
+                </>
+              )}
             </div>
           </div>
         </div>

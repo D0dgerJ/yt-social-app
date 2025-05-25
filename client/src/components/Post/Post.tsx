@@ -14,7 +14,7 @@
   import heartIcon from "../../assets/heart.png";
   import userPic from "./assets/user.png";
   import "./Post.scss";
-  import CommentSection from "../CommentSection/CommentSection";
+  import PostModal from "../PostModal/PostModal";
 
   interface PostProps {
     post: {
@@ -49,7 +49,7 @@
     const [lightboxIndex, setLightboxIndex] = useState<number>(0);
     const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
     const { user: currentUser } = useContext(AuthContext);
-    const [showComments, setShowComments] = useState(false);
+    const [showPostModal, setShowPostModal] = useState(false);
 
     const userId = currentUser?.id;
     const images = post.images ?? [];
@@ -221,12 +221,12 @@
           </div>
           <div
             className="comment-section"
-            onClick={() => setShowComments((prev) => !prev)}
+            onClick={() => setShowPostModal(true)}
           >
             <span>{post._count?.comments || 0} comments</span>
           </div>
-          {showComments && (
-            <CommentSection postId={post.id} />
+          {showPostModal && (
+            <PostModal post={post} onClose={() => setShowPostModal(false)} />
           )}
         </div>
       </div>
