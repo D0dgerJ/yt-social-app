@@ -1,16 +1,22 @@
-import React, { useEffect, useState, useContext, ChangeEvent } from "react";
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  ChangeEvent,
+  useRef,
+} from "react";
 import {
   getPostComments,
   createComment,
   toggleCommentLike,
   deleteComment,
   updateComment,
-  getCommentReplies,
-  createReply
 } from "../../utils/api/comment.api";
 import { AuthContext } from "../../context/AuthContext";
+import { FiMoreHorizontal } from "react-icons/fi";
+import { BsEmojiSmile } from "react-icons/bs";
+import { IoMdSend } from "react-icons/io";
 import moment from "moment";
-import likeIcon from "../../assets/like.png";
 import EmojiPicker from "emoji-picker-react";
 import ReplySection from "./ReplySection";
 import "./CommentSection.scss";
@@ -39,6 +45,7 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editedContent, setEditedContent] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
 
   const fetchComments = async () => {
     try {
@@ -49,10 +56,26 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
     }
   };
 
+  const handleClickOutside = (e: MouseEvent) => {
+    if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+      setShowEmoji(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [postId]);
+
   const handleCommentSubmit = async () => {
     if (!newComment.trim()) return;
     try {
-      await createComment({ postId, content: newComment });
+      await createComment({
+        postId,
+        content: newComment,
+        images: imageFile ? [URL.createObjectURL(imageFile)] : [],
+      });
       setNewComment("");
       setImageFile(null);
       fetchComments();
@@ -99,69 +122,84 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
     }
   };
 
-  useEffect(() => {
-    fetchComments();
-  }, [postId]);
+  const formatContent = (text: string) => {
+    return text.split(" ").map((part, i) => {
+      if (part.startsWith("@")) {
+        return (
+          <span key={i} className="mention">
+            {part}{" "}
+          </span>
+        );
+      }
+      if (part.startsWith("#")) {
+        return (
+          <span key={i} className="hashtag">
+            {part}{" "}
+          </span>
+        );
+      }
+      return part + " ";
+    });
+  };
 
   return (
     <div className="comment-section">
-      <div className="comment-input">
-        <input
-          type="text"
-          value={newComment}
-          placeholder="Write a comment..."
-          onChange={(e) => setNewComment(e.target.value)}
-        />
-        <button onClick={() => setShowEmoji(!showEmoji)}>😊</button>
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
-        <button onClick={handleCommentSubmit}>Send</button>
-        {showEmoji && <EmojiPicker onEmojiClick={handleEmojiClick} />}
-      </div>
-
       {comments.map((comment) => (
         <div key={comment.id} className="comment-item">
-          <img src={comment.user.profilePicture || "/default-avatar.png"} alt="user" />
-          <div className="comment-body">
-            <span className="username">{comment.user.username}</span>
+          <img
+            src={comment.user.profilePicture || "/default-avatar.png"}
+            alt="user"
+            className="avatar"
+          />
+          <div className="comment-content">
+            <div className="comment-header">
+              <span className="username">{comment.user.username}</span>
+              <span className="text">{formatContent(comment.content)}</span>
+              <FiMoreHorizontal className="more-icon" />
+            </div>
 
-            {editingCommentId === comment.id ? (
-              <>
+            {comment.images?.length ? (
+              <div className="comment-images">
+                {comment.images.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt="attachment"
+                    className="comment-img"
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            <div className="comment-meta">
+              <span className="time">{moment(comment.createdAt).fromNow()}</span>
+              <span className="like-btn" onClick={() => handleLike(comment.id)}>
+                ❤️ {comment._count?.likes || 0}
+              </span>
+              {currentUser?.id === comment.userId && (
+                <div className="comment-actions">
+                  <button onClick={() => setEditingCommentId(comment.id)}>
+                    Edit
+                  </button>
+                  <button onClick={() => handleDelete(comment.id)}>
+                    Delete
+                  </button>
+                </div>
+              )}
+              <button onClick={() => setReplyingTo(comment.id)}>Reply</button>
+            </div>
+
+            {editingCommentId === comment.id && (
+              <div className="edit-box">
                 <input
                   type="text"
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
+                  placeholder="Edit comment"
                 />
                 <button onClick={() => handleUpdate(comment.id)}>Save</button>
-              </>
-            ) : (
-              <span className="content">{comment.content}</span>
-            )}
-
-            {comment.images && comment.images.length > 0 && (
-              <div className="comment-images">
-                {comment.images.map((img, idx) => (
-                  <img key={idx} src={img} alt="attachment" className="comment-img" />
-                ))}
               </div>
             )}
-
-            <div className="meta">
-              <span className="time">{moment(comment.createdAt).fromNow()}</span>
-              <img
-                src={likeIcon}
-                className="like-icon"
-                onClick={() => handleLike(comment.id)}
-                alt="like"
-              />
-              <span>{comment._count?.likes || 0}</span>
-              {currentUser?.id === comment.userId && (
-                <>
-                  <button onClick={() => setEditingCommentId(comment.id)}>Edit</button>
-                  <button onClick={() => handleDelete(comment.id)}>Delete</button>
-                </>
-              )}
-              <button onClick={() => setReplyingTo(comment.id)}>Reply</button>
-            </div>
 
             {replyingTo === comment.id && (
               <ReplySection
@@ -176,6 +214,24 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
           </div>
         </div>
       ))}
+
+      <div className="comment-input">
+        <input
+          type="text"
+          value={newComment}
+          placeholder="Add a comment..."
+          onChange={(e) => setNewComment(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
+        />
+        <div ref={emojiRef} className="emoji-wrapper">
+          <BsEmojiSmile onClick={() => setShowEmoji(!showEmoji)} size={20} />
+          {showEmoji && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+        </div>
+        <input type="file" accept="image/*" onChange={handleImageUpload} />
+        <button onClick={handleCommentSubmit}>
+          <IoMdSend size={20} />
+        </button>
+      </div>
     </div>
   );
 };
