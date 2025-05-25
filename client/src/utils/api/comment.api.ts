@@ -7,6 +7,7 @@ interface CreateCommentInput {
   images?: string[];
   videos?: string[];
   files?: string[];
+  parentId?: number;
 }
 
 interface UpdateCommentInput {

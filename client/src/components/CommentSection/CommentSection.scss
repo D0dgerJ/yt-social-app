@@ -172,5 +172,42 @@
         }
       }
     }
+
+    // Переносим replies сюда
+    .replies {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+      margin-left: 40px;
+
+      .comment-item {
+        .comment-content {
+          background-color: #ffffff;
+        }
+      }
+    }
+  }
+}
+
+.reply-box {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+
+  input {
+    flex: 1;
+    padding: 6px 12px;
+    border-radius: 18px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: #0095f6;
+    cursor: pointer;
+    font-size: 18px;
   }
 }
