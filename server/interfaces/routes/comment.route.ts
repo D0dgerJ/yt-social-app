@@ -6,13 +6,19 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 
-// Комментарии
+// Комментарии и ответы (универсальный эндпоинт)
 router.post("/", authMiddleware, controller.create);
+
+// Получение комментариев к посту
 router.get("/post/:postId", controller.getComments);
+
+// Получение одного комментария по ID
 router.get("/:commentId", controller.getById);
+
+// Лайк/анлайк комментария
 router.put("/:commentId/like", authMiddleware, controller.likeComment);
 
-// Обновление и удаление комментариев
+// Обновление комментария или ответа
 router.put(
   "/:commentId",
   authMiddleware,
@@ -25,6 +31,7 @@ router.put(
   controller.update
 );
 
+// Удаление комментария или ответа
 router.delete(
   "/:commentId",
   authMiddleware,
@@ -37,37 +44,10 @@ router.delete(
   controller.remove
 );
 
-// Ответы
-router.post("/reply", authMiddleware, controller.reply);
+// Получение ответов на конкретный комментарий
 router.get("/replies/:commentId", controller.getReplies);
 
-// Обновление ответа
-router.put(
-  "/reply/:replyId",
-  authMiddleware,
-  checkOwnership(async (req) => {
-    const reply = await prisma.comment.findUnique({
-      where: { id: Number(req.params.replyId) },
-    });
-    return reply?.userId;
-  }),
-  controller.updateReply
-);
-
-// Удаление ответа
-router.delete(
-  "/reply/:replyId",
-  authMiddleware,
-  checkOwnership(async (req) => {
-    const reply = await prisma.comment.findUnique({
-      where: { id: Number(req.params.replyId) },
-    });
-    return reply?.userId;
-  }),
-  controller.removeReply
-);
-
-// 📊 Количество ответов к комментариям
+// 📊 Получение количества ответов к нескольким комментариям
 router.post("/replies-count", controller.getRepliesCountForManyHandler);
 
 export default router;

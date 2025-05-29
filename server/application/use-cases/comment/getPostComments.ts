@@ -6,8 +6,21 @@ export const getPostComments = async (postId: number) => {
   }
 
   return prisma.comment.findMany({
-    where: { postId },
-    include: { user: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  where: { postId },
+  include: {
+    user: true,
+    replies: {
+      include: {
+        user: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    },
+    _count: {
+      select: { likes: true },
+    },
+    likes: true,
+  },
+  orderBy: { createdAt: 'desc' },
+});
+
 };

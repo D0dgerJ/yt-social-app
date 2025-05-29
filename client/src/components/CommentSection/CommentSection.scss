@@ -173,7 +173,6 @@
       }
     }
 
-    // Переносим replies сюда
     .replies {
       display: flex;
       flex-direction: column;
@@ -188,6 +187,37 @@
       }
     }
   }
+
+  .comment-item.reply-item {
+  margin-left: 40px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background-color: #dbdbdb;
+  }
+
+  .comment-content {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .username {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .comment-meta {
+    font-size: 12px;
+    color: #8e8e8e;
+  }
+}
+
 }
 
 .reply-box {
@@ -209,5 +239,19 @@
     color: #0095f6;
     cursor: pointer;
     font-size: 18px;
+  }
+}
+
+.view-replies {
+  margin-left: 46px;
+  color: #8e8e8e;
+  font-size: 13px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
