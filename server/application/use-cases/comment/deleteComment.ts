@@ -1,7 +1,11 @@
 import prisma from '../../../infrastructure/database/prismaClient.ts';
 
 export const deleteComment = async (commentId: number) => {
-  return prisma.comment.delete({
+  await prisma.comment.deleteMany({
+    where: { parentId: commentId },
+  });
+
+  await prisma.comment.delete({
     where: { id: commentId },
   });
 };

@@ -4,6 +4,7 @@ interface CreateCommentParams {
   postId: number;
   userId: number;
   content: string;
+  parentId?: number;
   images?: string[];
   videos?: string[];
   files?: string[];
@@ -13,6 +14,7 @@ export const createComment = async ({
   postId,
   userId,
   content,
+  parentId,
   images = [],
   videos = [],
   files = [],
@@ -31,6 +33,7 @@ export const createComment = async ({
       postId,
       userId,
       content,
+      parentId,
       images,
       videos,
       files,

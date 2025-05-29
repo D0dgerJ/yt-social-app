@@ -5,7 +5,6 @@ import { updateComment } from "../../application/use-cases/comment/updateComment
 import { getPostComments } from "../../application/use-cases/comment/getPostComments.ts";
 import { toggleCommentLike } from "../../application/use-cases/comment/toggleCommentLike.ts";
 import { getCommentReplies } from "../../application/use-cases/comment/getCommentReplies.ts";
-import { createReply } from "../../application/use-cases/comment/createReply.ts";
 import { updateCommentReply } from "../../application/use-cases/comment/updateCommentReply.ts";
 import { deleteCommentReply } from "../../application/use-cases/comment/deleteCommentReply.ts";
 import { getCommentById } from "../../application/use-cases/comment/getCommentById.ts";
@@ -15,8 +14,25 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 export const create = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { postId, content, files = [], images = [], videos = [] } = req.body;
-    const comment = await createComment({ userId, postId, content, files, images, videos });
+    const {
+      postId,
+      content,
+      files = [],
+      images = [],
+      videos = [],
+      parentId,
+    } = req.body;
+
+    const comment = await createComment({
+      userId,
+      postId,
+      content,
+      files,
+      images,
+      videos,
+      parentId,
+    });
+
     res.status(201).json(comment);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -73,17 +89,6 @@ export const getReplies = async (req: Request, res: Response) => {
     res.status(200).json(replies);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
-  }
-};
-
-export const reply = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const { postId, parentId, content, images = [], videos = [], files = [] } = req.body;
-    const created = await createReply({ postId, parentId, userId, content, images, videos, files });
-    res.status(201).json(created);
-  } catch (err: any) {
-    res.status(400).json({ message: err.message });
   }
 };
 
