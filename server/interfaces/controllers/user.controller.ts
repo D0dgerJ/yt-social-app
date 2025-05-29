@@ -9,6 +9,14 @@ import {
   updateUser,
   updateProfilePicture,
   getUserByUsername,
+  getIncomingFriendRequests,
+  getOutgoingFriendRequests,
+  cancelFriendRequest  
+} from '../../application/use-cases/user/index.ts';
+import {
+  sendFriendRequest as sendFriendRequestUseCase,
+  acceptFriendRequest as acceptFriendRequestUseCase,
+  rejectFriendRequest as rejectFriendRequestUseCase,
 } from '../../application/use-cases/user/index.ts';
 
 
@@ -106,3 +114,79 @@ export const getByUsername = async (req: Request, res: Response) => {
     res.status(404).json({ message: error.message });
   }
 }
+
+export const sendFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const senderId = req.user!.id;
+    const receiverId = Number(req.params.id);
+
+    const request = await sendFriendRequestUseCase({ senderId, receiverId });
+
+    res.status(201).json(request);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const acceptFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const currentUserId = req.user!.id;
+    const requestId = Number(req.params.id);
+
+    const updated = await acceptFriendRequestUseCase({ requestId, currentUserId });
+
+    res.status(200).json(updated);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const rejectFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const currentUserId = req.user!.id;
+    const requestId = Number(req.params.id);
+
+    const updated = await rejectFriendRequestUseCase({ requestId, currentUserId });
+
+    res.status(200).json(updated);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getIncomingRequests = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const requests = await getIncomingFriendRequests({ userId });
+
+    res.status(200).json(requests);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getOutgoingRequests = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const requests = await getOutgoingFriendRequests({ userId });
+
+    res.status(200).json(requests);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const cancelRequest = async (req: Request, res: Response) => {
+  try {
+    const senderId = req.user!.id;
+    const receiverId = Number(req.params.id);
+
+    const result = await cancelFriendRequest({ senderId, receiverId });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

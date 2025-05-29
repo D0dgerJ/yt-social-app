@@ -38,6 +38,20 @@ model User {
   following      Follow[]    @relation("Following")
   storyViews  StoryView[]
   participants   Participant[] 
+  sentRequests     FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+}
+
+model FriendRequest {
+  id         Int      @id @default(autoincrement())
+  sender     User     @relation("SentRequests", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User     @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  receiverId Int
+  status     String   @default("pending") // "pending", "accepted", "rejected"
+  createdAt  DateTime @default(now())
+
+  @@unique([senderId, receiverId])
 }
 
 model Post {
