@@ -9,6 +9,7 @@ import { updateCommentReply } from "../../application/use-cases/comment/updateCo
 import { deleteCommentReply } from "../../application/use-cases/comment/deleteCommentReply.ts";
 import { getCommentById } from "../../application/use-cases/comment/getCommentById.ts";
 import { getRepliesCountForMany } from "../../application/use-cases/comment/getRepliesCountForMany.ts";
+import { getUserByUsername } from "../../application/use-cases/user/getUserByUsername.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 export const create = async (req: Request, res: Response) => {
@@ -130,5 +131,18 @@ export const getRepliesCountForManyHandler = async (req: Request, res: Response)
     res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getProfileByUsername = async (req: Request, res: Response) => {
+  try {
+    const username = req.params.username;
+    const currentUserId = req.user?.id;
+
+    const userProfile = await getUserByUsername(username, currentUserId);
+
+    res.status(200).json(userProfile);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
   }
 };
