@@ -11,13 +11,15 @@ import {
   getUserByUsername,
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
-  cancelFriendRequest  
+  cancelFriendRequest,
+  getUserFollowing
 } from '../../application/use-cases/user/index.ts';
 import {
   sendFriendRequest as sendFriendRequestUseCase,
   acceptFriendRequest as acceptFriendRequestUseCase,
   rejectFriendRequest as rejectFriendRequestUseCase,
 } from '../../application/use-cases/user/index.ts';
+import prisma from "../../infrastructure/database/prismaClient.ts";
 
 
 export const getById = async (req: Request, res: Response) => {
@@ -97,13 +99,13 @@ export const profile = async (req: Request, res: Response) => {
 export const friends = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    const follows = await getUserFriends(id);
-    const friends = follows.map(f => f.following);
+    const friends = await getUserFriends(id);
     res.status(200).json(friends);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 export const getByUsername = async (req: Request, res: Response) => {
   try {
@@ -186,6 +188,29 @@ export const cancelRequest = async (req: Request, res: Response) => {
     const result = await cancelFriendRequest({ senderId, receiverId });
 
     res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getFollowing = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const following = await getUserFollowing(id);
+    res.status(200).json(following.map(f => f.following));
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getFollowers = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const followers = await prisma.follow.findMany({
+      where: { followingId: id },
+      include: { follower: true },
+    });
+    res.status(200).json(followers.map(f => f.follower));
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }

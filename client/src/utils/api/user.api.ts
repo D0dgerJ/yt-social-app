@@ -33,16 +33,6 @@ export const updateProfilePicture = async (formData: FormData) => {
   return response.data;
 };
 
-export const followUser = async (userId: number) => {
-  const response = await axios.put(`/users/follow/${userId}`);
-  return response.data;
-};
-
-export const unfollowUser = async (userId: number) => {
-  const response = await axios.put(`/users/unfollow/${userId}`);
-  return response.data;
-};
-
 export const getUserProfile = async () => {
   const response = await axios.get('/users/profile');
   return response.data;
@@ -55,5 +45,55 @@ export const getUserFriends = async (userId: number) => {
 
 export const getUserByUsername = async (username: string) => {
   const response = await axios.get(`/users/username/${username}`);
+  return response.data;
+};
+
+export const followUser = async (userId: number) => {
+  const response = await axios.put(`/users/${userId}/follow`);
+  return response.data;
+};
+
+export const unfollowUser = async (userId: number) => {
+  const response = await axios.put(`/users/${userId}/unfollow`);
+  return response.data;
+};
+
+export const getUserFollowing = async (userId: number) => {
+  const response = await axios.get(`/users/following/${userId}`);
+  return response.data;
+};
+
+export const getUserFollowers = async (userId: number) => {
+  const response = await axios.get(`/users/followers/${userId}`);
+  return response.data;
+};
+
+export const sendFriendRequest = async (userId: number) => {
+  const response = await axios.post(`/users/friend-request/${userId}`);
+  return response.data;
+};
+
+export const acceptFriendRequest = async (requestId: number) => {
+  const response = await axios.post(`/users/friend-request/${requestId}/accept`);
+  return response.data;
+};
+
+export const rejectFriendRequest = async (requestId: number) => {
+  const response = await axios.post(`/users/friend-request/${requestId}/reject`);
+  return response.data;
+};
+
+export const cancelFriendRequest = async (userId: number) => {
+  const response = await axios.delete(`/users/friend-request/${userId}`);
+  return response.data;
+};
+
+export const getIncomingFriendRequests = async () => {
+  const response = await axios.get(`/users/friend-requests/incoming`);
+  return response.data;
+};
+
+export const getOutgoingFriendRequests = async () => {
+  const response = await axios.get(`/users/friend-requests/outgoing`);
   return response.data;
 };

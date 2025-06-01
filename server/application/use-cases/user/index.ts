@@ -2,6 +2,7 @@ export * from './createUser.ts';
 export * from './deleteUser.ts';
 export * from './followUser.ts';
 export * from './getUserById.ts';
+export * from './getUserFollowing.ts';
 export * from './getUserFriends.ts';
 export * from './getUserProfile.ts';
 export * from './unfollowUser.ts';

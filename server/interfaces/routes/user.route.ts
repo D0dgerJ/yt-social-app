@@ -17,6 +17,8 @@
     getIncomingRequests,
     getOutgoingRequests,
     cancelRequest,
+    getFollowing,
+    getFollowers
   } from "../controllers/user.controller.ts";
   import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 
@@ -44,5 +46,7 @@
   router.get("/friend-requests/incoming", getIncomingRequests);
   router.get("/friend-requests/outgoing", getOutgoingRequests);
   router.delete("/friend-request/:id", cancelRequest);
+  router.get("/following/:id", getFollowing);
+  router.get("/followers/:id", getFollowers);
 
   export default router;
