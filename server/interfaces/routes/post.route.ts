@@ -15,6 +15,7 @@ import {
 } from "../controllers/post.controller.ts";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
+import { getUserPostsFlexible } from "../controllers/post.controller.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
@@ -48,6 +49,7 @@ router.delete(
 router.get("/", getAll);
 router.get("/feed", authMiddleware, getFeed);
 router.get("/feed/:id", getFeedById);
+router.get("/user", getUserPostsFlexible);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
 router.get("/:id", getById);

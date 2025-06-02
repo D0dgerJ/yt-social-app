@@ -147,3 +147,26 @@ export const getAll = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getUserPostsFlexible = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId, username } = req.query;
+
+    if (!userId && !username) {
+      res.status(400).json({ message: "userId or username is required" });
+      return;
+    }
+
+    let posts;
+
+    if (userId) {
+      posts = await getUserPosts(Number(userId));
+    } else {
+      posts = await getUserPostsByUsername(String(username));
+    }
+
+    res.status(200).json(posts);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

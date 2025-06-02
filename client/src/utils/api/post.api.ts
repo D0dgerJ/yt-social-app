@@ -54,7 +54,9 @@ export const getPostById = async (id: number) => {
   return response.data;
 };
 
-export const getUserPostsByUsername = async (username: string) => {
-  const response = await axios.get(`/posts/user/${username}`);
+export const getUserPostsByUsername = async (identifier: string | number) => {
+  const isId = typeof identifier === "number" || /^\d+$/.test(identifier.toString());
+  const param = isId ? `userId=${identifier}` : `username=${encodeURIComponent(identifier)}`;
+  const response = await axios.get(`/posts/user?${param}`);
   return response.data;
 };
