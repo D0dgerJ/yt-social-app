@@ -57,7 +57,7 @@
     const files = post.files ?? [];
 
     useEffect(() => {
-      if (userId) {
+      if (userId && Array.isArray(post.likes)) {
         setIsLiked(post.likes.includes(userId));
       }
     }, [userId, post.likes]);
