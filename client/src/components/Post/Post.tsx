@@ -94,7 +94,7 @@
     };
 
     return (
-      <div className="post-container">
+      <div className="post-container" style={{ breakInside: "avoid" }}>
         <div className="post-top">
           <div className="post-user">
             <img
@@ -126,6 +126,7 @@
                     setLightboxIndex(index);
                     setIsLightboxOpen(true);
                   }}
+                  loading="lazy"
                 />
               ))}
             </div>

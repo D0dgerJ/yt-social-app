@@ -127,7 +127,7 @@ const Profile: React.FC = () => {
               </>
             )}
           </div>
-          <div className="profile-bottom flex">
+          <div className="profile-bottom">
             <NewsFeed userPosts />
             <Rightbar user={user || undefined} />
           </div>

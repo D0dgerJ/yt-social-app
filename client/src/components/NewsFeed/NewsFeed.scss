@@ -1,5 +1,31 @@
-.newsfeed {
-    flex: 5.5;
-    padding: 10px;
+.newsFeed {
+  padding: 0 20px;
+  margin-top: 20px;
+
+  &--profile {
+    // Никаких column-count, только стили для Masonry
   }
-  
+
+  &--home {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+/* Сетка masonry */
+.masonry-grid {
+  display: flex;
+  margin-left: -20px; // компенсируем отступы колонок
+  width: auto;
+}
+
+.masonry-grid_column {
+  padding-left: 20px;
+  background-clip: padding-box;
+}
+
+/* Отступ между постами */
+.masonry-grid_column > .post-container {
+  margin-bottom: 20px;
+}
