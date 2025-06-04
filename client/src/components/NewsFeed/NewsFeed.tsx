@@ -4,6 +4,7 @@ import Post from "../Post/Post";
 import { getFeedPosts, getUserPostsByUsername } from "../../utils/api/post.api";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import Masonry from "react-masonry-css";
 import "./NewsFeed.scss";
 
 interface NewsFeedProps {
@@ -25,6 +26,18 @@ interface PostType {
   likes: number[];
 }
 
+const profileColumns = {
+  default: 4,
+  1200: 3,
+  900: 2,
+  600: 1,
+};
+
+const feedColumns = {
+  default: 2,
+  900: 1,
+};
+
 const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
   const [posts, setPosts] = useState<PostType[]>([]);
   const { username } = useParams();
@@ -45,11 +58,17 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
   }, [username, userPosts]);
 
   return (
-    <div className="newsfeed">
+    <div className={`newsFeed ${userPosts ? "newsFeed--profile" : "newsFeed--home"}`}>
       {(!username || username === user?.username) && <UploadPost />}
-      {posts.map((post) => (
-        <Post key={post.id} post={post} />
-      ))}
+      <Masonry
+        breakpointCols={userPosts ? profileColumns : feedColumns}
+        className="masonry-grid"
+        columnClassName="masonry-grid_column"
+      >
+        {posts.map((post) => (
+          <Post key={post.id} post={post} />
+        ))}
+      </Masonry>
     </div>
   );
 };
