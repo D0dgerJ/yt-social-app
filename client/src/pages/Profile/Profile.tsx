@@ -10,6 +10,7 @@ import { getUserByUsername, updateProfilePicture } from "../../utils/api/user.ap
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import FriendButton from "../../components/FriendButton/FriendButton";
 
 interface User {
   id: number;
@@ -29,11 +30,11 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+     const fetchUserProfile = async () => {
       try {
         if (username) {
           const res = await getUserByUsername(username);
-          setUser(res.user);
+          setUser(res);
         }
       } catch (error) {
         console.error("Failed to fetch user profile", error);
@@ -125,6 +126,9 @@ const Profile: React.FC = () => {
                   </>
                 )}
               </>
+            )}
+            {user && currentUser?.id !== user.id && (
+              <FriendButton targetUserId={user.id} />
             )}
           </div>
           <div className="profile-bottom">

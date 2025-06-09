@@ -97,3 +97,14 @@ export const getOutgoingFriendRequests = async () => {
   const response = await axios.get(`/users/friend-requests/outgoing`);
   return response.data;
 };
+
+
+export const getFollowers = async (userId: number) => {
+  const response = await axios.get(`/users/followers/${userId}`);
+  return response.data;
+};
+
+export const getFollowings = async (userId: number) => {
+  const response = await axios.get(`/users/following/${userId}`);
+  return response.data;
+};
