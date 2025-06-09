@@ -1,14 +1,21 @@
-import React, { useContext } from "react";
-import { IoSearch, IoPersonSharp, IoChatboxEllipses } from "react-icons/io5";
+import React, { useContext, useState } from "react";
+import {
+  IoSearch,
+  IoPersonSharp,
+  IoChatboxEllipses,
+} from "react-icons/io5";
 import { IoIosNotifications } from "react-icons/io";
 import Logo from "../Logo/Logo";
 import noProfile from "../../assets/profile/user.png";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import "./Navbar.scss";
+import NotificationsInteractions from "../NotificationsInteractions/NotificationsInteractions";
+// число notification должно меняться в зависемости от количества уведомлений
 
 const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <div className="navbar">
@@ -41,11 +48,20 @@ const Navbar: React.FC = () => {
             <IoChatboxEllipses />
             <span className="icon-badge">1</span>
           </div>
-          <div className="tab-icon">
+          <div
+            className="tab-icon"
+            onClick={() => setShowNotifications(!showNotifications)}
+          >
             <IoIosNotifications />
             <span className="icon-badge">1</span>
+            {showNotifications && (
+              <div className="notifications-popup">
+                <NotificationsInteractions />
+              </div>
+            )}
           </div>
         </div>
+
         <div className="profile-pic-div">
           <Link to={`/profile/${user?.username}`}>
             <img

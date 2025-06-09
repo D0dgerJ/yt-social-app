@@ -101,3 +101,15 @@
     }
   }
   
+.notifications-popup {
+  position: absolute;
+  top: 60px;
+  right: 10px;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  width: 360px;
+  backdrop-filter: blur(4px);
+}
