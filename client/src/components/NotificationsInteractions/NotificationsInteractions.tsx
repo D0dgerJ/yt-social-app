@@ -57,7 +57,6 @@ const NotificationsInteractions: React.FC = () => {
 
   return (
     <div className="notifications-interactions">
-      <h3>Запросы в друзья</h3>
 
       {loading ? (
         <p>Загрузка...</p>
@@ -69,9 +68,9 @@ const NotificationsInteractions: React.FC = () => {
             <li key={id} className="friend-request-item">
               <img
                 src={sender.profilePicture || "/assets/user.png"}
-                alt={sender.username}
                 className="friend-avatar"
               />
+              <span className="friend-username">Запрос в друзья от {sender.username}</span>
               <div className="friend-actions">
                 <button
                   onClick={() => handleAccept(id)}
