@@ -16,47 +16,57 @@
 
     .friend-request-item {
       display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      border: 1px solid #e6e6e6;
-      border-radius: 6px;
-      margin-bottom: 10px;
-      transition: background 0.2s;
+      flex-direction: column;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background-color: transparent;
+      transition: background-color 0.2s ease;
 
       &:hover {
-        background-color: #f9f9f9;
+        background-color: #f8f8f8;
       }
 
-      .friend-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1px solid #ccc;
-      }
-
-      .friend-username {
-        flex-grow: 1;
-        font-weight: 500;
-        color: #222;
-      }
-
-      .friend-actions {
+      .friend-request-top {
         display: flex;
-        gap: 6px;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+
+        .friend-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ccc;
+        }
+
+        .friend-username {
+          font-size: 15px;
+          font-weight: 500;
+          color: #333;
+        }
+      }
+
+      .friend-request-bottom {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
 
         .btn {
-          padding: 4px 8px;
-          font-size: 12px;
+          width: 100px;
+          padding: 8px 0;
+          font-size: 14px;
+          font-weight: 500;
+          text-align: center;
           border: none;
-          border-radius: 4px;
+          border-radius: 6px;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: background-color 0.2s ease;
+          color: #fff;
 
           &.btn-success {
             background-color: #28a745;
-            color: rgb(143, 143, 143);
 
             &:hover {
               background-color: #218838;
@@ -65,7 +75,6 @@
 
           &.btn-danger {
             background-color: #dc3545;
-            color: rgb(151, 151, 151);
 
             &:hover {
               background-color: #c82333;
@@ -75,6 +84,7 @@
       }
     }
   }
+
 
   p {
     color: #555;
