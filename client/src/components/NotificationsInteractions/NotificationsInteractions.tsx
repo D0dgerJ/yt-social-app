@@ -79,15 +79,17 @@ const NotificationsInteractions: React.FC = () => {
               <div className="friend-request-bottom">
                 <button
                   onClick={() => handleAccept(id)}
-                  className="btn btn-success btn-sm"
+                  className="btn btn-success btn-11"
                 >
                   Принять
+                  <div className="dot"></div>
                 </button>
                 <button
                   onClick={() => handleReject(id)}
-                  className="btn btn-danger btn-sm"
+                  className="btn btn-danger btn-11"
                 >
                   Отклонить
+                  <div className="dot"></div>
                 </button>
               </div>
             </li>
