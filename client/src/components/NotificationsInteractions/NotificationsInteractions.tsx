@@ -5,6 +5,7 @@ import {
   rejectFriendRequest,
 } from "../../utils/api/user.api";
 import { AuthContext } from "../../context/AuthContext";
+import "./NotificationsInteractions.scss";
 
 interface FriendRequest {
   id: number;
@@ -71,7 +72,6 @@ const NotificationsInteractions: React.FC = () => {
                 alt={sender.username}
                 className="friend-avatar"
               />
-              <span className="friend-username">{sender.username}</span>
               <div className="friend-actions">
                 <button
                   onClick={() => handleAccept(id)}
