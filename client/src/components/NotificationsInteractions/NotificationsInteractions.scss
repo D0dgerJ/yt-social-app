@@ -1,9 +1,7 @@
 .notifications-interactions {
-  background-color: #fff;
   border-radius: 8px;
   padding: 16px;
   max-width: 400px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
 
   h3 {
     font-size: 18px;
@@ -58,7 +56,7 @@
 
           &.btn-success {
             background-color: #28a745;
-            color: white;
+            color: rgb(93, 163, 53);
 
             &:hover {
               background-color: #218838;
@@ -67,7 +65,7 @@
 
           &.btn-danger {
             background-color: #dc3545;
-            color: white;
+            color: rgb(39, 194, 129);
 
             &:hover {
               background-color: #c82333;

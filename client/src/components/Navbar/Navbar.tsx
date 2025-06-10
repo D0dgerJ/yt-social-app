@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import "./Navbar.scss";
 import NotificationsInteractions from "../NotificationsInteractions/NotificationsInteractions";
-// число notification должно меняться в зависемости от количества уведомлений
+// число notification должно меняться в зависемости от количества уведомлений (когда перейдёш к уведомлениям)
 
 const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
