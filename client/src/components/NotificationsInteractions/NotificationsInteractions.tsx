@@ -66,12 +66,17 @@ const NotificationsInteractions: React.FC = () => {
         <ul className="friend-requests-list">
           {requests.map(({ id, sender }) => (
             <li key={id} className="friend-request-item">
-              <img
-                src={sender.profilePicture || "/assets/user.png"}
-                className="friend-avatar"
-              />
-              <span className="friend-username">Запрос в друзья от {sender.username}</span>
-              <div className="friend-actions">
+              <div className="friend-request-top">
+                <img
+                  src={sender.profilePicture || "/assets/user.png"}
+                  className="friend-avatar"
+                  alt={sender.username}
+                />
+                <span className="friend-username">
+                  Запрос в друзья от {sender.username}
+                </span>
+              </div>
+              <div className="friend-request-bottom">
                 <button
                   onClick={() => handleAccept(id)}
                   className="btn btn-success btn-sm"
