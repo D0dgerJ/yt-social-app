@@ -10,6 +10,7 @@ import { deleteConversationIfEmpty } from "../../application/use-cases/chat/dele
 import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead.ts";
 import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.ts";
 import { addOrUpdateReaction } from "../../application/use-cases/chat/addOrUpdateReaction.ts";
+import { getMessageReactions } from "../../application/use-cases/chat/getMessageReactions.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 export const create = async (req: Request, res: Response) => {
@@ -200,6 +201,16 @@ export const reactToMessage = async (req: Request, res: Response) => {
     const result = await addOrUpdateReaction({ userId, messageId, emoji });
 
     res.status(200).json({ reaction: result });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getReactions = async (req: Request, res: Response) => {
+  try {
+    const messageId = Number(req.params.messageId);
+    const reactions = await getMessageReactions(messageId);
+    res.status(200).json({ reactions });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
