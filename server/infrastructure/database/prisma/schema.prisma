@@ -14,32 +14,33 @@ datasource db {
 }
 
 model User {
-  id             Int         @id @default(autoincrement())
-  username       String      @unique
-  email          String      @unique
-  password       String
-  profilePicture String?     // Cloudinary URL
-  coverPicture   String?     // Cloudinary URL
-  desc           String?     @default("")
-  isAdmin        Boolean     @default(false)
-  from           String?     @default("Ghana")
-  city           String?     @default("Accra")
-  relationship   Int?        @default(1)
-  posts          Post[]
-  likes          Like[]
-  comments       Comment[]
-  commentLikes   CommentLike[]
-  messages       Message[]
-  savedPosts     SavedPost[]
-  stories        Story[]
-  notificationsFrom Notification[] @relation("NotificationFrom")
-  notificationsTo   Notification[] @relation("NotificationTo")
-  followedBy     Follow[]    @relation("FollowedBy")
-  following      Follow[]    @relation("Following")
-  storyViews  StoryView[]
-  participants   Participant[] 
-  sentRequests     FriendRequest[] @relation("SentRequests")
-  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+  id                Int             @id @default(autoincrement())
+  username          String          @unique
+  email             String          @unique
+  password          String
+  profilePicture    String? // Cloudinary URL
+  coverPicture      String? // Cloudinary URL
+  desc              String?         @default("")
+  isAdmin           Boolean         @default(false)
+  from              String?         @default("Ghana")
+  city              String?         @default("Accra")
+  relationship      Int?            @default(1)
+  posts             Post[]
+  likes             Like[]
+  comments          Comment[]
+  commentLikes      CommentLike[]
+  messages          Message[]
+  savedPosts        SavedPost[]
+  stories           Story[]
+  notificationsFrom Notification[]  @relation("NotificationFrom")
+  notificationsTo   Notification[]  @relation("NotificationTo")
+  followedBy        Follow[]        @relation("FollowedBy")
+  following         Follow[]        @relation("Following")
+  storyViews        StoryView[]
+  participants      Participant[]
+  sentRequests      FriendRequest[] @relation("SentRequests")
+  receivedRequests  FriendRequest[] @relation("ReceivedRequests")
+  messageReactions  Reaction[]
 }
 
 model FriendRequest {
@@ -55,24 +56,24 @@ model FriendRequest {
 }
 
 model Post {
-  id         Int         @id @default(autoincrement())
-  userId     Int
-  user       User        @relation(fields: [userId], references: [id])
-  desc       String?
-  mediaUrl   String?
-  mediaType  String      @default("image") // image / video
-  likes      Like[]
-  comments   Comment[]
-  savedBy    SavedPost[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id])
+  desc      String?
+  mediaUrl  String?
+  mediaType String      @default("image") // image / video
+  likes     Like[]
+  comments  Comment[]
+  savedBy   SavedPost[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  images     String[]    @default([]) // массив URL-ов к изображениям
-  videos     String[]    @default([]) // массив URL-ов к видео
-  files      String[]    @default([]) // любые другие файлы
+  images String[] @default([]) // массив URL-ов к изображениям
+  videos String[] @default([]) // массив URL-ов к видео
+  files  String[] @default([]) // любые другие файлы
 
-  tags       String[]    @default([]) // новый массив тегов
-  location   String?                  // необязательная строка (город, страна и т.п.)
+  tags     String[] @default([]) // новый массив тегов
+  location String? // необязательная строка (город, страна и т.п.)
 }
 
 model Like {
@@ -86,37 +87,37 @@ model Like {
 }
 
 model Comment {
-  id         Int            @id @default(autoincrement())
-  postId     Int
-  userId     Int
-  content    String
-  images     String[]       @default([])
-  videos     String[]       @default([])
-  files      String[]       @default([])
-  createdAt  DateTime       @default(now())
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  content   String
+  images    String[] @default([])
+  videos    String[] @default([])
+  files     String[] @default([])
+  createdAt DateTime @default(now())
 
   // 💬 Replies
-  parentId   Int?
-  parent     Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
-  replies    Comment[]      @relation("CommentReplies")
+  parentId Int?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
 
   // 🔗 Relations
-  post       Post           @relation(fields: [postId], references: [id])
-  user       User           @relation(fields: [userId], references: [id])
-  likes      CommentLike[]
+  post  Post          @relation(fields: [postId], references: [id])
+  user  User          @relation(fields: [userId], references: [id])
+  likes CommentLike[]
 
   // track who was mentioned
   // mentions   User[] @relation("CommentMentions", references: [id])
 }
 
 model CommentLike {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  commentId  Int
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  commentId Int
+  createdAt DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
-  comment    Comment  @relation(fields: [commentId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  comment Comment @relation(fields: [commentId], references: [id])
 
   @@unique([userId, commentId], name: "userId_commentId")
 }
@@ -133,7 +134,7 @@ model Follow {
 
 model Notification {
   id         Int      @id @default(autoincrement())
-  type       String   // 'like', 'comment', 'follow', etc.
+  type       String // 'like', 'comment', 'follow', etc.
   content    String?
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
@@ -149,19 +150,19 @@ model SavedPost {
   postId Int
   user   User @relation(fields: [userId], references: [id])
   post   Post @relation(fields: [postId], references: [id])
-  
+
   @@unique([userId, postId], name: "userId_postId")
 }
 
 model Story {
-  id        Int      @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   mediaUrl  String
-  mediaType String   // 'image' | 'video'
+  mediaType String // 'image' | 'video'
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now())
   expiresAt DateTime
-  views      StoryView[]
+  views     StoryView[]
 }
 
 model StoryView {
@@ -170,40 +171,64 @@ model StoryView {
   storyId   Int
   createdAt DateTime @default(now())
 
-  user   User  @relation(fields: [userId], references: [id])
-  story  Story @relation(fields: [storyId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  story Story @relation(fields: [storyId], references: [id])
 
   @@unique([userId, storyId])
 }
 
 model Conversation {
-  id           Int             @id @default(autoincrement())
-  name         String?         // Название беседы (только для групп)
-  isGroup      Boolean         @default(false)
-  participants Participant[]   // Участники беседы
+  id           Int           @id @default(autoincrement())
+  name         String? // Название беседы (только для групп)
+  isGroup      Boolean       @default(false)
+  participants Participant[] // Участники беседы
   messages     Message[]
-  createdAt    DateTime        @default(now())
+  createdAt    DateTime      @default(now())
 }
 
 model Participant {
-  id             Int           @id @default(autoincrement())
-  userId         Int
-  conversationId Int
-  user           User          @relation(fields: [userId], references: [id])
-  conversation   Conversation  @relation(fields: [conversationId], references: [id])
-  joinedAt       DateTime      @default(now())
+  id                   Int          @id @default(autoincrement())
+  userId               Int
+  conversationId       Int
+  user                 User         @relation(fields: [userId], references: [id])
+  conversation         Conversation @relation(fields: [conversationId], references: [id])
+  joinedAt             DateTime     @default(now())
+  receiveNotifications Boolean      @default(true)
+  isOnline             Boolean      @default(false)
 
   @@unique([userId, conversationId])
 }
 
 model Message {
-  id             Int            @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   conversationId Int
   senderId       Int
   content        String?
-  mediaUrl       String?        // Фото/видео
-  createdAt      DateTime       @default(now())
-  
-  conversation   Conversation   @relation(fields: [conversationId], references: [id])
-  sender         User           @relation(fields: [senderId], references: [id])
+  mediaUrl       String? // Фото/видео/файл
+  mediaType      String? // image | video | file | gif | audio | text
+  fileName       String? // для файлов: PDF, DOC и т.д.
+  gifUrl         String? // для GIF-ссылок
+  isDelivered    Boolean   @default(false)
+  isRead         Boolean   @default(false)
+  repliedToId    Int?
+  repliedTo      Message?  @relation("RepliedTo", fields: [repliedToId], references: [id])
+  replies        Message[] @relation("RepliedTo")
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+  reactions    Reaction[]
+}
+
+model Reaction {
+  id        Int      @id @default(autoincrement())
+  emoji     String
+  messageId Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId]) // Один пользователь — одна реакция на одно сообщение
 }
