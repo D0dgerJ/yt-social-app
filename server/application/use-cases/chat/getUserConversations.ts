@@ -11,8 +11,15 @@ export const getUserConversations = async (userId: number) => {
     },
     include: {
       participants: {
-        include: {
-          user: true,
+        select: {
+          isOnline: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
+            },
+          },
         },
       },
       messages: {
@@ -24,3 +31,4 @@ export const getUserConversations = async (userId: number) => {
     },
   });
 };
+

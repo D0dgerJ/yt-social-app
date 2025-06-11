@@ -7,9 +7,10 @@ interface SendMessageInput {
   content?: string;
   senderId: number;
   mediaUrl?: string;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text';
+  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
   fileName?: string;
   gifUrl?: string;
+  stickerUrl?: string;
   repliedToId?: number;
 }
 
@@ -22,6 +23,7 @@ export const sendMessage = async (data: SendMessageInput) => {
     mediaType,
     fileName,
     gifUrl,
+    stickerUrl,
     repliedToId,
   } = data;
 
@@ -51,6 +53,7 @@ export const sendMessage = async (data: SendMessageInput) => {
       mediaType,
       fileName,
       gifUrl,
+      stickerUrl,
       repliedToId,
       isDelivered: false,
       isRead: false,
