@@ -1,6 +1,8 @@
 import { Server as SocketIOServer } from "socket.io";
 import { Server } from "http";
 import prisma from "../database/prismaClient";
+import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered";
+import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead";
 
 let io: SocketIOServer;
 
@@ -45,6 +47,31 @@ export const initSocket = (server: Server) => {
     // Сообщения
     socket.on("sendMessage", (data) => {
       io.to(data.conversationId).emit("receiveMessage", data);
+    });
+
+    socket.on("markAsDelivered", async ({ conversationId }: { conversationId: number }) => {
+      const userId = socket.data.userId;
+      if (!userId) return;
+
+      const result = await markMessagesAsDelivered({ conversationId, userId });
+
+      // Уведомление участников (можно убрать если не требуется в UI)
+      socket.to(String(conversationId)).emit("messagesDelivered", {
+        conversationId,
+        userId,
+      });
+    });
+
+    socket.on("markAsRead", async ({ conversationId }: { conversationId: number }) => {
+      const userId = socket.data.userId;
+      if (!userId) return;
+
+      const count = await markMessagesAsRead({ conversationId, userId });
+
+      socket.to(String(conversationId)).emit("messagesRead", {
+        conversationId,
+        userId,
+      });
     });
 
     // При отключении
