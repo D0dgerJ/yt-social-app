@@ -10,7 +10,8 @@ import {
   remove,
   markAsDelivered,
   markAsRead,
-  reactToMessage 
+  reactToMessage,
+  getReactions
 } from "../controllers/chat.controller.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
@@ -26,6 +27,7 @@ router.get("/conversations/:conversationId/messages", authMiddleware, getConvers
 router.post("/conversations/:conversationId/participants", authMiddleware, add);
 router.delete("/conversations/:conversationId/leave", authMiddleware, leave);
 router.post("/messages/:messageId/react", authMiddleware, reactToMessage);
+router.get("/messages/:messageId/reactions", authMiddleware, getReactions);
 router.post("/messages/mark-as-read", authMiddleware, markAsRead);
 router.post("/messages/mark-as-delivered", authMiddleware, markAsDelivered);
 
