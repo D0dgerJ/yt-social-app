@@ -4,19 +4,37 @@ import { getIO } from "../../../infrastructure/websocket/socket";
 
 interface SendMessageInput {
   conversationId: number;
-  content: string;
+  content?: string;
   senderId: number;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text';
+  fileName?: string;
+  gifUrl?: string;
+  repliedToId?: number;
 }
 
 export const sendMessage = async (data: SendMessageInput) => {
-  // Валидация входных данных
-  const { conversationId, content } = sendMessageSchema.parse(data);
+  const {
+    conversationId,
+    senderId,
+    content,
+    mediaUrl,
+    mediaType,
+    fileName,
+    gifUrl,
+    repliedToId,
+  } = data;
+
+  // Минимальная проверка: должно быть хотя бы одно поле
+  if (!content && !mediaUrl && !gifUrl) {
+    throw new Error("Нельзя отправить пустое сообщение");
+  }
 
   // Проверка: участвует ли пользователь в беседе
   const isParticipant = await prisma.participant.findFirst({
     where: {
       conversationId,
-      userId: data.senderId,
+      userId: senderId,
     },
   });
 
@@ -24,12 +42,18 @@ export const sendMessage = async (data: SendMessageInput) => {
     throw new Error("Вы не являетесь участником этого чата");
   }
 
-  // Создание сообщения
   const message = await prisma.message.create({
     data: {
       conversationId,
-      senderId: data.senderId,
+      senderId,
       content,
+      mediaUrl,
+      mediaType,
+      fileName,
+      gifUrl,
+      repliedToId,
+      isDelivered: false,
+      isRead: false,
     },
     include: {
       sender: {
@@ -39,10 +63,18 @@ export const sendMessage = async (data: SendMessageInput) => {
           profilePicture: true,
         },
       },
+      repliedTo: {
+        select: {
+          id: true,
+          content: true,
+          senderId: true,
+          mediaUrl: true,
+          mediaType: true,
+        },
+      },
     },
   });
 
-  // Отправка сообщения через сокет всем участникам комнаты
   getIO().to(String(conversationId)).emit("receiveMessage", message);
 
   return message;
