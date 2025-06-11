@@ -34,6 +34,20 @@ export const getConversationMessages = async ({
           senderId: true,
         },
       },
+      reactions: {
+        select: {
+          id: true,
+          emoji: true,
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
+            },
+          },
+        },
+      },
     },
   });
 

@@ -208,6 +208,7 @@ model Message {
   mediaType      String? // image | video | file | gif | audio | text
   fileName       String? // для файлов: PDF, DOC и т.д.
   gifUrl         String? // для GIF-ссылок
+  stickerUrl     String? // для стикеров
   isDelivered    Boolean   @default(false)
   isRead         Boolean   @default(false)
   repliedToId    Int?
