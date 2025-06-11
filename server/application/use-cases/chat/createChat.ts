@@ -1,36 +1,35 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient";
+import { createChatSchema } from "../../../validation/chatSchemas";
 
 interface CreateChatInput {
-  userIds: number[];
+  participantIds: number[];
   name?: string;
 }
 
-export const createChat = async ({ userIds, name }: CreateChatInput) => {
-  if (!userIds || userIds.length < 2) {
-    throw new Error('At least two users are required to start a chat');
+export const createChat = async (data: CreateChatInput) => {
+  const { participantIds, name } = createChatSchema.parse(data);
+
+  if (participantIds.length < 2) {
+    throw new Error("Минимум два участника для создания чата");
   }
 
-  const isGroup = userIds.length > 2 || !!name;
+  const isGroup = participantIds.length > 2 || !!name;
 
+  // Проверка на существующий приватный чат
   if (!isGroup) {
-    // Поиск существующего one-on-one чата
-    const existingConversation = await prisma.conversation.findFirst({
+    const existing = await prisma.conversation.findFirst({
       where: {
         isGroup: false,
         participants: {
           every: {
-            userId: { in: userIds },
+            userId: { in: participantIds },
           },
         },
       },
-      include: {
-        participants: true,
-      },
+      include: { participants: true },
     });
 
-    if (existingConversation) {
-      return existingConversation;
-    }
+    if (existing) return existing;
   }
 
   const conversation = await prisma.conversation.create({
@@ -38,11 +37,21 @@ export const createChat = async ({ userIds, name }: CreateChatInput) => {
       name: isGroup ? name : null,
       isGroup,
       participants: {
-        create: userIds.map(userId => ({ userId })),
+        create: participantIds.map((id) => ({ userId: id })),
       },
     },
     include: {
-      participants: true,
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
+            },
+          },
+        },
+      },
     },
   });
 
