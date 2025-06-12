@@ -1,6 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { sendMessageSchema } from "../../../validation/chatSchemas";
-import { getIO } from "../../../infrastructure/websocket/socket";
+import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface SendMessageInput {
   conversationId: number;
