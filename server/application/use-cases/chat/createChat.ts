@@ -1,5 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { createChatSchema } from "../../../validation/chatSchemas";
+import { createChatSchema } from "../../../validation/chatSchemas.ts";
 
 interface CreateChatInput {
   participantIds: number[];

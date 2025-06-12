@@ -1,8 +1,8 @@
 import { Server as SocketIOServer } from "socket.io";
 import { Server } from "http";
-import prisma from "../database/prismaClient";
-import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered";
-import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead";
+import prisma from "../database/prismaClient.ts";
+import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.ts";
+import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead.ts";
 
 let io: SocketIOServer;
 
