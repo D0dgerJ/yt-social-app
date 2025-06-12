@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient";
+import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket";
 
 interface DeleteMessageInput {

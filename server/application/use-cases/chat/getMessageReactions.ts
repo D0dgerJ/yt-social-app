@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient";
+import prisma from "../../../infrastructure/database/prismaClient.ts";
 
 export const getMessageReactions = async (messageId: number) => {
   return prisma.reaction.findMany({
