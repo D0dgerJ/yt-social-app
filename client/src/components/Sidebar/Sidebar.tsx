@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { SiFeedly } from "react-icons/si";
 import { BiSolidVideos } from "react-icons/bi";
 import { MdGroups } from "react-icons/md";
@@ -56,8 +57,10 @@ const Sidebar: React.FC = () => {
             <span>Groups</span>
           </li>
           <li className="sidebar-list-item">
-            <IoChatboxEllipsesSharp className="sidebar-icon" />
-            <span>Chat</span>
+            <Link to="/chat" className="sidebar-link">
+              <IoChatboxEllipsesSharp className="sidebar-icon" />
+              <span>Chat</span>
+            </Link>
           </li>
           <li className="sidebar-list-item">
             <IoBookmarks className="sidebar-icon" />
