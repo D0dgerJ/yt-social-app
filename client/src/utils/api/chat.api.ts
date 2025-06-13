@@ -1,18 +1,18 @@
 import axios from './axiosInstance';
 
-// Создание беседы
+// Создание чата
 export const createChat = async (participantIds: number[], name?: string) => {
-  const response = await axios.post('/chats', { participantIds, name });
+  const response = await axios.post('/chat', { participantIds, name });
   return response.data;
 };
 
-// Получение всех бесед пользователя
+// Получение всех чатов пользователя
 export const getUserConversations = async () => {
-  const response = await axios.get('/chats');
+  const response = await axios.get('/chat');
   return response.data;
 };
 
-// Отправка сообщения (с поддержкой медиа, replies, GIF, стикеров и т.д.)
+// Отправка сообщения
 export const sendMessage = async (
   chatId: number,
   message: {
@@ -25,78 +25,74 @@ export const sendMessage = async (
     repliedToId?: number;
   }
 ) => {
-  const response = await axios.post(`/chats/${chatId}/messages`, message);
+  const response = await axios.post(`/chat/${chatId}/messages`, message);
   return response.data;
 };
 
-// Получение сообщений (с пагинацией опционально)
+// Получение сообщений
 export const getChatMessages = async (chatId: number, page = 1, limit = 30) => {
-  const response = await axios.get(`/chats/${chatId}/messages`, {
+  const response = await axios.get(`/chat/${chatId}/messages`, {
     params: { page, limit },
   });
   return response.data;
 };
 
 // Обновление сообщения
-export const updateMessage = async (
-  chatId: number,
-  messageId: number,
-  content: string
-) => {
-  const response = await axios.patch(`/chats/${chatId}/messages/${messageId}`, { content });
+export const updateMessage = async (chatId: number, messageId: number, content: string) => {
+  const response = await axios.patch(`/chat/${chatId}/messages/${messageId}`, { content });
   return response.data;
 };
 
 // Удаление сообщения
 export const deleteMessage = async (chatId: number, messageId: number) => {
-  const response = await axios.delete(`/chats/${chatId}/messages/${messageId}`);
+  const response = await axios.delete(`/chat/${chatId}/messages/${messageId}`);
   return response.data;
 };
 
-// Выйти из беседы
+// Выйти из чата
 export const leaveConversation = async (chatId: number) => {
-  const response = await axios.post(`/chats/${chatId}/leave`);
+  const response = await axios.delete(`/chat/${chatId}/leave`);
   return response.data;
 };
 
 // Удалить чат (если пустой)
 export const deleteConversationIfEmpty = async (chatId: number) => {
-  const response = await axios.delete(`/chats/${chatId}`);
+  const response = await axios.delete(`/chat/${chatId}`);
   return response.data;
 };
 
 // Добавить участника в чат
 export const addParticipant = async (chatId: number, userId: number) => {
-  const response = await axios.post(`/chats/${chatId}/participants`, { userId });
+  const response = await axios.post(`/chat/${chatId}/participants`, { userId });
   return response.data;
 };
 
 // Получить реакции к сообщению
 export const getMessageReactions = async (messageId: number) => {
-  const response = await axios.get(`/messages/${messageId}/reactions`);
+  const response = await axios.get(`/chat/messages/${messageId}/reactions`);
   return response.data;
 };
 
-// Поставить или обновить реакцию
+// Поставить/обновить реакцию
 export const reactToMessage = async (messageId: number, emoji: string) => {
-  const response = await axios.post(`/messages/${messageId}/reactions`, { emoji });
+  const response = await axios.post(`/chat/messages/${messageId}/react`, { emoji });
   return response.data;
 };
 
 // Удалить реакцию
 export const removeReaction = async (messageId: number) => {
-  const response = await axios.delete(`/messages/${messageId}/reactions`);
+  const response = await axios.delete(`/chat/messages/${messageId}/reactions`);
   return response.data;
 };
 
-// Отметить сообщения как доставленные
+// Отметить как доставленные
 export const markAsDelivered = async (chatId: number) => {
-  const response = await axios.post(`/chats/${chatId}/delivered`);
+  const response = await axios.post(`/chat/${chatId}/delivered`);
   return response.data;
 };
 
-// Отметить сообщения как прочитанные
+// Отметить как прочитанные
 export const markAsRead = async (chatId: number) => {
-  const response = await axios.post(`/chats/${chatId}/read`);
+  const response = await axios.post(`/chat/${chatId}/read`);
   return response.data;
 };

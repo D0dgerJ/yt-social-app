@@ -16,6 +16,6 @@ router.use("/users", userRoutes);
 router.use("/stories", storyRoutes);
 router.use("/comments", commentRoutes);
 router.use("/notifications", notificationRoutes);
-router.use("/chats", chatRoutes);
+router.use("/chat", chatRoutes);
 
 export default router;

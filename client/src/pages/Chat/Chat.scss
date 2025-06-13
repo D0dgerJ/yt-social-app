@@ -1,0 +1,29 @@
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar-wrapper {
+  flex: 1;
+}
+
+.chat-wrapper {
+  flex: 2.5;
+  display: flex;
+  border-left: 1px solid #2a2a2a;
+  border-right: 1px solid #2a2a2a;
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.chat-sidebar {
+  width: 35%;
+  border-right: 1px solid #333;
+  overflow-y: auto;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
