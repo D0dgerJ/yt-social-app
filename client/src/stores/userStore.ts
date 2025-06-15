@@ -8,7 +8,7 @@ interface User {
 
 interface UserStore {
   currentUser: User | null;
-  setCurrentUser: (user: User) => void;
+  setCurrentUser: (user: User | null) => void;
 }
 
 export const useUserStore = create<UserStore>((set) => ({

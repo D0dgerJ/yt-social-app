@@ -23,6 +23,6 @@ export const sendMessageSchema = z.object({
 
 
 export const createChatSchema = z.object({
-  participantIds: z.array(z.number()).min(1, "At least one participant is required"),
+  userIds: z.array(z.number()).min(2, "At least one participant is required"),
   name: z.string().optional().nullable(),
 });

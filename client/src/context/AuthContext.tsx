@@ -1,6 +1,7 @@
 import { createContext, useReducer, ReactNode, useEffect } from 'react';
 import AuthReducer from './AuthReducer';
 import { AuthState, AuthAction } from './types';
+import { useUserStore } from '@/stores/userStore';
 
 const INITIAL_STATE: AuthState = {
   user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -19,16 +20,24 @@ export const AuthContext = createContext<AuthContextProps>({
 
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
+  const { setCurrentUser } = useUserStore();
 
   useEffect(() => {
     if (state.user) {
       localStorage.setItem('user', JSON.stringify(state.user));
       localStorage.setItem('token', state.user.token);
+
+      setCurrentUser({
+        id: state.user.id,
+        username: state.user.username,
+        profilePicture: state.user.profilePicture,
+      });
     } else {
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      setCurrentUser(null);
     }
-  }, [state.user]);
+  }, [state.user, setCurrentUser]);
 
   return (
     <AuthContext.Provider

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { getUserConversations } from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
+import CreateChatModal from "../CreateChatModal/CreateChatModal";
+import "./ChatList.scss";
 
 interface Conversation {
   id: number;
@@ -13,19 +15,21 @@ interface Conversation {
 const ChatList: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const { currentConversationId, setCurrentConversationId } = useChatStore();
 
+  const fetchConversations = async () => {
+    try {
+      const data = await getUserConversations();
+      setConversations(data);
+    } catch (error) {
+      console.error("Ошибка при загрузке чатов:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getUserConversations();
-        setConversations(data);
-      } catch (error) {
-        console.error("Ошибка при загрузке чатов:", error);
-      }
-    };
-    fetchData();
+    fetchConversations();
   }, []);
 
   const filtered = conversations.filter((conv) => {
@@ -35,13 +39,19 @@ const ChatList: React.FC = () => {
 
   return (
     <div className="chat-list">
-      <input
-        type="text"
-        placeholder="Поиск чатов..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="chat-search"
-      />
+      <div className="chat-list-header">
+        <button onClick={() => setShowModal(true)} className="create-chat-btn">
+          ➕ Создать чат
+        </button>
+        <input
+          type="text"
+          placeholder="Поиск чатов..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="chat-search"
+        />
+      </div>
+
       <ul className="chat-list-items">
         {filtered.map((chat) => {
           const lastMessage = chat.messages[0]?.content?.trim() || "Нет сообщений";
@@ -65,6 +75,16 @@ const ChatList: React.FC = () => {
           );
         })}
       </ul>
+
+      {showModal && (
+        <CreateChatModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => {
+            fetchConversations();
+            setShowModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };
