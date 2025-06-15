@@ -25,8 +25,8 @@ const Chat = () => {
   return (
     <>
       <Navbar />
-      <div className="layout">
-        <div className="sidebar-wrapper">
+      <div className="chat-layout">
+        <div className="chat-sidebar-wrapper">
           <Sidebar />
         </div>
 
