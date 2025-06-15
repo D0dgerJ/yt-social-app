@@ -1,8 +1,9 @@
 import axios from './axiosInstance';
 
 // Создание чата
-export const createChat = async (participantIds: number[], name?: string) => {
-  const response = await axios.post('/chat', { participantIds, name });
+export const createChat = async (userIds: number[], name?: string) => {
+  console.log("Отправляем на сервер:", { userIds, name });
+  const response = await axios.post('/chat', { userIds, name });
   return response.data;
 };
 

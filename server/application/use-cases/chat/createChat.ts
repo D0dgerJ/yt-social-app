@@ -2,18 +2,22 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { createChatSchema } from "../../../validation/chatSchemas.ts";
 
 interface CreateChatInput {
-  participantIds: number[];
+  userIds: number[];
   name?: string;
 }
 
 export const createChat = async (data: CreateChatInput) => {
-  const { participantIds, name } = createChatSchema.parse(data);
+  console.log('[createChat] Входные данные:', data);
 
-  if (participantIds.length < 2) {
+   const { userIds, name } = createChatSchema.parse(data);
+
+  console.log('[createChat] После валидации:', userIds, name);
+
+  if (userIds.length < 2) {
     throw new Error("Минимум два участника для создания чата");
   }
 
-  const isGroup = participantIds.length > 2 || !!name;
+  const isGroup = userIds.length > 2 || !!name;
 
   // Проверка на существующий приватный чат
   if (!isGroup) {
@@ -22,7 +26,7 @@ export const createChat = async (data: CreateChatInput) => {
         isGroup: false,
         participants: {
           every: {
-            userId: { in: participantIds },
+            userId: { in: userIds },
           },
         },
       },
@@ -37,7 +41,7 @@ export const createChat = async (data: CreateChatInput) => {
       name: isGroup ? name : null,
       isGroup,
       participants: {
-        create: participantIds.map((id) => ({ userId: id })),
+        create: userIds.map((id) => ({ userId: id })),
       },
     },
     include: {

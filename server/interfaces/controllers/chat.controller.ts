@@ -16,7 +16,7 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 export const create = async (req: Request, res: Response) => {
   try {
     const { userIds, name } = req.body;
-    const conversation = await createChat({ participantIds: userIds, name });
+    const conversation = await createChat({ userIds: userIds, name });
     res.status(201).json(conversation);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
