@@ -11,6 +11,7 @@ export const markMessagesAsRead = async ({ conversationId, userId }: MarkAsReadI
       conversationId,
       isDelivered: true,
       isRead: false,
+      isDeleted: false,
       NOT: {
         senderId: userId,
       },
