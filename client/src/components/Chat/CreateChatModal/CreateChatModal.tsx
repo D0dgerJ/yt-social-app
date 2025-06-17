@@ -45,11 +45,8 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
   const handleCreate = async () => {
     if (selected.length > 0 && currentUser?.id) {
-      const allParticipantIds = [...selected, currentUser.id];
-      console.log("Создаём чат с участниками:", allParticipantIds);
-
       try {
-        await createChat(allParticipantIds);
+        await createChat(selected, currentUser.id);
         onCreated();
         onClose();
       } catch (error) {

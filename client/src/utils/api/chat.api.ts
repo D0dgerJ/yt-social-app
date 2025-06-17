@@ -1,9 +1,9 @@
 import axios from './axiosInstance';
 
 // Создание чата
-export const createChat = async (userIds: number[], name?: string) => {
-  console.log("Отправляем на сервер:", { userIds, name });
-  const response = await axios.post('/chat', { userIds, name });
+export const createChat = async (userIds: number[], creatorId: number, name?: string) => {
+  console.log("Отправляем на сервер:", { userIds, creatorId, name });
+  const response = await axios.post('/chat', { userIds, creatorId, name });
   return response.data;
 };
 
@@ -52,19 +52,18 @@ export const deleteMessage = async (chatId: number, messageId: number) => {
 
 // Выйти из чата
 export const leaveConversation = async (chatId: number) => {
-  const response = await axios.delete(`/chat/${chatId}/leave`);
-  return response.data;
-};
-
-// Удалить чат (если пустой)
-export const deleteConversationIfEmpty = async (chatId: number) => {
-  const response = await axios.delete(`/chat/${chatId}`);
+  const response = await axios.delete(`/chat/${chatId}/leave`, {
+    data: { conversationId: chatId },
+  });
   return response.data;
 };
 
 // Добавить участника в чат
 export const addParticipant = async (chatId: number, userId: number) => {
-  const response = await axios.post(`/chat/${chatId}/participants`, { userId });
+  const response = await axios.post(`/chat/${chatId}/participants`, {
+    conversationId: chatId,
+    userId,
+  });
   return response.data;
 };
 
@@ -78,13 +77,7 @@ export const getMessageReactions = async (messageId: number) => {
 export const reactToMessage = async (messageId: number, emoji: string) => {
   const response = await axios.post(`/chat/messages/${messageId}/react`, { emoji });
   return response.data;
-};
-
-// Удалить реакцию
-export const removeReaction = async (messageId: number) => {
-  const response = await axios.delete(`/chat/messages/${messageId}/reactions`);
-  return response.data;
-};
+}; 
 
 // Отметить как доставленные
 export const markAsDelivered = async (chatId: number) => {
