@@ -4,9 +4,7 @@ export const getUserConversations = async (userId: number) => {
   return prisma.conversation.findMany({
     where: {
       participants: {
-        some: {
-          userId,
-        },
+        some: { userId },
       },
     },
     include: {
@@ -22,13 +20,30 @@ export const getUserConversations = async (userId: number) => {
           },
         },
       },
-      messages: {
-        orderBy: {
-          createdAt: 'desc',
+      lastMessage: {
+        where: {
+          isDeleted: false,
         },
-        take: 1,
+        select: {
+          id: true,
+          content: true,
+          mediaUrl: true,
+          mediaType: true,
+          createdAt: true,
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
+            },
+          },
+        },
       },
+    },
+    orderBy: {
+      updatedAt: 'desc',
     },
   });
 };
+
 

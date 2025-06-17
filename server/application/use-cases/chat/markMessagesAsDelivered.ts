@@ -6,18 +6,19 @@ interface MarkDeliveredInput {
 }
 
 export const markMessagesAsDelivered = async ({ conversationId, userId }: MarkDeliveredInput) => {
-  const messages = await prisma.message.updateMany({
+  const result = await prisma.message.updateMany({
     where: {
       conversationId,
       senderId: {
         not: userId,
       },
       isDelivered: false,
+      isDeleted: false,
     },
     data: {
       isDelivered: true,
     },
   });
 
-  return messages;
+  return { updated: result.count };
 };

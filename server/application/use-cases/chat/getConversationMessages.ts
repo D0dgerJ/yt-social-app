@@ -2,8 +2,8 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 
 interface GetConversationMessagesInput {
   conversationId: number;
-  page?: number;       // номер страницы (по умолчанию 1)
-  limit?: number;      // количество сообщений на страницу (по умолчанию 20)
+  page?: number;         // номер страницы (по умолчанию 1)
+  limit?: number;        // количество сообщений на страницу (по умолчанию 20)
 }
 
 export const getConversationMessages = async ({
@@ -14,7 +14,10 @@ export const getConversationMessages = async ({
   const offset = (page - 1) * limit;
 
   const messages = await prisma.message.findMany({
-    where: { conversationId },
+    where: {
+      conversationId,
+      isDeleted: false,
+    },
     orderBy: { createdAt: "desc" },
     skip: offset,
     take: limit,
@@ -32,6 +35,7 @@ export const getConversationMessages = async ({
           content: true,
           mediaUrl: true,
           senderId: true,
+          isDeleted: true,
         },
       },
       reactions: {
@@ -52,7 +56,10 @@ export const getConversationMessages = async ({
   });
 
   const totalMessages = await prisma.message.count({
-    where: { conversationId },
+    where: {
+      conversationId,
+      isDeleted: false,
+    },
   });
 
   return {

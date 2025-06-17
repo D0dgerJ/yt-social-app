@@ -16,7 +16,10 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 export const create = async (req: Request, res: Response) => {
   try {
     const { userIds, name } = req.body;
-    const conversation = await createChat({ userIds: userIds, name });
+    const creatorId = req.user!.id;
+
+    const conversation = await createChat({ userIds, name, creatorId });
+
     res.status(201).json(conversation);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -104,8 +107,10 @@ export const leave = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const { conversationId } = req.body;
-    await leaveConversation({ conversationId, userId });
+
+    await leaveConversation({ conversationId, userId, requestedById: userId });
     await deleteConversationIfEmpty(conversationId);
+
     res.status(200).json({ message: "Left the conversation" });
   } catch (error: any) {
     res.status(400).json({ message: error.message });

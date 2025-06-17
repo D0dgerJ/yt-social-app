@@ -14,7 +14,9 @@ interface SendMessageInput {
   repliedToId?: number;
 }
 
-export const sendMessage = async (data: SendMessageInput) => {
+export const sendMessage = async (input: SendMessageInput) => {
+  const data = sendMessageSchema.parse(input);
+
   const {
     conversationId,
     senderId,
@@ -27,12 +29,6 @@ export const sendMessage = async (data: SendMessageInput) => {
     repliedToId,
   } = data;
 
-  // Минимальная проверка: должно быть хотя бы одно поле
-  if (!content && !mediaUrl && !gifUrl) {
-    throw new Error("Нельзя отправить пустое сообщение");
-  }
-
-  // Проверка: участвует ли пользователь в беседе
   const isParticipant = await prisma.participant.findFirst({
     where: {
       conversationId,
@@ -55,8 +51,6 @@ export const sendMessage = async (data: SendMessageInput) => {
       gifUrl,
       stickerUrl,
       repliedToId,
-      isDelivered: false,
-      isRead: false,
     },
     include: {
       sender: {
@@ -78,6 +72,17 @@ export const sendMessage = async (data: SendMessageInput) => {
     },
   });
 
+  // 📌 Обновляем lastMessageId и updatedAt у чата
+  await prisma.conversation.updateMany({
+    where: { id: conversationId },
+    data: {
+      lastMessageId: message.id,
+      updatedAt: new Date(),
+    } as any,
+  });
+
+
+  // 📡 Отправляем по сокетам
   getIO().to(String(conversationId)).emit("receiveMessage", message);
 
   return message;
