@@ -211,7 +211,7 @@ model Message {
   id             Int     @id @default(autoincrement())
   conversationId Int
   senderId       Int
-  content        String?
+  encryptedContent String? // base64 от зашифрованного текста
   mediaUrl       String?
   mediaType      String? // image | video | file | gif | audio | text
   fileName       String?
@@ -236,17 +236,69 @@ model Message {
 
   isDeleted  Boolean   @default(false)
   deletedAt  DateTime?
+
+  mentions User[] @relation("MessageMentions", references: [id])
 }
 
-model Reaction {
+model EncryptionKey {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  deviceId   String   // уникальный ID устройства
+  publicKey  String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, deviceId])
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  reporterId  Int
+  messageId   Int
+  reason      String
+  type        String   @default("abuse") // abuse | spam | csam | terror | other
+  createdAt   DateTime @default(now())
+
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  message     Message  @relation(fields: [messageId], references: [id])
+
+  @@unique([reporterId, messageId])
+
+  status String @default("pending") // pending | reviewed | banned | rejected
+}
+
+model MediaFile {
+  id         Int      @id @default(autoincrement())
+  url        String
+  type       String   // image, video, audio, file, sticker, gif
+  uploaderId Int
+  uploadedAt DateTime @default(now())
+
+  uploader   User     @relation(fields: [uploaderId], references: [id])
+
+  messageId Int?
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model MessageDelivery {
   id        Int      @id @default(autoincrement())
-  emoji     String
   messageId Int
   userId    Int
-  createdAt DateTime @default(now())
+  status    String   @default("sent") // sent | delivered | read
+  timestamp DateTime @default(now())
 
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([messageId, userId])
+}
+
+model Device {
+  id        String   @id // UUID или fingerprint
+  userId    Int
+  name      String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
 }
