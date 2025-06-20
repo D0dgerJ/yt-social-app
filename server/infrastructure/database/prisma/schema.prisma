@@ -14,33 +14,46 @@ datasource db {
 }
 
 model User {
-  id                Int             @id @default(autoincrement())
-  username          String          @unique
-  email             String          @unique
-  password          String
-  profilePicture    String? // Cloudinary URL
-  coverPicture      String? // Cloudinary URL
-  desc              String?         @default("")
-  isAdmin           Boolean         @default(false)
-  from              String?         @default("Ghana")
-  city              String?         @default("Accra")
-  relationship      Int?            @default(1)
-  posts             Post[]
-  likes             Like[]
-  comments          Comment[]
-  commentLikes      CommentLike[]
-  messages          Message[]
-  savedPosts        SavedPost[]
-  stories           Story[]
-  notificationsFrom Notification[]  @relation("NotificationFrom")
-  notificationsTo   Notification[]  @relation("NotificationTo")
-  followedBy        Follow[]        @relation("FollowedBy")
-  following         Follow[]        @relation("Following")
-  storyViews        StoryView[]
-  participants      Participant[]
-  sentRequests      FriendRequest[] @relation("SentRequests")
-  receivedRequests  FriendRequest[] @relation("ReceivedRequests")
-  messageReactions  Reaction[]
+  id             Int     @id @default(autoincrement())
+  username       String  @unique
+  email          String  @unique
+  password       String
+  profilePicture String? // Cloudinary URL
+  coverPicture   String? // Cloudinary URL
+  desc           String? @default("")
+  isAdmin        Boolean @default(false)
+  from           String? @default("Ghana")
+  city           String? @default("Accra")
+  relationship   Int?    @default(1)
+
+  posts        Post[]
+  likes        Like[]
+  comments     Comment[]
+  commentLikes CommentLike[]
+  messages     Message[]
+  savedPosts   SavedPost[]
+  stories      Story[]
+  storyViews   StoryView[]
+
+  sentRequests     FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+
+  notificationsFrom Notification[] @relation("NotificationFrom")
+  notificationsTo   Notification[] @relation("NotificationTo")
+
+  followedBy Follow[] @relation("FollowedBy")
+  following  Follow[] @relation("Following")
+
+  participants Participant[]
+
+  messageReactions Reaction[]
+
+  encryptionKeys    EncryptionKey[]
+  reportsSent       Report[]          @relation("ReportsSent")
+  mediaFiles        MediaFile[]
+  messageDeliveries MessageDelivery[]
+  devices           Device[]
+  messageMentions   Message[]         @relation("MessageMentions")
 }
 
 model FriendRequest {
@@ -208,16 +221,17 @@ model Participant {
 }
 
 model Message {
-  id             Int     @id @default(autoincrement())
+  id             Int @id @default(autoincrement())
   conversationId Int
   senderId       Int
+
   encryptedContent String? // base64 от зашифрованного текста
-  mediaUrl       String?
-  mediaType      String? // image | video | file | gif | audio | text
-  fileName       String?
-  gifUrl         String?
-  stickerUrl     String?
-  audioText      String?
+  mediaUrl         String?
+  mediaType        String? // image | video | file | gif | audio | text
+  fileName         String?
+  gifUrl           String?
+  stickerUrl       String?
+  audioText        String?
 
   isDelivered Boolean   @default(false)
   isRead      Boolean   @default(false)
@@ -234,48 +248,49 @@ model Message {
   reactions                   Reaction[]
   createdAt                   DateTime      @default(now())
 
-  isDeleted  Boolean   @default(false)
-  deletedAt  DateTime?
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
 
-  mentions User[] @relation("MessageMentions", references: [id])
+  mentions User[] @relation("MessageMentions")
+
+  reports    Report[]
+  mediaFiles MediaFile[]
+  deliveries MessageDelivery[]
 }
 
 model EncryptionKey {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  deviceId   String   // уникальный ID устройства
-  publicKey  String
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  deviceId  String // уникальный ID устройства
+  publicKey String
+  createdAt DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
-  
+  user User @relation(fields: [userId], references: [id])
+
   @@unique([userId, deviceId])
 }
 
 model Report {
-  id          Int      @id @default(autoincrement())
-  reporterId  Int
-  messageId   Int
-  reason      String
-  type        String   @default("abuse") // abuse | spam | csam | terror | other
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  reporterId Int
+  messageId  Int
+  reason     String
+  type       String   @default("abuse") // abuse | spam | csam | terror | other
+  createdAt  DateTime @default(now())
+  status     String   @default("pending") // pending | reviewed | banned | rejected
 
-  reporter    User     @relation(fields: [reporterId], references: [id])
-  message     Message  @relation(fields: [messageId], references: [id])
-
-  @@unique([reporterId, messageId])
-
-  status String @default("pending") // pending | reviewed | banned | rejected
+  reporter User    @relation("ReportsSent", fields: [reporterId], references: [id])
+  message  Message @relation(fields: [messageId], references: [id])
 }
 
 model MediaFile {
   id         Int      @id @default(autoincrement())
   url        String
-  type       String   // image, video, audio, file, sticker, gif
+  type       String // image, video, audio, file, sticker, gif
   uploaderId Int
   uploadedAt DateTime @default(now())
 
-  uploader   User     @relation(fields: [uploaderId], references: [id])
+  uploader User @relation(fields: [uploaderId], references: [id])
 
   messageId Int?
   message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
@@ -288,8 +303,8 @@ model MessageDelivery {
   status    String   @default("sent") // sent | delivered | read
   timestamp DateTime @default(now())
 
-  message   Message  @relation(fields: [messageId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  message Message @relation(fields: [messageId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
 
   @@unique([messageId, userId])
 }
@@ -300,5 +315,18 @@ model Device {
   name      String?
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Reaction {
+  id        Int      @id @default(autoincrement())
+  emoji     String // например, ❤️, 😂, 👍
+  userId    Int
+  messageId Int
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  message Message @relation(fields: [messageId], references: [id])
+
+  @@unique([userId, messageId]) // один пользователь — одна реакция на сообщение
 }
