@@ -3,10 +3,12 @@ import { Server } from "http";
 import prisma from "../database/prismaClient.ts";
 import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.ts";
 import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead.ts";
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
 
 let io: SocketIOServer;
 
-export const initSocket = (server: Server) => {
+export const initSocket = async (server: Server) => {
   io = new SocketIOServer(server, {
     cors: {
       origin: "http://localhost:5173",
@@ -14,37 +16,39 @@ export const initSocket = (server: Server) => {
     },
   });
 
+  const pubClient = createClient();
+  const subClient = pubClient.duplicate();
+
+  await pubClient.connect();
+  await subClient.connect();
+
+  io.adapter(createAdapter(pubClient, subClient));
+
   io.on("connection", (socket) => {
     console.log("✅ User connected:", socket.id);
 
-    // Сохраняем userId в сокете
     socket.on("registerUser", async ({ userId }: { userId: number }) => {
       socket.data.userId = userId;
 
-      // Найдём все беседы, где он участвует
       const participantEntries = await prisma.participant.findMany({
         where: { userId },
         select: { conversationId: true },
       });
 
-      // Присоединим к комнатам
       participantEntries.forEach(({ conversationId }) => {
         socket.join(String(conversationId));
       });
 
-      // Обновим статус в БД
       await prisma.participant.updateMany({
         where: { userId },
         data: { isOnline: true },
       });
 
-      // Оповестим участников бесед
       participantEntries.forEach(({ conversationId }) => {
         socket.to(String(conversationId)).emit("userOnline", { userId });
       });
     });
 
-    // Сообщения
     socket.on("sendMessage", (data) => {
       io.to(data.conversationId).emit("receiveMessage", data);
     });
@@ -53,9 +57,8 @@ export const initSocket = (server: Server) => {
       const userId = socket.data.userId;
       if (!userId) return;
 
-      const result = await markMessagesAsDelivered({ conversationId, userId });
+      await markMessagesAsDelivered({ conversationId, userId });
 
-      // Уведомление участников (можно убрать если не требуется в UI)
       socket.to(String(conversationId)).emit("messagesDelivered", {
         conversationId,
         userId,
@@ -66,7 +69,7 @@ export const initSocket = (server: Server) => {
       const userId = socket.data.userId;
       if (!userId) return;
 
-      const count = await markMessagesAsRead({ conversationId, userId });
+      await markMessagesAsRead({ conversationId, userId });
 
       socket.to(String(conversationId)).emit("messagesRead", {
         conversationId,
@@ -74,7 +77,6 @@ export const initSocket = (server: Server) => {
       });
     });
 
-    // При отключении
     socket.on("disconnecting", async () => {
       const userId = socket.data.userId;
       if (!userId) return;
