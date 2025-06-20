@@ -4,7 +4,7 @@ import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface SendMessageInput {
   conversationId: number;
-  content?: string;
+  encryptedContent?: string;
   senderId: number;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
@@ -20,7 +20,7 @@ export const sendMessage = async (input: SendMessageInput) => {
   const {
     conversationId,
     senderId,
-    content,
+    encryptedContent,
     mediaUrl,
     mediaType,
     fileName,
@@ -44,7 +44,7 @@ export const sendMessage = async (input: SendMessageInput) => {
     data: {
       conversationId,
       senderId,
-      content,
+      encryptedContent,
       mediaUrl,
       mediaType,
       fileName,
@@ -63,7 +63,7 @@ export const sendMessage = async (input: SendMessageInput) => {
       repliedTo: {
         select: {
           id: true,
-          content: true,
+          encryptedContent: true,
           senderId: true,
           mediaUrl: true,
           mediaType: true,

@@ -4,7 +4,7 @@ interface UpdateMessageInput {
   messageId: number;
   userId: number;
 
-  content?: string;
+  encryptedContent?: string;
   mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
   fileName?: string | null;
@@ -17,7 +17,7 @@ export const updateMessage = async (data: UpdateMessageInput) => {
   const {
     messageId,
     userId,
-    content,
+    encryptedContent,
     mediaUrl,
     mediaType,
     fileName,
@@ -36,7 +36,7 @@ export const updateMessage = async (data: UpdateMessageInput) => {
   const updated = await prisma.message.update({
     where: { id: messageId },
     data: {
-      content,
+      encryptedContent,
       mediaUrl,
       mediaType,
       fileName,
