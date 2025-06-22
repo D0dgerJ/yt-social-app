@@ -20,7 +20,7 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
   const softDeleted = await prisma.message.update({
     where: { id: messageId },
     data: {
-      content: null,
+      encryptedContent: null,
       mediaUrl: null,
       mediaType: null,
       fileName: null,
