@@ -3,7 +3,7 @@ import "./Logo.scss";
 
 const Logo: React.FC = () => {
   return (
-    <h1 className="logo">Solu Social</h1>
+    <h1 className="logo">DodgerJ Social</h1>
   );
 };
 
