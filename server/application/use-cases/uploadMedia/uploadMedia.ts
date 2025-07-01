@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import multer from "multer";
-import { uploadToStorage } from "../../utils/uploadToStorage.ts";
+import { uploadToStorage } from "../../../utils/uploadToStorage.ts";
 
 const upload = multer({ dest: "tmp/" }); // локальная временная директория
 
