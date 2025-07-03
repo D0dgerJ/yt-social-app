@@ -4,7 +4,7 @@ import { Readable } from "stream";
 
 const s3 = new S3Client({
   region: process.env.S3_REGION!,
-  endpoint: `https://${process.env.SPACES_URL}`, // например: nyc3.digitaloceanspaces.com
+  endpoint: `https://${process.env.SPACES_URL}`,
   credentials: {
     accessKeyId: process.env.S3_KEY!,
     secretAccessKey: process.env.S3_SECRET!,
@@ -26,7 +26,9 @@ export const downloadMedia = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Файл не найден" });
     }
 
-    res.setHeader("Content-Type", "application/octet-stream");
+    const fileName = key.split("/").pop() || "file";
+    res.setHeader("Content-Type", response.ContentType || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
 
     const stream = response.Body as Readable;
     stream.pipe(res);
