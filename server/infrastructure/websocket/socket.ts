@@ -1,107 +1,72 @@
-import { Server as SocketIOServer } from "socket.io";
-import { Server } from "http";
-import prisma from "../database/prismaClient.ts";
-import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.ts";
-import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead.ts";
-import { createAdapter } from "@socket.io/redis-adapter";
-import { createClient } from "redis";
+import { Server } from "socket.io";
+import http from "http";
+import jwt from "jsonwebtoken";
+import { sendMessage } from "../../application/use-cases/chat/sendMessage";
+import prisma from "../database/prismaClient";
 
-let io: SocketIOServer;
+// Храним экземпляр io
+let io: Server;
 
-export const initSocket = async (server: Server) => {
-  io = new SocketIOServer(server, {
+export const initSocket = (server: http.Server) => {
+  io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: "*", // желательно указать конкретный фронт
       methods: ["GET", "POST"],
     },
   });
 
-  const pubClient = createClient();
-  const subClient = pubClient.duplicate();
+  // Middleware для авторизации по JWT
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error("Unauthorized"));
 
-  await pubClient.connect();
-  await subClient.connect();
-
-  io.adapter(createAdapter(pubClient, subClient));
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number };
+      socket.data.userId = decoded.id;
+      next();
+    } catch (err) {
+      next(new Error("Invalid token"));
+    }
+  });
 
   io.on("connection", (socket) => {
-    console.log("✅ User connected:", socket.id);
+    const userId = socket.data.userId;
+    console.log(`🟢 Пользователь подключён: ${userId}`);
 
-    socket.on("registerUser", async ({ userId }: { userId: number }) => {
-      socket.data.userId = userId;
-
-      const participantEntries = await prisma.participant.findMany({
-        where: { userId },
-        select: { conversationId: true },
+    // Подключение к комнате чата
+    socket.on("joinConversation", async (conversationId: number) => {
+      const isParticipant = await prisma.participant.findFirst({
+        where: {
+          userId,
+          conversationId,
+        },
       });
 
-      participantEntries.forEach(({ conversationId }) => {
+      if (isParticipant) {
         socket.join(String(conversationId));
-      });
-
-      await prisma.participant.updateMany({
-        where: { userId },
-        data: { isOnline: true },
-      });
-
-      participantEntries.forEach(({ conversationId }) => {
-        socket.to(String(conversationId)).emit("userOnline", { userId });
-      });
+        console.log(`👥 Пользователь ${userId} присоединился к комнате ${conversationId}`);
+      } else {
+        socket.emit("error", "Вы не участник этого чата");
+      }
     });
 
-    socket.on("sendMessage", (data) => {
-      io.to(data.conversationId).emit("receiveMessage", data);
-    });
-
-    socket.on("markAsDelivered", async ({ conversationId }: { conversationId: number }) => {
-      const userId = socket.data.userId;
-      if (!userId) return;
-
-      await markMessagesAsDelivered({ conversationId, userId });
-
-      socket.to(String(conversationId)).emit("messagesDelivered", {
-        conversationId,
-        userId,
-      });
-    });
-
-    socket.on("markAsRead", async ({ conversationId }: { conversationId: number }) => {
-      const userId = socket.data.userId;
-      if (!userId) return;
-
-      await markMessagesAsRead({ conversationId, userId });
-
-      socket.to(String(conversationId)).emit("messagesRead", {
-        conversationId,
-        userId,
-      });
-    });
-
-    socket.on("disconnecting", async () => {
-      const userId = socket.data.userId;
-      if (!userId) return;
-
-      const rooms = [...socket.rooms].filter((r) => r !== socket.id);
-
-      await prisma.participant.updateMany({
-        where: { userId },
-        data: { isOnline: false },
-      });
-
-      rooms.forEach((roomId) => {
-        socket.to(roomId).emit("userOffline", { userId });
-      });
+    // Отправка сообщения
+    socket.on("sendMessage", async (messageInput, callback) => {
+      try {
+        const fullInput = { ...messageInput, senderId: userId };
+        const message = await sendMessage(fullInput);
+        callback?.({ status: "ok", message }); // подтверждение клиенту
+      } catch (err) {
+        console.error("❌ Ошибка sendMessage:", err);
+        callback?.({ status: "error", error: err.message });
+      }
     });
 
     socket.on("disconnect", () => {
-      console.log("❌ User disconnected:", socket.id);
+      console.log(`🔴 Пользователь отключился: ${userId}`);
     });
   });
-
-  return io;
 };
 
-export const getIO = () => {
-  if (!io) throw new Error("Socket.io not initialized");
-  return io;
-};
+// Глобальный доступ к io
+export const getIO = () => io;
