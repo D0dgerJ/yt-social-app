@@ -10,12 +10,12 @@ let io: Server;
 export const initSocket = (server: http.Server) => {
   io = new Server(server, {
     cors: {
-      origin: "*", // желательно указать конкретный фронт
+      origin: "*", // в проде укажи фронт
       methods: ["GET", "POST"],
     },
   });
 
-  // Middleware для авторизации по JWT
+  // Middleware авторизации
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("Unauthorized"));
@@ -29,11 +29,26 @@ export const initSocket = (server: http.Server) => {
     }
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
     const userId = socket.data.userId;
     console.log(`🟢 Пользователь подключён: ${userId}`);
 
-    // Подключение к комнате чата
+    // 🔁 Автоматическое присоединение ко всем чатам
+    try {
+      const conversations = await prisma.participant.findMany({
+        where: { userId },
+        select: { conversationId: true },
+      });
+
+      conversations.forEach(({ conversationId }) => {
+        socket.join(String(conversationId));
+        console.log(`🔗 Пользователь ${userId} автоматически присоединился к чату ${conversationId}`);
+      });
+    } catch (err) {
+      console.error("❌ Ошибка при авто-присоединении к чатам:", err);
+    }
+
+    // Присоединение вручную (опционально)
     socket.on("joinConversation", async (conversationId: number) => {
       const isParticipant = await prisma.participant.findFirst({
         where: {
@@ -44,7 +59,7 @@ export const initSocket = (server: http.Server) => {
 
       if (isParticipant) {
         socket.join(String(conversationId));
-        console.log(`👥 Пользователь ${userId} присоединился к комнате ${conversationId}`);
+        console.log(`👥 Пользователь ${userId} вручную присоединился к комнате ${conversationId}`);
       } else {
         socket.emit("error", "Вы не участник этого чата");
       }
@@ -55,10 +70,15 @@ export const initSocket = (server: http.Server) => {
       try {
         const fullInput = { ...messageInput, senderId: userId };
         const message = await sendMessage(fullInput);
-        callback?.({ status: "ok", message }); // подтверждение клиенту
+        callback?.({ status: "ok", message });
       } catch (err) {
-        console.error("❌ Ошибка sendMessage:", err);
-        callback?.({ status: "error", error: err.message });
+        if (err instanceof Error) {
+          console.error("❌ Ошибка sendMessage:", err);
+          callback?.({ status: "error", error: err.message });
+        } else {
+          console.error("❌ Неизвестная ошибка:", err);
+          callback?.({ status: "error", error: "Неизвестная ошибка" });
+        }
       }
     });
 
