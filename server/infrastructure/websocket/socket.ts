@@ -48,7 +48,7 @@ export const initSocket = (server: http.Server) => {
       console.error("❌ Ошибка при авто-присоединении к чатам:", err);
     }
 
-    // Присоединение вручную (опционально)
+    // Присоединение вручную
     socket.on("joinConversation", async (conversationId: number) => {
       const isParticipant = await prisma.participant.findFirst({
         where: {
