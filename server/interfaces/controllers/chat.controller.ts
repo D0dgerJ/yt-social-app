@@ -11,6 +11,7 @@ import { markMessagesAsRead } from "../../application/use-cases/chat/markMessage
 import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.ts";
 import { addOrUpdateReaction } from "../../application/use-cases/chat/addOrUpdateReaction.ts";
 import { getMessageReactions } from "../../application/use-cases/chat/getMessageReactions.ts";
+import { getConversationMessages as getMsgsUC } from "../../application/use-cases/chat/getConversationMessages.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 export const create = async (req: Request, res: Response) => {
@@ -52,7 +53,7 @@ export const send = async (req: Request, res: Response) => {
     const message = await sendMessage({
       conversationId,
       senderId,
-      content,
+      encryptedContent: content,
       mediaUrl,
       mediaType,
       fileName,
@@ -75,7 +76,7 @@ export const update = async (req: Request, res: Response) => {
     const message = await updateMessage({
       messageId,
       userId,
-      content,
+      encryptedContent: content,
       mediaUrl,
       mediaType,
       fileName,
@@ -129,48 +130,27 @@ export const add = async (req: Request, res: Response) => {
 
 export const getConversationMessages = async (req: Request, res: Response) => {
   try {
-    const conversationId = Number(req.params.conversationId);
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
+    const conversationId = Number(req.params.chatId);
+    const userId = req.user!.id;
 
-    const skip = (page - 1) * limit;
+    if (isNaN(conversationId)) {
+      res.status(400).json({ message: "Некорректный chatId" });
+      return;
+    }
 
-    const [messages, total] = await Promise.all([
-      prisma.message.findMany({
-        where: { conversationId },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          sender: {
-            select: {
-              id: true,
-              username: true,
-              profilePicture: true,
-            },
-          },
-          repliedTo: {
-            select: {
-              id: true,
-              content: true,
-              mediaUrl: true,
-              mediaType: true,
-              senderId: true,
-            },
-          },
-        },
-      }),
-      prisma.message.count({ where: { conversationId } }),
-    ]);
+    const page = req.query.page ? Number(req.query.page) : 1;
+    const limit = req.query.limit ? Number(req.query.limit) : 20;
 
-    res.status(200).json({
+    const result = await getMsgsUC({
+      conversationId,
+      userId,
       page,
       limit,
-      total,
-      messages,
     });
+
+    res.status(200).json(result);
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message || "Ошибка сервера" });
   }
 };
 

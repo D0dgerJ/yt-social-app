@@ -11,7 +11,7 @@ import {
   markAsDelivered,
   markAsRead,
   reactToMessage,
-  getReactions
+  getReactions,
 } from "../controllers/chat.controller.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
@@ -34,8 +34,11 @@ router.post("/:chatId/messages", authMiddleware, send); // POST /api/v1/chat/:ch
 
 router.patch("/:chatId/messages/:messageId", authMiddleware,
   checkOwnership(async (req) => {
+    const messageId = Number(req.params.messageId);
+    if (isNaN(messageId)) return undefined;
+    
     const message = await prisma.message.findUnique({
-      where: { id: Number(req.params.messageId) },
+      where: { id: messageId },
     });
     return message?.senderId;
   }),
@@ -44,8 +47,11 @@ router.patch("/:chatId/messages/:messageId", authMiddleware,
 
 router.delete("/:chatId/messages/:messageId", authMiddleware,
   checkOwnership(async (req) => {
+    const messageId = Number(req.params.messageId);
+    if (isNaN(messageId)) return undefined;
+
     const message = await prisma.message.findUnique({
-      where: { id: Number(req.params.messageId) },
+      where: { id: messageId },
     });
     return message?.senderId;
   }),
