@@ -1,12 +1,11 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { redisPub } from "../../../infrastructure/redis/redisClient.ts";
 
 interface SendMessageInput {
   conversationId: number;
   encryptedContent?: string;
-  senderId: number; // должен передаваться из авторизованного контекста (req.user.id)
+  senderId: number;
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
   fileName?: string;
@@ -31,7 +30,7 @@ export const sendMessage = async (input: SendMessageInput) => {
       repliedToId,
     } = data;
 
-    // ✅ Проверка участника
+    // ✅ Проверка: участник ли пользователь
     const isParticipant = await prisma.participant.findFirst({
       where: {
         conversationId,
@@ -43,7 +42,16 @@ export const sendMessage = async (input: SendMessageInput) => {
       throw new Error("Вы не являетесь участником этого чата");
     }
 
-    // 🔐 TODO: здесь можно вставить фильтрацию медиа и шифрование, если требуется
+    // ✅ Опционально: проверка на repliedToId в пределах чата
+    if (repliedToId) {
+      const original = await prisma.message.findUnique({
+        where: { id: repliedToId },
+      });
+
+      if (!original || original.conversationId !== conversationId) {
+        throw new Error("Ответ на сообщение из другого чата запрещён");
+      }
+    }
 
     // 💬 Создание сообщения
     const message = await prisma.message.create({
@@ -78,8 +86,8 @@ export const sendMessage = async (input: SendMessageInput) => {
       },
     });
 
-    // 🕒 Обновляем lastMessageId и время
-    await prisma.conversation.updateMany({
+    // 🕒 Обновляем данные чата
+    await prisma.conversation.update({
       where: { id: conversationId },
       data: {
         lastMessageId: message.id,
@@ -87,15 +95,15 @@ export const sendMessage = async (input: SendMessageInput) => {
       },
     });
 
-    // 📡 WebSocket — отправка в комнату
+    // 📡 Отправка по WebSocket
     getIO().to(String(conversationId)).emit("receiveMessage", message);
-
-    // 📣 Redis Pub/Sub — отправка события
-    await redisPub.publish("newMessage", JSON.stringify(message));
 
     return message;
   } catch (error) {
-    console.error("Ошибка при отправке сообщения:", error);
+    console.error("❌ Ошибка при отправке сообщения:", error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
     throw new Error("Не удалось отправить сообщение");
   }
 };
