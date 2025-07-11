@@ -1,8 +1,8 @@
 import { Server } from "socket.io";
 import http from "http";
 import jwt from "jsonwebtoken";
-import { sendMessage } from "../../application/use-cases/chat/sendMessage";
-import prisma from "../database/prismaClient";
+import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
+import prisma from "../database/prismaClient.ts";
 
 // Храним экземпляр io
 let io: Server;
