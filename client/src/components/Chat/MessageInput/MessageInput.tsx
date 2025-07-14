@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { useChatStore } from '@/stores/chatStore';
-import { Socket } from 'socket.io-client';
-
-declare global {
-  interface Window {
-    socket: Socket | null;
-  }
-}
+import { useSocket } from "@/hooks/useSocket";
 
 const MessageInput: React.FC = () => {
   const [content, setContent] = useState('');
   const { currentUser } = useUserStore();
   const { currentConversationId } = useChatStore();
+  const { socket } = useSocket();
 
   const handleSend = () => {
-    if (!content.trim() || !currentUser || !currentConversationId || !window.socket) return;
+    if (!content.trim() || !currentUser || !currentConversationId || !socket) return;
 
     const messageData = {
       conversationId: currentConversationId,
@@ -23,7 +18,7 @@ const MessageInput: React.FC = () => {
       content: content.trim(),
     };
 
-    window.socket.emit('sendMessage', messageData);
+    socket.emit('sendMessage', messageData);
     setContent('');
   };
 
