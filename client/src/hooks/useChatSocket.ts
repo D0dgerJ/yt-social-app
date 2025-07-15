@@ -1,53 +1,48 @@
-import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useUserStore } from '@/stores/userStore';
-import { useChatStore } from '@/stores/chatStore';
-import { useMessageStore } from '@/stores/messageStore';
-import { Message } from '../utils/types/MessageTypes';
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+import { useEffect, useRef } from "react";
+import { useUserStore } from "@/stores/userStore";
+import { useChatStore } from "@/stores/chatStore";
+import { useMessageStore } from "@/stores/messageStore";
+import { useSocket } from "@/hooks/useSocket";
+import { Message } from "@/utils/types/MessageTypes";
 
 export const useChatSocket = () => {
   const { currentUser } = useUserStore();
   const { currentConversationId } = useChatStore();
   const { addMessage } = useMessageStore();
+  const { socket } = useSocket();
 
-  const socketRef = useRef<Socket | null>(null);
   const prevConversationIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!currentUser || currentConversationId === null) return;
+    if (!socket || !currentUser || currentConversationId === null) return;
 
-    if (!socketRef.current) {
-      socketRef.current = io(SOCKET_URL, {
-        query: { userId: currentUser.id },
-      });
+    // Подписка на входящие сообщения
+    const handleReceiveMessage = (message: Message) => {
+      if (message.conversationId === currentConversationId) {
+        addMessage(message);
+      }
+    };
 
-      // Подписка на входящие сообщения
-      socketRef.current.on('receiveMessage', (message: Message) => {
-        if (message.conversationId === currentConversationId) {
-          addMessage(message);
-        }
-      });
-    }
+    socket.on("receiveMessage", handleReceiveMessage);
 
-    // Если комната сменилась, переприсоединиться
+    // Переподключение к комнате
     if (prevConversationIdRef.current !== currentConversationId) {
       if (prevConversationIdRef.current !== null) {
-        socketRef.current.emit('leaveConversation', prevConversationIdRef.current);
+        socket.emit("leaveConversation", prevConversationIdRef.current);
       }
 
-      socketRef.current.emit('joinConversation', currentConversationId);
+      socket.emit("joinConversation", currentConversationId);
       prevConversationIdRef.current = currentConversationId;
     }
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.emit('leaveConversation', currentConversationId);
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        prevConversationIdRef.current = null;
+      socket.off("receiveMessage", handleReceiveMessage);
+
+      if (currentConversationId !== null) {
+        socket.emit("leaveConversation", currentConversationId);
       }
+
+      prevConversationIdRef.current = null;
     };
-  }, [currentUser, currentConversationId, addMessage]);
+  }, [socket, currentUser, currentConversationId, addMessage]);
 };
