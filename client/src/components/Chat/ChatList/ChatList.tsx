@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { getUserConversations } from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
 import CreateChatModal from "../CreateChatModal/CreateChatModal";
+import { formatDistanceToNowStrict } from "date-fns";
 import "./ChatList.scss";
 
 interface Conversation {
   id: number;
   name: string | null;
   isGroup: boolean;
-  participants: { user: { id: number; username: string; profilePicture: string | null } }[];
+  participants: {
+    user: { id: number; username: string; profilePicture: string | null };
+  }[];
   messages: { id: number; content: string | null; createdAt: string }[];
 }
 
@@ -54,9 +57,19 @@ const ChatList: React.FC = () => {
 
       <ul className="chat-list-items">
         {filtered.map((chat) => {
-          const lastMessage = chat.messages[0]?.content?.trim() || "Нет сообщений";
           const chatTitle = chat.name || chat.participants.map((p) => p.user.username).join(", ");
-          const avatar = chat.participants[0]?.user.profilePicture || "/default-avatar.png";
+          const avatar =
+            Array.isArray(chat.participants) &&
+            chat.participants.length > 0 &&
+            chat.participants[0].user.profilePicture
+              ? chat.participants[0].user.profilePicture
+              : "/default-avatar.png";
+
+          const lastMsg = chat.messages?.[0];
+          const lastMessage = lastMsg?.content?.trim() || "Нет сообщений";
+          const time = lastMsg?.createdAt
+            ? formatDistanceToNowStrict(new Date(lastMsg.createdAt), { addSuffix: true })
+            : "";
 
           return (
             <li
@@ -68,7 +81,10 @@ const ChatList: React.FC = () => {
                 <img src={avatar} alt="avatar" className="chat-avatar-img" />
               </div>
               <div className="chat-info">
-                <div className="chat-title">{chatTitle}</div>
+                <div className="chat-title-row">
+                  <span className="chat-title">{chatTitle}</span>
+                  <span className="chat-time">{time}</span>
+                </div>
                 <div className="chat-preview">{lastMessage}</div>
               </div>
             </li>

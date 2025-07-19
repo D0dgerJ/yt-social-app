@@ -10,6 +10,7 @@
 .chat-wrapper {
   flex: 2.5;
   display: flex;
+  flex-direction: column;
   background-color: #89e27e;
   color: white;
 }
