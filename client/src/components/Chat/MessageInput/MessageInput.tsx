@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { useChatStore } from '@/stores/chatStore';
 import { useSocket } from "@/hooks/useSocket";
+import './MessageInput.scss';
 
 const MessageInput: React.FC = () => {
   const [content, setContent] = useState('');
@@ -10,7 +11,20 @@ const MessageInput: React.FC = () => {
   const { socket } = useSocket();
 
   const handleSend = () => {
-    if (!content.trim() || !currentUser || !currentConversationId || !socket) return;
+    if (!content.trim() || !currentUser || !currentConversationId || !socket) {
+      console.log("❌ Один из параметров отсутствует:", {
+        content,
+        currentUser,
+        currentConversationId,
+        socket,
+      });
+      return;
+    }
+
+    if (!socket.connected) {
+      console.log("❌ Socket НЕ подключен");
+      return;
+    }
 
     const messageData = {
       conversationId: currentConversationId,
@@ -18,6 +32,7 @@ const MessageInput: React.FC = () => {
       content: content.trim(),
     };
 
+    console.log("✅ Отправка сообщения через socket:", messageData);
     socket.emit('sendMessage', messageData);
     setContent('');
   };
@@ -30,11 +45,11 @@ const MessageInput: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center p-2 border-t">
+    <div className="message-input-container">
       <input
         type="text"
         placeholder="Напишите сообщение..."
-        className="flex-1 p-2 rounded border"
+        className="message-input-field"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onKeyDown={handleKeyPress}
@@ -42,7 +57,7 @@ const MessageInput: React.FC = () => {
       <button
         onClick={handleSend}
         disabled={!content.trim()}
-        className="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="message-send-button"
       >
         Отправить
       </button>
