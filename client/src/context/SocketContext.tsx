@@ -16,7 +16,11 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     if (currentUser && !socketRef.current) {
-      socketRef.current = io(SOCKET_URL, { query: { userId: currentUser.id } });
+      socketRef.current = io(SOCKET_URL, {
+        auth: {
+          token: localStorage.getItem("token"),
+        },
+      });
     }
     return () => {
       socketRef.current?.disconnect();
