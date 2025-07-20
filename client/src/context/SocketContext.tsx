@@ -1,4 +1,4 @@
-import { createContext, useEffect, useRef, PropsWithChildren } from "react";
+import { createContext, useEffect, useState, PropsWithChildren } from "react";
 import { io, Socket } from "socket.io-client";
 import { useUserStore } from "@/stores/userStore";
 
@@ -12,24 +12,26 @@ export const SocketContext = createContext<SocketContextType>({ socket: null });
 
 export const SocketProvider = ({ children }: PropsWithChildren) => {
   const { currentUser } = useUserStore();
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (currentUser && !socketRef.current) {
-      socketRef.current = io(SOCKET_URL, {
+    if (currentUser && !socket) {
+      const newSocket = io(SOCKET_URL, {
         auth: {
           token: localStorage.getItem("token"),
         },
       });
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.disconnect();
+        setSocket(null);
+      };
     }
-    return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-    };
   }, [currentUser]);
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current }}>
+    <SocketContext.Provider value={{ socket }}>
       {children}
     </SocketContext.Provider>
   );
