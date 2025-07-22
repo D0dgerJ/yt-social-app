@@ -21,8 +21,8 @@ export const initSocket = (server: http.Server) => {
     if (!token) return next(new Error("Unauthorized"));
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number };
-      socket.data.userId = decoded.id;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+      socket.data.userId = decoded.userId;
       next();
     } catch (err) {
       next(new Error("Invalid token"));
@@ -68,9 +68,16 @@ export const initSocket = (server: http.Server) => {
     // Отправка сообщения
     socket.on("sendMessage", async (messageInput, callback) => {
       try {
-        const fullInput = { ...messageInput, senderId: userId };
+        const fullInput = {
+          ...messageInput,
+          senderId: userId, // ← обязательно добавляем вручную!
+        };
+
         const message = await sendMessage(fullInput);
         callback?.({ status: "ok", message });
+
+        // Оповещаем других участников комнаты
+        socket.to(String(message.conversationId)).emit("receiveMessage", message);
       } catch (err) {
         if (err instanceof Error) {
           console.error("❌ Ошибка sendMessage:", err);
@@ -82,11 +89,11 @@ export const initSocket = (server: http.Server) => {
       }
     });
 
-    socket.on("disconnect", () => {
-      console.log(`🔴 Пользователь отключился: ${userId}`);
-    });
-  });
-};
+        socket.on("disconnect", () => {
+          console.log(`🔴 Пользователь отключился: ${userId}`);
+        });
+      });
+    };
 
 // Глобальный доступ к io
 export const getIO = () => io;

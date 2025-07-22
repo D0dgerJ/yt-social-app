@@ -6,7 +6,7 @@ interface SendMessageInput {
   conversationId: number;
   encryptedContent?: string;
   senderId: number;
-  mediaUrl?: string;
+  mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
   fileName?: string;
   gifUrl?: string;
