@@ -3,7 +3,7 @@ export interface Message {
   conversationId: number;
   senderId: number;
   content?: string;
-  mediaUrl?: string;
+  mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
   fileName?: string;
   gifUrl?: string;

@@ -25,7 +25,7 @@ export const sendMessage = async (
   chatId: number,
   message: {
     content?: string;
-    mediaUrl?: string;
+    mediaUrl?: string | null;
     mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
     fileName?: string;
     gifUrl?: string;

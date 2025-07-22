@@ -2,9 +2,15 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  profilePicture?: string;
   token: string;
   followings?: number[];
+  profilePicture?: string;
+  coverPicture?: string;
+  isAdmin: boolean;
+  from?: string;
+  city?: string;
+  relationship?: number;
+  desc?: string;
 }
 
 export interface AuthState {

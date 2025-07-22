@@ -33,8 +33,8 @@ const Chat = () => {
         <div className="chat-wrapper">
           {currentConversationId ? (
             <div className="chat-window-container">
-              <ChatWindow />
               <MessageInput />
+              <ChatWindow />
             </div>
           ) : (
             <ChatList />

@@ -15,20 +15,21 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (currentUser && !socket) {
-      const newSocket = io(SOCKET_URL, {
-        auth: {
-          token: localStorage.getItem("token"),
-        },
-      });
-      setSocket(newSocket);
+    if (!currentUser?.id) return;
 
-      return () => {
-        newSocket.disconnect();
-        setSocket(null);
-      };
-    }
-  }, [currentUser]);
+    const newSocket = io(SOCKET_URL, {
+      auth: {
+        token: localStorage.getItem("token"),
+      },
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+      setSocket(null);
+    };
+  }, [currentUser?.id]);
 
   return (
     <SocketContext.Provider value={{ socket }}>
