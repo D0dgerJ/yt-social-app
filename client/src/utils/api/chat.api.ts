@@ -38,7 +38,9 @@ export const sendMessage = async (
 // Получение сообщений
 export const getChatMessages = async (chatId: number, page = 1, limit = 30) =>
   handleRequest(() =>
-    axios.get(`/chat/${chatId}/messages`, { params: { page, limit } }).then(res => res.data)
+    axios
+      .get(`/chat/${chatId}/messages`, { params: { page, limit } })
+      .then(res => res.data.messages)
   );
 
 // Обновление сообщения
