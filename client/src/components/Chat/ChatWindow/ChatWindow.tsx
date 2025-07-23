@@ -1,13 +1,33 @@
 import React, { useEffect, useRef } from 'react';
 import { useMessageStore } from '@/stores/messageStore';
 import { useChatSocket } from '@/hooks/useChatSocket';
+import { useChatStore } from '@/stores/chatStore';
+import { getChatMessages } from '@/utils/api/chat.api';
+import { decrypt } from '@/utils/encryption';
 
 const ChatWindow = () => {
-  const { messages } = useMessageStore();
+  const { messages, setMessages } = useMessageStore();
+  const { currentConversationId } = useChatStore();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useChatSocket();
 
+  // Загрузка истории сообщений
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!currentConversationId) return;
+      try {
+        const data = await getChatMessages(currentConversationId);
+        setMessages(data);
+      } catch (error) {
+        console.error("❌ Ошибка загрузки сообщений:", error);
+      }
+    };
+
+    loadMessages();
+  }, [currentConversationId, setMessages]);
+
+  // Автоскролл вниз
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -21,14 +41,34 @@ const ChatWindow = () => {
           <div key={msg.id} className="message">
             <p>
               <strong>{msg.sender.username}: </strong>
-              {msg.content}
+              <span style={{ color: 'red', fontWeight: 'bold' }}>
+                {msg.encryptedContent ? (() => {
+                  try {
+                    const decrypted = decrypt(msg.encryptedContent);
+                    console.log("🔓", msg.encryptedContent, "→", decrypted);
+                    return decrypted;
+                  } catch (e) {
+                    console.warn("❌ Ошибка расшифровки:", msg.encryptedContent);
+                    return "[ошибка]";
+                  }
+                })() : '[нет контента]'}
+              </span>
             </p>
 
-            {msg.mediaType === 'image' && <img src={msg.mediaUrl} alt="image" />}
-            {msg.mediaType === 'gif' && <img src={msg.gifUrl} alt="gif" />}
-            {msg.mediaType === 'sticker' && <img src={msg.stickerUrl} alt="sticker" />}
-            {msg.mediaType === 'file' && (
-              <a href={msg.mediaUrl} download={msg.fileName}>
+            {msg.mediaType === 'image' && msg.mediaUrl && (
+              <img src={msg.mediaUrl} alt="image" />
+            )}
+
+            {msg.mediaType === 'gif' && msg.gifUrl && (
+              <img src={msg.gifUrl} alt="gif" />
+            )}
+
+            {msg.mediaType === 'sticker' && msg.stickerUrl && (
+              <img src={msg.stickerUrl} alt="sticker" />
+            )}
+
+            {msg.mediaType === 'file' && msg.mediaUrl && (
+              <a href={msg.mediaUrl} download={msg.fileName ?? undefined}>
                 📎 {msg.fileName}
               </a>
             )}
