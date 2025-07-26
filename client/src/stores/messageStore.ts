@@ -5,7 +5,7 @@ export interface Message {
   conversationId: number;
   clientMessageId?: string;
   senderId: number;
-  content?: string;
+  encryptedContent?: string;
   mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
   fileName?: string;
