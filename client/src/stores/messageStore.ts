@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface Message {
   id: number;
   conversationId: number;
+  clientMessageId?: string;
   senderId: number;
   content?: string;
   mediaUrl?: string | null;
@@ -28,7 +29,7 @@ interface MessageStore {
   setMessages: (msgs: Message[]) => void;
   addMessage: (msg: Message) => void;
   updateMessage: (updatedMsg: Message) => void;
-  replaceMessage: (oldId: number, newMsg: Message) => void;
+  replaceMessage: (clientMessageId: string, newMsg: Message) => void;
   removeMessage: (id: number) => void;
   clearMessages: () => void;
 }
@@ -49,14 +50,22 @@ export const useMessageStore = create<MessageStore>((set) => ({
 
   addMessage: (msg) =>
     set((state) => {
-      const exists = state.messages.some((m) => m.id === msg.id);
-      // Если id меньше 0 или начинается с "temp-", это временное
+      const exists = state.messages.some(
+        (m) =>
+          m.id === msg.id ||
+          (msg.clientMessageId && m.clientMessageId === msg.clientMessageId)
+      );
+
       if (exists) {
         console.warn('⚠️ Дубликат сообщения (не добавлено):', msg);
         return state;
       }
 
-      return { messages: [...state.messages, msg] };
+      return {
+        messages: [...state.messages, msg].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        ),
+      };
     }),
 
   updateMessage: (updatedMsg) =>
@@ -66,17 +75,27 @@ export const useMessageStore = create<MessageStore>((set) => ({
       ),
     })),
 
-  replaceMessage: (oldId, newMsg) =>
+  replaceMessage: (clientMessageId: string, newMsg: Message) =>
     set((state) => {
-      const alreadyExists = state.messages.some((msg) => msg.id === newMsg.id);
-      if (alreadyExists) {
-        console.warn("⚠️ Сообщение уже есть:", newMsg.id);
+      const index = state.messages.findIndex(
+        (msg) => msg.clientMessageId === clientMessageId
+      );
+
+      if (index === -1) {
+        console.warn('⚠️ Сообщение с clientMessageId не найдено:', clientMessageId);
         return state;
       }
 
+      const filtered = state.messages.filter(
+        (msg, i) => i === index || msg.id !== newMsg.id
+      );
+
+      const newMessages = [...filtered];
+      newMessages[index] = newMsg;
+
       return {
-        messages: state.messages.map((msg) =>
-          msg.id === oldId ? newMsg : msg
+        messages: newMessages.sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         ),
       };
     }),

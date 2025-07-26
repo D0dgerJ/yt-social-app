@@ -4,6 +4,7 @@ import { useAuth } from '@/context/useAuth';
 import { useSocket } from '@/hooks/useSocket';
 import { useMessageStore, type Message } from '@/stores/messageStore';
 import { encrypt } from '@/utils/encryption';
+import { v4 as uuidv4 } from 'uuid';
 import './MessageInput.scss';
 
 const MessageInput: React.FC = () => {
@@ -30,17 +31,15 @@ const MessageInput: React.FC = () => {
     }
 
     const encryptedContent = encrypt(content.trim());
+    const clientMessageId = uuidv4();
 
-    // 1️⃣ Временное сообщение (Optimistic UI)
-    const tempId = Date.now();
     const now = new Date().toISOString();
-
-    const tempMessage: Message = {
-      id: tempId,
+    const tempMessage = {
+      id: `temp-${clientMessageId}`, // временный ID в формате строки
       conversationId: currentConversationId,
       senderId: user.id,
       content,
-      mediaUrl: null, // допустимо, т.к. mediaUrl?: string | null
+      mediaUrl: null,
       mediaType: 'text',
       isDelivered: false,
       isRead: false,
@@ -51,25 +50,24 @@ const MessageInput: React.FC = () => {
         username: user.username,
         profilePicture: user.profilePicture,
       },
-    };
+      clientMessageId,
+    } as unknown as Message;
 
     addMessage(tempMessage);
     setContent('');
 
-    // 2️⃣ Отправка через socket
     const messageData = {
       conversationId: currentConversationId,
       senderId: user.id,
       encryptedContent,
+      clientMessageId,
     };
 
     console.log("✅ Отправка сообщения через socket:", messageData);
     socket.emit('sendMessage', messageData, (response: any) => {
       if (response.status === 'ok') {
         console.log("📨 Сообщение подтверждено:", response.message);
-
-        // 3️⃣ Замена временного на серверное сообщение
-        replaceMessage(tempId, {
+        replaceMessage(clientMessageId, {
           ...response.message,
           isDelivered: true,
         });
