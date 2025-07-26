@@ -1,6 +1,7 @@
 export interface Message {
   id: number;
   conversationId: number;
+  clientMessageId?: string;
   senderId: number;
   encryptedContent?: string;
   mediaUrl?: string | null;
