@@ -30,14 +30,16 @@ const Chat = () => {
           <Sidebar />
         </div>
 
-        <div className="chat-wrapper">
-          {currentConversationId ? (
-            <div className="chat-window-container">
-              <MessageInput />
-              <ChatWindow />
-            </div>
-          ) : (
+        <div className={`chat-wrapper ${currentConversationId ? "chat-split" : ""}`}>
+          <div className="chat-list-pane">
             <ChatList />
+          </div>
+
+          {currentConversationId && (
+            <div className="chat-window-pane">
+              <ChatWindow />
+              <MessageInput />
+            </div>
           )}
         </div>
 
