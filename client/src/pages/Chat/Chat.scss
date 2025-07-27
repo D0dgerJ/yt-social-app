@@ -13,6 +13,31 @@
   flex-direction: column;
   background-color: #89e27e;
   color: white;
+
+  &.chat-split {
+    flex-direction: row;
+  }
+
+  .chat-list-pane {
+    width: 100%;
+  }
+
+  &.chat-split .chat-list-pane {
+    width: 20%;
+    border-right: 1px solid #ccc;
+  }
+
+  .chat-window-pane {
+    display: none;
+  }
+
+  &.chat-split .chat-window-pane {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    background-color: #fff;
+    color: #000;
+  }
 }
 
 .chat-sidebar {

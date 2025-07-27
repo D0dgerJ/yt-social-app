@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { getUserConversations } from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
 import CreateChatModal from "../CreateChatModal/CreateChatModal";
-import ChatListHeader from "../ChatListHeader/ChatListHeader";
 import { formatDistanceToNowStrict } from "date-fns";
 import "./ChatList.scss";
 
@@ -43,7 +42,18 @@ const ChatList: React.FC = () => {
 
   return (
     <div className="chat-list">
-      <ChatListHeader search={search} setSearch={setSearch} setShowModal={setShowModal} />
+      <div className="chat-list-header">
+        <button onClick={() => setShowModal(true)} className="create-chat-btn">
+          ➕ Создать чат
+        </button>
+        <input
+          type="text"
+          placeholder="Поиск чатов..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="chat-search"
+        />
+      </div>
 
       <ul className="chat-list-items">
         {filtered.map((chat) => {
