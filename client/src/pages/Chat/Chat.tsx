@@ -24,25 +24,29 @@ const Chat = () => {
     };
   }, [clearMessages]);
 
-  return (
+    return (
     <>
       <Navbar />
       <div className="chat-layout">
         <div className="chat-sidebar-wrapper">
           <Sidebar />
         </div>
-        <div className={`chat-wrapper ${currentConversationId ? "chat-split" : ""}`}>
-          <div className="chat-list-pane">
-            <ChatListHeader onSearchChange={setSearch} />
-            <ChatList search={search} />
-          </div>
 
-          {currentConversationId && (
-            <div className="chat-window-pane">
-              <ChatWindow />
-              <MessageInput />
+        <div className={`chat-wrapper ${currentConversationId ? "chat-split" : ""}`}>
+          <ChatListHeader onSearchChange={setSearch} />
+
+          <div className="chat-main-content">
+            <div className="chat-list-pane">
+              <ChatList search={search} />
             </div>
-          )}
+
+            {currentConversationId && (
+              <div className="chat-window-pane">
+                <ChatWindow />
+                <MessageInput />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="rightbar-wrapper">
