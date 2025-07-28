@@ -23,8 +23,12 @@
   }
 
   &.chat-split .chat-list-pane {
+    display: flex;                 
+    flex-direction: column;        
     width: 20%;
+    height: 100%;                 
     border-right: 1px solid #ccc;
+    overflow: hidden;
   }
 
   .chat-window-pane {

@@ -6,36 +6,6 @@
   background-color: #16a34a;
   border-right: 1px solid #ddd;
 
-    .chat-list-header {
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    .create-chat-btn {
-      width: 130px;
-      flex-shrink: 0;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-
-      &:hover {
-        background-color: #0056b3;
-      }
-    }
-
-    .chat-search {
-      flex-grow: 1;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-  }
-
   .chat-list-items {
     flex-grow: 1;
     overflow-y: auto;

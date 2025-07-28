@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Rightbar from "../../components/Rightbar/Rightbar";
 import ChatList from "../../components/Chat/ChatList/ChatList";
+import ChatListHeader from "../../components/Chat/ChatListHeader/ChatListHeader";
 import ChatWindow from "../../components/Chat/ChatWindow/ChatWindow";
 import MessageInput from "../../components/Chat/MessageInput/MessageInput";
 import { useChatStore } from "@/stores/chatStore";
@@ -13,6 +14,7 @@ import "./Chat.scss";
 const Chat = () => {
   const { currentConversationId } = useChatStore();
   const { clearMessages } = useMessageStore();
+  const [search, setSearch] = useState("");
 
   useChatSocket();
 
@@ -29,10 +31,10 @@ const Chat = () => {
         <div className="chat-sidebar-wrapper">
           <Sidebar />
         </div>
-
         <div className={`chat-wrapper ${currentConversationId ? "chat-split" : ""}`}>
           <div className="chat-list-pane">
-            <ChatList />
+            <ChatListHeader onSearchChange={setSearch} />
+            <ChatList search={search} />
           </div>
 
           {currentConversationId && (
