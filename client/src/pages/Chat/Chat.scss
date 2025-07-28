@@ -11,47 +11,54 @@
   flex: 2.5;
   display: flex;
   flex-direction: column;
-  background-color: #89e27e;
+  background-color: #16a34a;
   color: white;
+  height: 100vh;
 
   &.chat-split {
-    flex-direction: row;
-  }
+    .chat-main-content {
+      display: flex;
+    }
 
-  .chat-list-pane {
-    width: 100%;
-  }
-
-  &.chat-split .chat-list-pane {
-    display: flex;                 
-    flex-direction: column;        
-    width: 20%;
-    height: 100%;                 
-    border-right: 1px solid #ccc;
-    overflow: hidden;
-  }
-
-  .chat-window-pane {
-    display: none;
-  }
-
-  &.chat-split .chat-window-pane {
-    display: flex;
-    flex-direction: column;
-    width: 80%;
-    background-color: #fff;
-    color: #000;
+    .chat-window-pane {
+      display: flex;
+    }
   }
 }
 
-.chat-sidebar {
-  width: 35%;
-  border-right: 1px solid #333;
-  overflow-y: auto;
+.chat-list-header {
+  flex-shrink: 0;
+  background-color: #16a34a;
+  padding: 12px;
+  z-index: 2;
 }
 
-.chat-main {
+.chat-main-content {
   flex: 1;
   display: flex;
+  overflow: hidden;
+}
+
+.chat-list-pane {
+  width: 100%;
+  display: flex;
   flex-direction: column;
+  height: 100%;
+}
+
+.chat-wrapper.chat-split .chat-list-pane {
+  width: 25%;
+}
+
+.chat-window-pane {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  background-color: #89e27e;
+  color: #000;
+  height: 100%;
+}
+
+.rightbar-wrapper {
+  width: 250px;
 }
