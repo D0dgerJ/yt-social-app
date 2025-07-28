@@ -1,26 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { getUserConversations } from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
-import CreateChatModal from "../CreateChatModal/CreateChatModal";
-import ChatListHeader from "../ChatListHeader/ChatListHeader";
-import { formatDistanceToNowStrict } from "date-fns";
 import "./ChatList.scss";
 
-interface Conversation {
-  id: number;
-  name: string | null;
-  isGroup: boolean;
-  participants: {
-    user: { id: number; username: string; profilePicture: string | null };
-  }[];
-  messages: { id: number; content: string | null; createdAt: string }[];
+interface ChatListProps {
+  search?: string;
 }
 
-const ChatList: React.FC = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-
+const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
+  const [conversations, setConversations] = useState<any[]>([]);
   const { currentConversationId, setCurrentConversationId } = useChatStore();
 
   const fetchConversations = async () => {
@@ -37,28 +25,21 @@ const ChatList: React.FC = () => {
   }, []);
 
   const filtered = conversations.filter((conv) => {
-    const title = conv.name || conv.participants.map((p) => p.user.username).join(", ");
+    const title = conv.name || conv.participants.map((p: any) => p.user.username).join(", ");
     return title.toLowerCase().includes(search.toLowerCase());
   });
 
   return (
     <div className="chat-list">
-      <ChatListHeader search={search} setSearch={setSearch} setShowModal={setShowModal} />
-
       <ul className="chat-list-items">
         {filtered.map((chat) => {
-          const chatTitle = chat.name || chat.participants.map((p) => p.user.username).join(", ");
+          const chatTitle = chat.name || chat.participants.map((p: any) => p.user.username).join(", ");
           const avatar =
-            Array.isArray(chat.participants) &&
-            chat.participants.length > 0 &&
-            chat.participants[0].user.profilePicture
-              ? chat.participants[0].user.profilePicture
-              : "/default-avatar.png";
-
+            chat.participants[0]?.user.profilePicture || "/default-avatar.png";
           const lastMsg = chat.messages?.[0];
           const lastMessage = lastMsg?.content?.trim() || "Нет сообщений";
           const time = lastMsg?.createdAt
-            ? formatDistanceToNowStrict(new Date(lastMsg.createdAt), { addSuffix: true })
+            ? new Date(lastMsg.createdAt).toLocaleTimeString()
             : "";
 
           return (
@@ -81,16 +62,6 @@ const ChatList: React.FC = () => {
           );
         })}
       </ul>
-
-      {showModal && (
-        <CreateChatModal
-          onClose={() => setShowModal(false)}
-          onCreated={() => {
-            fetchConversations();
-            setShowModal(false);
-          }}
-        />
-      )}
     </div>
   );
 };

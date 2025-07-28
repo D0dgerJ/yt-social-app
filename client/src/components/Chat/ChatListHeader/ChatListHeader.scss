@@ -1,8 +1,12 @@
 .chat-list-header {
+  flex-shrink: 0;
+  background-color: #fff;
+  z-index: 1;
   padding: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
+  border-bottom: 1px solid #ddd;
 
   .create-chat-btn {
     width: 130px;
