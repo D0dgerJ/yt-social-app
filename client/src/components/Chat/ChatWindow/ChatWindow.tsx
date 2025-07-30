@@ -6,7 +6,7 @@ import { getChatMessages } from '@/utils/api/chat.api';
 import { decrypt } from '@/utils/encryption';
 
 const ChatWindow = () => {
-  const { messages, setMessages } = useMessageStore();
+  const { messages, setMessages, clearMessages } = useMessageStore();
   const { currentConversationId } = useChatStore();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -17,6 +17,7 @@ const ChatWindow = () => {
     const loadMessages = async () => {
       if (!currentConversationId) return;
       try {
+        clearMessages(); // Очищаем старые сообщения перед загрузкой новых
         const data = await getChatMessages(currentConversationId);
         setMessages(data);
       } catch (error) {
@@ -25,7 +26,7 @@ const ChatWindow = () => {
     };
 
     loadMessages();
-  }, [currentConversationId, setMessages]);
+  }, [currentConversationId, setMessages, clearMessages]);
 
   // Автоскролл вниз
   useEffect(() => {
