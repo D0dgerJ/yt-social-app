@@ -6,6 +6,7 @@ import ChatList from "../../components/Chat/ChatList/ChatList";
 import ChatListHeader from "../../components/Chat/ChatListHeader/ChatListHeader";
 import ChatWindow from "../../components/Chat/ChatWindow/ChatWindow";
 import MessageInput from "../../components/Chat/MessageInput/MessageInput";
+import ChatHeader from "../../components/Chat/ChatListHeader/ChatHeader";
 import { useChatStore } from "@/stores/chatStore";
 import { useMessageStore } from "@/stores/messageStore";
 import { useChatSocket } from "@/hooks/useChatSocket";
@@ -42,6 +43,7 @@ const Chat = () => {
 
             {currentConversationId && (
               <div className="chat-window-pane">
+                <ChatHeader />
                 <ChatWindow />
                 <MessageInput />
               </div>
