@@ -60,8 +60,8 @@ const ChatWindow = () => {
               <img src={msg.mediaUrl} alt="image" />
             )}
 
-            {msg.mediaType === 'gif' && msg.gifUrl && (
-              <img src={msg.gifUrl} alt="gif" />
+            {msg.mediaType === 'gif' && msg.mediaUrl && (
+              <img src={msg.mediaUrl} alt="gif" className="media-gif" />
             )}
 
             {msg.mediaType === 'sticker' && msg.stickerUrl && (

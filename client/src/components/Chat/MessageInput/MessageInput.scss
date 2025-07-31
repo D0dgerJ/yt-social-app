@@ -3,8 +3,8 @@
   align-items: center;
   padding: 8px;
   border-top: 1px solid #ccc;
-  position: relative; // нужно для позиционирования emoji-picker
-  background: #fff;
+  position: relative;
+  background: #16a34a;
   gap: 8px;
 }
 
@@ -61,5 +61,39 @@
     bottom: 45px;
     left: 0;
     z-index: 100;
+  }
+}
+
+.gif-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .gif-toggle-button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
+
+  .gif-picker-wrapper {
+    position: absolute;
+    bottom: 45px;
+    left: 0;
+    z-index: 100;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 8px;
+    width: 250px;
+    max-height: 300px;
+    overflow-y: auto;
   }
 }
