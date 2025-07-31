@@ -3,22 +3,29 @@
   align-items: center;
   padding: 8px;
   border-top: 1px solid #ccc;
+  position: relative; // нужно для позиционирования emoji-picker
+  background: #fff;
+  gap: 8px;
 }
 
 .message-input-field {
   flex: 1;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 20px;
   border: 1px solid #ccc;
+  font-size: 14px;
+  outline: none;
 }
 
 .message-send-button {
-  margin-left: 8px;
-  padding: 8px 16px;
+  padding: 10px 16px;
   background-color: #2563eb;
   color: #fff;
-  border-radius: 6px;
+  border-radius: 20px;
+  border: none;
+  font-weight: 500;
   transition: background-color 0.2s ease;
+  cursor: pointer;
 
   &:hover {
     background-color: #1d4ed8;
@@ -27,5 +34,32 @@
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+}
+
+.emoji-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .emoji-toggle-button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
+
+  .emoji-picker-wrapper {
+    position: absolute;
+    bottom: 45px;
+    left: 0;
+    z-index: 100;
   }
 }
