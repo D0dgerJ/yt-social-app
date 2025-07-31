@@ -5,10 +5,13 @@ import { useSocket } from '@/hooks/useSocket';
 import { useMessageStore, type Message } from '@/stores/messageStore';
 import { encrypt } from '@/utils/encryption';
 import { v4 as uuidv4 } from 'uuid';
+import EmojiPicker from 'emoji-picker-react';
 import './MessageInput.scss';
 
 const MessageInput: React.FC = () => {
   const [content, setContent] = useState('');
+  const [showEmoji, setShowEmoji] = useState(false);
+
   const { currentConversationId } = useChatStore();
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -32,10 +35,10 @@ const MessageInput: React.FC = () => {
 
     const encryptedContent = encrypt(content.trim());
     const clientMessageId = uuidv4();
-
     const now = new Date().toISOString();
+
     const tempMessage = {
-      id: `temp-${clientMessageId}`, // временный ID в формате строки
+      id: `temp-${clientMessageId}`,
       conversationId: currentConversationId,
       senderId: user.id,
       content,
@@ -55,6 +58,7 @@ const MessageInput: React.FC = () => {
 
     addMessage(tempMessage);
     setContent('');
+    setShowEmoji(false);
 
     const messageData = {
       conversationId: currentConversationId,
@@ -84,8 +88,26 @@ const MessageInput: React.FC = () => {
     }
   };
 
+  const handleEmojiClick = (emojiData: any) => {
+    setContent((prev) => prev + emojiData.emoji);
+  };
+
   return (
     <div className="message-input-container">
+      <div className="emoji-wrapper">
+        <button
+          className="emoji-toggle-button"
+          onClick={() => setShowEmoji(!showEmoji)}
+        >
+          😊
+        </button>
+        {showEmoji && (
+          <div className="emoji-picker-wrapper">
+            <EmojiPicker onEmojiClick={handleEmojiClick} height={300} />
+          </div>
+        )}
+      </div>
+
       <input
         type="text"
         placeholder="Напишите сообщение..."
@@ -94,6 +116,7 @@ const MessageInput: React.FC = () => {
         onChange={(e) => setContent(e.target.value)}
         onKeyDown={handleKeyPress}
       />
+
       <button
         onClick={handleSend}
         disabled={!content.trim()}
