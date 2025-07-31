@@ -1,0 +1,49 @@
+.gif-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .gif-search {
+    display: flex;
+    gap: 6px;
+
+    input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #1d4ed8;
+      }
+    }
+  }
+
+  .gif-results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      cursor: pointer;
+      border-radius: 6px;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+}

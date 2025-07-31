@@ -6,34 +6,31 @@ import { useMessageStore, type Message } from '@/stores/messageStore';
 import { encrypt } from '@/utils/encryption';
 import { v4 as uuidv4 } from 'uuid';
 import EmojiPicker from 'emoji-picker-react';
+import GifPicker from './GifPicker';
 import './MessageInput.scss';
 
 const MessageInput: React.FC = () => {
   const [content, setContent] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
 
   const { currentConversationId } = useChatStore();
   const { user } = useAuth();
   const { socket } = useSocket();
   const { addMessage, replaceMessage } = useMessageStore();
 
-  const handleSend = () => {
-    if (!content.trim() || !currentConversationId || !socket || !user?.id) {
-      console.log("❌ Один из параметров отсутствует:", {
-        content,
-        currentConversationId,
-        socket,
-        user,
-      });
-      return;
-    }
+  const sendMessage = ({
+    text,
+    mediaUrl = null,
+    mediaType = 'text',
+  }: {
+    text: string;
+    mediaUrl?: string | null;
+    mediaType?: 'text' | 'gif' | 'image' | 'video';
+  }) => {
+    if (!currentConversationId || !socket || !user?.id) return;
 
-    if (!socket.connected) {
-      console.log("❌ Socket НЕ подключен");
-      return;
-    }
-
-    const encryptedContent = encrypt(content.trim());
+    const encryptedContent = encrypt(text);
     const clientMessageId = uuidv4();
     const now = new Date().toISOString();
 
@@ -41,9 +38,9 @@ const MessageInput: React.FC = () => {
       id: `temp-${clientMessageId}`,
       conversationId: currentConversationId,
       senderId: user.id,
-      content,
-      mediaUrl: null,
-      mediaType: 'text',
+      content: text,
+      mediaUrl,
+      mediaType,
       isDelivered: false,
       isRead: false,
       createdAt: now,
@@ -57,28 +54,37 @@ const MessageInput: React.FC = () => {
     } as unknown as Message;
 
     addMessage(tempMessage);
-    setContent('');
-    setShowEmoji(false);
 
-    const messageData = {
+    if (mediaType === 'text') setContent('');
+    setShowEmoji(false);
+    setShowGifPicker(false);
+
+    socket.emit('sendMessage', {
       conversationId: currentConversationId,
       senderId: user.id,
       encryptedContent,
       clientMessageId,
-    };
-
-    console.log("✅ Отправка сообщения через socket:", messageData);
-    socket.emit('sendMessage', messageData, (response: any) => {
+      mediaUrl,
+      mediaType,
+    }, (response: any) => {
       if (response.status === 'ok') {
-        console.log("📨 Сообщение подтверждено:", response.message);
         replaceMessage(clientMessageId, {
           ...response.message,
           isDelivered: true,
         });
       } else {
-        console.error("❌ Ошибка при отправке:", response.error);
+        console.error('Ошибка при отправке:', response.error);
       }
     });
+  };
+
+  const handleSend = () => {
+    if (!content.trim()) return;
+    sendMessage({ text: content.trim() });
+  };
+
+  const handleGifSelect = (gifUrl: string) => {
+    sendMessage({ text: '', mediaUrl: gifUrl, mediaType: 'gif' });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -95,15 +101,23 @@ const MessageInput: React.FC = () => {
   return (
     <div className="message-input-container">
       <div className="emoji-wrapper">
-        <button
-          className="emoji-toggle-button"
-          onClick={() => setShowEmoji(!showEmoji)}
-        >
+        <button className="emoji-toggle-button" onClick={() => setShowEmoji(!showEmoji)}>
           😊
         </button>
         {showEmoji && (
           <div className="emoji-picker-wrapper">
             <EmojiPicker onEmojiClick={handleEmojiClick} height={300} />
+          </div>
+        )}
+      </div>
+
+      <div className="gif-wrapper">
+        <button className="gif-toggle-button" onClick={() => setShowGifPicker(!showGifPicker)}>
+          🎬
+        </button>
+        {showGifPicker && (
+          <div className="gif-picker-wrapper">
+            <GifPicker onSelect={handleGifSelect} />
           </div>
         )}
       </div>
