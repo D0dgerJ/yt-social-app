@@ -21,11 +21,11 @@ const MessageInput: React.FC = () => {
 
   const sendMessage = ({
     text,
-    mediaUrl = null,
+    mediaUrl,
     mediaType = 'text',
   }: {
     text: string;
-    mediaUrl?: string | null;
+    mediaUrl?: string;
     mediaType?: 'text' | 'gif' | 'image' | 'video';
   }) => {
     if (!currentConversationId || !socket || !user?.id) return;
@@ -59,14 +59,23 @@ const MessageInput: React.FC = () => {
     setShowEmoji(false);
     setShowGifPicker(false);
 
-    socket.emit('sendMessage', {
+    // ⚠️ Сборка payload без лишних null-полей
+    const payload: any = {
       conversationId: currentConversationId,
       senderId: user.id,
-      encryptedContent,
       clientMessageId,
-      mediaUrl,
-      mediaType,
-    }, (response: any) => {
+    };
+
+    if (text.trim()) {
+      payload.encryptedContent = encryptedContent;
+    }
+
+    if (mediaUrl) {
+      payload.mediaUrl = mediaUrl;
+      payload.mediaType = mediaType;
+    }
+
+    socket.emit('sendMessage', payload, (response: any) => {
       if (response.status === 'ok') {
         replaceMessage(clientMessageId, {
           ...response.message,
@@ -77,6 +86,7 @@ const MessageInput: React.FC = () => {
       }
     });
   };
+
 
   const handleSend = () => {
     if (!content.trim()) return;
