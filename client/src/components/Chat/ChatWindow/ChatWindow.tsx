@@ -10,6 +10,9 @@ const ChatWindow = () => {
   const { messages, setMessages, clearMessages } = useMessageStore();
   const { currentConversationId } = useChatStore();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const hasMedia = (msg: any): boolean => {
+    return !!(msg.mediaUrl || msg.stickerUrl || msg.gifUrl || msg.fileName);
+  };
 
   useChatSocket();
 
@@ -45,16 +48,26 @@ const ChatWindow = () => {
               <p>
                 <strong>{msg.sender.username}: </strong>
                 <span style={{ color: 'red', fontWeight: 'bold' }}>
-                  {msg.encryptedContent ? (() => {
-                    try {
-                      const decrypted = decrypt(msg.encryptedContent);
-                      console.log("🔓", msg.encryptedContent, "→", decrypted);
-                      return decrypted;
-                    } catch (e) {
-                      console.warn("❌ Ошибка расшифровки:", msg.encryptedContent);
-                      return "[ошибка]";
-                    }
-                  })() : '[нет контента]'}
+                  {msg.encryptedContent ? (
+                    (() => {
+                      try {
+                        const decrypted = decrypt(msg.encryptedContent);
+                        return (
+                          <span style={{ color: 'red', fontWeight: 'bold' }}>
+                            {decrypted}
+                          </span>
+                        );
+                      } catch (e) {
+                        return (
+                          <span style={{ color: 'red', fontWeight: 'bold' }}>
+                            [ошибка]
+                          </span>
+                        );
+                      }
+                    })()
+                  ) : !hasMedia(msg) ? (
+                    <span style={{ color: 'red', fontWeight: 'bold' }}>[нет контента]</span>
+                  ) : null}
                 </span>
               </p>
 

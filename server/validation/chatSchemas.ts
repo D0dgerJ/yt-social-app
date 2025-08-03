@@ -5,11 +5,11 @@ export const sendMessageSchema = z
     conversationId: z.number({ invalid_type_error: "conversationId must be a number" }),
     senderId: z.number({ invalid_type_error: "senderId must be a number" }),
     encryptedContent: z.string().optional(),
-    mediaUrl: z.string().url().optional(),
+    mediaUrl: z.string().url().optional().nullable(),
     mediaType: z.enum(['image', 'video', 'file', 'gif', 'audio', 'text', 'sticker']).optional(),
     fileName: z.string().optional(),
-    gifUrl: z.string().url().optional(),
-    stickerUrl: z.string().url().optional(),
+    gifUrl: z.string().url().optional().nullable(),
+    stickerUrl: z.string().url().optional().nullable(),
     repliedToId: z.number().optional(),
   })
   .refine(

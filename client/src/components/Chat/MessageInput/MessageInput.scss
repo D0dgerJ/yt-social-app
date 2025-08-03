@@ -1,4 +1,6 @@
 .message-input-container {
+  flex-shrink: 0;
+  z-index: 1; 
   display: flex;
   align-items: center;
   padding: 8px;
