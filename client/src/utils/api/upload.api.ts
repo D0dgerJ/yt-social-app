@@ -18,8 +18,12 @@ export const uploadFile = async (file: File): Promise<UploadResponse> => {
     },
   });
 
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
   return {
-    fileUrl: response.data.fileUrl,
+    fileUrl: `${baseUrl}${response.data.fileUrl}`,
     fileType: response.data.fileType,
+    fileName: response.data.fileName,
+    fileSize: response.data.fileSize,
   };
 };

@@ -19,24 +19,39 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect }) => {
     if (!file) return;
 
     const allowedTypes = [
+      // 📸 Изображения
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'image/gif',
+
+      // 📄 Документы
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
+      // 📦 Архивы
       'application/zip',
       'application/x-rar-compressed',
       'application/x-7z-compressed',
-      'audio/mpeg',
-      'video/mp4',
-      'video/x-matroska',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/json',
+
+      // 📄 Текст
+      'text/plain',
       'text/csv',
       'text/html',
       'text/css',
       'application/javascript',
       'application/x-typescript',
+      'application/json',
+
+      // 🎵 Аудио
+      'audio/mpeg',
+
+      // 🎥 Видео
+      'video/mp4',
+      'video/x-matroska',
     ];
 
     if (!allowedTypes.includes(file.type)) {
@@ -62,7 +77,7 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect }) => {
         type="file"
         hidden
         onChange={handleChange}
-        accept=".pdf,.doc,.docx,.txt,.zip,.rar,.7z,.mp3,.mp4,.avi,.mkv,.csv,.xlsx,.json,.xml,.html,.css,.js,.ts"
+        accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.doc,.docx,.txt,.zip,.rar,.7z,.mp3,.mp4,.avi,.mkv,.csv,.xlsx,.json,.xml,.html,.css,.js,.ts"
       />
     </>
   );

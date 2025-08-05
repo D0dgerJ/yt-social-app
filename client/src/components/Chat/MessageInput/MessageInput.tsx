@@ -98,24 +98,39 @@ const MessageInput: React.FC = () => {
     if (!file) return;
 
     const allowedTypes = [
+      // 📸 Изображения
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'image/gif',
+
+      // 📄 Документы
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
+      // 📦 Архивы
       'application/zip',
       'application/x-rar-compressed',
       'application/x-7z-compressed',
-      'audio/mpeg',
-      'video/mp4',
-      'video/x-matroska',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/json',
+
+      // 📄 Текст
+      'text/plain',
       'text/csv',
       'text/html',
       'text/css',
       'application/javascript',
       'application/x-typescript',
+      'application/json',
+
+      // 🎵 Аудио
+      'audio/mpeg',
+
+      // 🎥 Видео
+      'video/mp4',
+      'video/x-matroska',
     ];
 
     const mediaTypes = ['text', 'image', 'video', 'gif', 'file'] as const;
