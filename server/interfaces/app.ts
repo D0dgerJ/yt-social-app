@@ -1,5 +1,6 @@
 import express, { Express } from "express";
 import dotenv from "dotenv";
+import path from "path";
 
 dotenv.config();
 
@@ -15,6 +16,8 @@ try {
   await import("../cron/storyCleaner.ts");
 
   app = express();
+
+  app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
 
   app.use(helmet());
   app.use(morgan("dev"));
