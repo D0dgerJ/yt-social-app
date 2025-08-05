@@ -1,11 +1,16 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url'; // 👈 нужно для __dirname в ESM
+
+// 👇 Эмуляция __dirname для ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Папка для загрузок
 const uploadDir = path.join(__dirname, '../../../uploads');
 
-// Убедиться, что папка есть
+// Убедиться, что папка существует
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

@@ -7,7 +7,7 @@ import storyRoutes from "./story.route.ts";
 import commentRoutes from "./comment.route.ts";
 import notificationRoutes from "./notification.route.ts";
 import chatRoutes from "./chat.route.ts";
-import uploadRoutes from "./uploadRoutes";
+import uploadRoutes from "./uploadRoutes.ts";
 
 const router = express.Router();
 
