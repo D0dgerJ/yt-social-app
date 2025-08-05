@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import EmojiPicker from 'emoji-picker-react';
 import GifPicker from './GifPicker';
 import './MessageInput.scss';
+import FilePicker from './FilePicker';
+import { uploadFile } from '../../../utils/api/upload.api';
 
 const MessageInput: React.FC = () => {
   const [content, setContent] = useState('');
@@ -26,7 +28,7 @@ const MessageInput: React.FC = () => {
   }: {
     text: string;
     mediaUrl?: string;
-    mediaType?: 'text' | 'gif' | 'image' | 'video';
+    mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file';
   }) => {
     if (!currentConversationId || !socket || !user?.id) return;
 
@@ -87,11 +89,62 @@ const MessageInput: React.FC = () => {
     });
   };
 
-
   const handleSend = () => {
     if (!content.trim()) return;
     sendMessage({ text: content.trim() });
   };
+
+  const handleFileSelect = async (file: File) => {
+    if (!file) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
+      'audio/mpeg',
+      'video/mp4',
+      'video/x-matroska',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/json',
+      'text/csv',
+      'text/html',
+      'text/css',
+      'application/javascript',
+      'application/x-typescript',
+    ];
+
+    const mediaTypes = ['text', 'image', 'video', 'gif', 'file'] as const;
+    type MediaType = typeof mediaTypes[number];
+
+    const isValidMediaType = (type: string): type is MediaType => {
+      return mediaTypes.includes(type as MediaType);
+    };
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Этот тип файла не поддерживается');
+      return;
+    }
+
+    try {
+      const { fileUrl, fileType } = await uploadFile(file);
+
+      const mediaType: MediaType = isValidMediaType(fileType) ? fileType : 'file';
+
+      sendMessage({
+        text: '',
+        mediaUrl: fileUrl,
+        mediaType,
+      });
+    } catch (error) {
+      console.error('Ошибка при загрузке файла:', error);
+    }
+  };
+
 
   const handleGifSelect = (gifUrl: string) => {
     sendMessage({ text: '', mediaUrl: gifUrl, mediaType: 'gif' });
@@ -130,6 +183,10 @@ const MessageInput: React.FC = () => {
             <GifPicker onSelect={handleGifSelect} />
           </div>
         )}
+      </div>
+
+      <div className="file-wrapper">
+        <FilePicker onSelect={handleFileSelect} />
       </div>
 
       <input
