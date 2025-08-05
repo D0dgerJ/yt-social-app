@@ -21,7 +21,7 @@ try {
 
   app = express();
 
-  app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
+ /*app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));*/
 
   app.use(helmet());
   app.use(morgan("dev"));

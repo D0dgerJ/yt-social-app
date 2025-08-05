@@ -8,6 +8,7 @@ import commentRoutes from "./comment.route.ts";
 import notificationRoutes from "./notification.route.ts";
 import chatRoutes from "./chat.route.ts";
 import uploadRoutes from "./uploadRoutes.ts";
+import downloadRoutes from "./downloadRoutes.ts";
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.use("/comments", commentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/chat", chatRoutes);
 router.use("/upload", uploadRoutes);
+router.use(downloadRoutes);
 
 export default router;
