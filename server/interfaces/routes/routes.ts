@@ -7,6 +7,7 @@ import storyRoutes from "./story.route.ts";
 import commentRoutes from "./comment.route.ts";
 import notificationRoutes from "./notification.route.ts";
 import chatRoutes from "./chat.route.ts";
+import uploadRoutes from "./uploadRoutes";
 
 const router = express.Router();
 
@@ -17,5 +18,6 @@ router.use("/stories", storyRoutes);
 router.use("/comments", commentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/chat", chatRoutes);
+router.use("/upload", uploadRoutes);
 
 export default router;
