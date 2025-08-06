@@ -1,0 +1,63 @@
+.message-reactions {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .reaction-options {
+    display: flex;
+    gap: 8px;
+
+    .reaction-button {
+      background-color: #f3f3f3;
+      border: none;
+      padding: 6px 10px;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #e0e0e0;
+      }
+    }
+  }
+
+  .reaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .reaction-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .emoji {
+        font-size: 18px;
+      }
+
+      .count {
+        font-weight: bold;
+        color: #333;
+      }
+
+      .users {
+        display: flex;
+        gap: 4px;
+
+        .user-avatar {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ccc;
+
+          &.me {
+            border-color: #00acdc;
+          }
+        }
+      }
+    }
+  }
+}

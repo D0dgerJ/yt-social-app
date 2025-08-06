@@ -4,11 +4,14 @@ import { useChatSocket } from '@/hooks/useChatSocket';
 import { useChatStore } from '@/stores/chatStore';
 import { getChatMessages } from '@/utils/api/chat.api';
 import { decrypt } from '@/utils/encryption';
+import { MessageReactions } from '../MessageReactions/MessageReactions';
+import { useUserStore } from '@/stores/userStore';
 import './ChatWindow.scss';
 
 const ChatWindow = () => {
   const { messages, setMessages, clearMessages } = useMessageStore();
   const { currentConversationId } = useChatStore();
+  const currentUser = useUserStore((state) => state.currentUser);
   const bottomRef = useRef<HTMLDivElement>(null);
   const hasMedia = (msg: any): boolean => {
     return !!(msg.mediaUrl || msg.stickerUrl || msg.gifUrl || msg.fileName);
@@ -84,9 +87,18 @@ const ChatWindow = () => {
               )}
 
               {msg.mediaType === 'file' && msg.mediaUrl && (
-                <a href={msg.mediaUrl} download={msg.fileName ?? undefined}>
+                <a
+                  href={`/uploads/${encodeURIComponent(
+                    msg.mediaUrl.split('/').pop() || ''
+                  )}`}
+                  download={msg.fileName ?? undefined}
+                >
                   📎 {msg.fileName}
                 </a>
+              )}
+
+              {currentUser && (
+                <MessageReactions messageId={msg.id} currentUserId={currentUser.id} />
               )}
             </div>
           ))
