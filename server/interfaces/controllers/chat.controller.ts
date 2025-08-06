@@ -181,7 +181,13 @@ export const markAsRead = async (req: Request, res: Response) => {
 export const reactToMessage = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { messageId, emoji } = req.body;
+    const messageId = Number(req.params.messageId);
+    const { emoji } = req.body;
+
+    if (isNaN(messageId)) {
+      res.status(400).json({ message: "Некорректный messageId" });
+      return;
+    }
 
     const result = await addOrUpdateReaction({ userId, messageId, emoji });
 
