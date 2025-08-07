@@ -57,7 +57,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       )}
 
       {mediaType === 'image' && mediaUrl && (
-        <img src={mediaUrl} alt="image" />
+        <img src={mediaUrl} alt="image" className="message-image" />
       )}
 
       {mediaType === 'gif' && mediaUrl && (
