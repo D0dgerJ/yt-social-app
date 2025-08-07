@@ -4,7 +4,7 @@ import { useChatSocket } from '@/hooks/useChatSocket';
 import { useChatStore } from '@/stores/chatStore';
 import { getChatMessages } from '@/utils/api/chat.api';
 import { decrypt } from '@/utils/encryption';
-import { MessageReactions } from '../MessageReactions/MessageReactions';
+import { MessageItem } from '../MessageItem/MessageItem';
 import { useUserStore } from '@/stores/userStore';
 import './ChatWindow.scss';
 
@@ -97,9 +97,31 @@ const ChatWindow = () => {
                 </a>
               )}
 
-              {currentUser && (
-                <MessageReactions messageId={msg.id} currentUserId={currentUser.id} />
-              )}
+              <MessageItem
+                key={msg.id}
+                messageId={msg.id}
+                content={
+                  msg.encryptedContent
+                    ? (() => {
+                        try {
+                          return decrypt(msg.encryptedContent);
+                        } catch {
+                          return '[ошибка]';
+                        }
+                      })()
+                    : !hasMedia(msg)
+                    ? '[нет контента]'
+                    : ''
+                }
+                currentUserId={currentUser?.id ?? 0}
+                senderId={msg.senderId}
+                senderUsername={msg.sender.username}
+                isOwnMessage={msg.senderId === currentUser?.id}
+                mediaType={msg.mediaType}
+                mediaUrl={msg.mediaUrl}
+                stickerUrl={msg.stickerUrl}
+                fileName={msg.fileName}
+              />
             </div>
           ))
         )}
