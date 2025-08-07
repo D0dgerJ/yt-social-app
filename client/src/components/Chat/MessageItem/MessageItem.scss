@@ -1,0 +1,25 @@
+.message-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  position: relative;
+  background-color: #f1f1f1;
+
+  &.own {
+    background-color: #daf1e1;
+    text-align: right;
+  }
+
+  .sender {
+    font-weight: bold;
+    margin-right: 6px;
+  }
+
+  .reactions-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10;
+    margin-top: 4px;
+  }
+}
