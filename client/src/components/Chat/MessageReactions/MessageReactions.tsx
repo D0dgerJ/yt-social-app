@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { getMessageReactions, reactToMessage } from '../../../utils/api/chat.api';
+import {
+  getMessageReactions,
+  reactToMessage,
+} from '../../../utils/api/chat.api';
 import './MessageReactions.scss';
 
 interface User {
@@ -8,7 +11,7 @@ interface User {
   profilePicture: string | null;
 }
 
-interface GroupedReaction {
+export interface GroupedReaction {
   emoji: string;
   count: number;
   users: User[];
@@ -17,11 +20,13 @@ interface GroupedReaction {
 interface MessageReactionsProps {
   messageId: number;
   currentUserId: number;
+  onReactionsUpdate?: (reactions: GroupedReaction[]) => void;
 }
 
 export const MessageReactions: React.FC<MessageReactionsProps> = ({
   messageId,
   currentUserId,
+  onReactionsUpdate,
 }) => {
   const [reactions, setReactions] = useState<GroupedReaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,6 +36,7 @@ export const MessageReactions: React.FC<MessageReactionsProps> = ({
     try {
       const { reactions } = await getMessageReactions(messageId);
       setReactions(reactions);
+      onReactionsUpdate?.(reactions);
     } catch (err) {
       console.error('Не удалось получить реакции');
     } finally {
@@ -56,25 +62,32 @@ export const MessageReactions: React.FC<MessageReactionsProps> = ({
   return (
     <div className="message-reactions">
       <div className="reaction-options">
-        {emojis.map((emoji) => (
-          <button
-            key={emoji}
-            className="reaction-button"
-            onClick={() => handleReact(emoji)}
-          >
-            {emoji}
-          </button>
-        ))}
+        {emojis.map((emoji) => {
+          const userReacted = reactions.some(
+            (r) => r.emoji === emoji && r.users.some((u) => u.id === currentUserId)
+          );
+
+        return (
+            <button
+              key={emoji}
+              className={`reaction-button${userReacted ? ' reaction-button--active' : ''}`}
+              onClick={() => handleReact(emoji)}
+              type="button"
+            >
+              {emoji}
+            </button>
+          );
+        })}
       </div>
 
       <div className="reaction-list">
         {loading ? (
-          <p>Загрузка...</p>
+          <span className="reaction-loading">Загрузка...</span>
         ) : (
           reactions.map((reaction) => (
             <div key={reaction.emoji} className="reaction-group">
-              <span className="emoji">{reaction.emoji}</span>
-              <span className="count">{reaction.count}</span>
+              <span className="reaction-group__emoji">{reaction.emoji}</span>
+              <span className="reaction-group__count">{reaction.count}</span>
             </div>
           ))
         )}

@@ -1,40 +1,64 @@
 .message-item {
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 4px;
   position: relative;
-  background-color: none;
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: #a0e890;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
 
   &.own {
-    background-color: none;
-    text-align: right;
+    background-color: #c0ffd9;
+    align-self: flex-end;
   }
 
-  .sender {
-    font-weight: bold;
-    margin-right: 6px;
+  .message-content {
+    font-size: 14px;
+
+    .sender {
+      font-weight: bold;
+      margin-right: 4px;
+    }
+  }
+
+  .message-image {
+    max-width: 300px;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+
+  .file-link {
+    margin-top: 8px;
+    display: inline-block;
+    color: #0056b3;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .message-reactions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+
+    .reaction {
+      padding: 4px 8px;
+      background-color: #f0f0f0;
+      border-radius: 12px;
+      font-size: 14px;
+
+      &.own-reaction {
+        background-color: #d1ffd9;
+        border: 1px solid #66bb6a;
+      }
+    }
   }
 
   .reactions-popup {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 10;
-    margin-top: 4px;
-  }
-}
-
-.message-image {
-  max-width: 300px;
-  max-height: 300px;
-  border-radius: 10px;
-  object-fit: cover;
-  margin-top: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: scale(1.02);
+    margin-top: 8px;
   }
 }
