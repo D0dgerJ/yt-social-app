@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
-import { MessageReactions, type GroupedReaction } from '../MessageReactions/MessageReactions';
+import React, { useEffect, useState } from 'react';
+import { MessageReactions } from '../MessageReactions/MessageReactions';
+import { getMessageReactions } from '../../../utils/api/chat.api';
 import './MessageItem.scss';
+
+interface GroupedReaction {
+  emoji: string;
+  count: number;
+  users: { id: number; username: string; profilePicture: string | null }[];
+}
 
 interface MessageItemProps {
   messageId: number;
@@ -18,7 +25,7 @@ interface MessageItemProps {
 
 const API_BASE = import.meta.env.VITE_API_URL ?? window.location.origin;
 
-function toAbsoluteUrl(url: string | undefined | null): string {
+function toAbsoluteUrl(url?: string): string {
   if (!url) return '';
   try {
     new URL(url);
@@ -37,7 +44,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   messageId,
   content,
   currentUserId,
-  senderId,
   senderUsername,
   isOwnMessage,
   mediaType,
@@ -46,100 +52,108 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   fileName,
   groupedReactions = [],
 }) => {
-  const [showReactionsPicker, setShowReactionsPicker] = useState(false);
-  const [currentReactions, setCurrentReactions] = useState<GroupedReaction[]>(groupedReactions);
+  const [showReactionsPopup, setShowReactionsPopup] = useState(false);
+  const [reactions, setReactions] = useState<GroupedReaction[]>(groupedReactions);
   const [imageFailed, setImageFailed] = useState(false);
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setShowReactionsPicker((prev) => !prev);
-  };
+  useEffect(() => {
+    let isCancelled = false;
 
-  const handleReactionsUpdate = (reactions: GroupedReaction[]) => {
-    setCurrentReactions(reactions);
-  };
+    const fetch = async () => {
+      try {
+        const { reactions } = await getMessageReactions(messageId);
+        if (!isCancelled) setReactions(reactions);
+      } catch {
+      }
+    };
+
+    fetch();
+    return () => {
+      isCancelled = true;
+    };
+  }, [messageId]);
 
   const normalizedMediaUrl = toAbsoluteUrl(mediaUrl);
   const uploadsFallback =
     mediaUrl ? `/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}` : '';
-
   const isImage =
-    (mediaType === 'image' || mediaType === 'gif' || isImageByExt(normalizedMediaUrl));
+    (mediaType === 'image' || mediaType === 'gif') && !!mediaUrl
+      ? true
+      : normalizedMediaUrl
+        ? isImageByExt(normalizedMediaUrl)
+        : false;
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowReactionsPopup((prev) => !prev);
+  };
 
   return (
     <div
-      className={`message-item${isOwnMessage ? ' message-item--own' : ''}`}
+      className={`message-item ${isOwnMessage ? 'own' : ''}`}
       onContextMenu={handleContextMenu}
     >
       <div className="message-content">
-        <span className="message-content__sender">{senderUsername}:</span>
-        <span className="message-content__text">{content}</span>
+        <span className="sender">{senderUsername}:</span> {content}
       </div>
 
-      {/* Медиа — изображения и гифы: показываем <img>, плюс fallback, плюс плейсхолдер */}
+      {/* Медиа — изображение/гиф с запасным путём */}
       {isImage && mediaUrl && (
         <div className="message-media">
           {!imageFailed ? (
             <img
-              className="message-media__image"
+              className="message-image"
               src={normalizedMediaUrl}
               alt={fileName ?? 'image'}
               loading="lazy"
               onError={(e) => {
-                if (uploadsFallback && (e.currentTarget as HTMLImageElement).src !== uploadsFallback) {
-                  (e.currentTarget as HTMLImageElement).src = uploadsFallback;
+                const el = e.currentTarget as HTMLImageElement;
+                if (uploadsFallback && el.src !== uploadsFallback) {
+                  el.src = uploadsFallback;
                 } else {
                   setImageFailed(true);
                 }
               }}
             />
           ) : (
-            <div className="message-media__placeholder">Изображение недоступно</div>
+            <div className="message-image-fallback">Изображение недоступно</div>
           )}
         </div>
       )}
 
-      {/* Стикер */}
       {mediaType === 'sticker' && stickerUrl && (
-        <div className="message-media">
-          <img className="message-media__sticker" src={toAbsoluteUrl(stickerUrl)} alt="sticker" />
-        </div>
+        <img src={toAbsoluteUrl(stickerUrl)} alt="sticker" className="message-image" />
       )}
 
-      {/* Файл (не изображение) — иконка/ссылка (рендер оставлен как был) */}
       {mediaType === 'file' && mediaUrl && (
         <a
           href={`/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}`}
           download={fileName ?? undefined}
-          className="message-file"
+          className="file-link"
         >
           📎 {fileName}
         </a>
       )}
 
-      {/* Реакции */}
-      {currentReactions.length > 0 && (
+      {/* Реакции — всегда видны, если они есть */}
+      {reactions.length > 0 && (
         <div className="message-reactions-static">
-          {currentReactions.map((r) => (
-            <span key={r.emoji} className="message-reaction-chip">
-              <span className="message-reaction-chip__emoji">{r.emoji}</span>
-              <span className="message-reaction-chip__count">{r.count}</span>
+          {reactions.map((r) => (
+            <span key={r.emoji} className="reaction-chip">
+              <span className="reaction-chip__emoji">{r.emoji}</span>
+              <span className="reaction-chip__count">{r.count}</span>
             </span>
           ))}
         </div>
       )}
 
-      {/* Попап выбора реакций — по ПКМ (или можно повесить на клик по иконке) */}
-      {showReactionsPicker && (
-        <div
-          className="reactions-popup"
-          onClick={() => setShowReactionsPicker(false)}
-          role="presentation"
-        >
+      {/* Попап выбора реакций (ПКМ) — обновляет состояния через onReactionsUpdate */}
+      {showReactionsPopup && (
+        <div className="reactions-popup" onClick={() => setShowReactionsPopup(false)}>
           <MessageReactions
             messageId={messageId}
             currentUserId={currentUserId}
-            onReactionsUpdate={handleReactionsUpdate}
+            onReactionsUpdate={setReactions}
           />
         </div>
       )}
