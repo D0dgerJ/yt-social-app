@@ -62,3 +62,22 @@
     margin-top: 8px;
   }
 }
+
+.message-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f7f7f7;
+  transition: background .15s ease;
+  &:hover { background: #efefef; }
+  &__name {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+  }
+}
