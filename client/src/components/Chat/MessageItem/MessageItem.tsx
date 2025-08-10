@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MessageReactions } from '../MessageReactions/MessageReactions';
 import { getMessageReactions } from '../../../utils/api/chat.api';
+import FileIcon, { getExt } from '../FileIcon/FileIcon';
 import './MessageItem.scss';
 
 interface GroupedReaction {
@@ -129,12 +130,15 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         <a
           href={`/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}`}
           download={fileName ?? undefined}
-          className="file-link"
+          className="message-file"
         >
-          📎 {fileName}
+          <FileIcon nameOrUrl={fileName || mediaUrl} />
+          <span className="message-file__name">
+            {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
+          </span>
         </a>
       )}
-
+      
       {/* Реакции — всегда видны, если они есть */}
       {reactions.length > 0 && (
         <div className="message-reactions-static">

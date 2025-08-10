@@ -1,0 +1,33 @@
+.file-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  font-size: 12px;
+  line-height: 1;
+  user-select: none;
+
+  &__badge {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #e9e9e9;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+
+  &--pdf { background: #fdeaea; .file-icon__badge { background:#f8d1d1; } }
+  &--word { background: #eaf1fd; .file-icon__badge { background:#d6e4fb; } }
+  &--excel { background: #eaf7f0; .file-icon__badge { background:#d2f0e0; } }
+  &--powerpoint { background: #fff0e6; .file-icon__badge { background:#ffe2cf; } }
+  &--txt { background: #f4f4f4; .file-icon__badge { background:#e6e6e6; } }
+  &--csv { background: #edf9f0; .file-icon__badge { background:#dcf3e2; } }
+  &--json { background: #eef7ff; .file-icon__badge { background:#dcebff; } }
+  &--image { background: #eefbf6; .file-icon__badge { background:#dcf5eb; } }
+  &--audio { background: #edf3ff; .file-icon__badge { background:#dde9ff; } }
+  &--video { background: #f3f0ff; .file-icon__badge { background:#e7e1ff; } }
+  &--archive { background: #fff6e6; .file-icon__badge { background:#ffebc7; } }
+  &--code { background: #eff6ff; .file-icon__badge { background:#dce9ff; } }
+  &--other { background: #f1f1f1; .file-icon__badge { background:#e5e5e5; } }
+}
