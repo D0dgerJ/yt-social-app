@@ -48,54 +48,6 @@ const ChatWindow = () => {
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className="message">
-              <p>
-                <strong>{msg.sender.username}: </strong>
-                <span style={{ color: 'red', fontWeight: 'bold' }}>
-                  {msg.encryptedContent ? (
-                    (() => {
-                      try {
-                        const decrypted = decrypt(msg.encryptedContent);
-                        return (
-                          <span style={{ color: 'red', fontWeight: 'bold' }}>
-                            {decrypted}
-                          </span>
-                        );
-                      } catch (e) {
-                        return (
-                          <span style={{ color: 'red', fontWeight: 'bold' }}>
-                            [ошибка]
-                          </span>
-                        );
-                      }
-                    })()
-                  ) : !hasMedia(msg) ? (
-                    <span style={{ color: 'red', fontWeight: 'bold' }}>[нет контента]</span>
-                  ) : null}
-                </span>
-              </p>
-
-              {msg.mediaType === 'image' && msg.mediaUrl && (
-                <img src={msg.mediaUrl} alt="image" />
-              )}
-
-              {msg.mediaType === 'gif' && msg.mediaUrl && (
-                <img src={msg.mediaUrl} alt="gif" className="media-gif" />
-              )}
-
-              {msg.mediaType === 'sticker' && msg.stickerUrl && (
-                <img src={msg.stickerUrl} alt="sticker" />
-              )}
-
-              {msg.mediaType === 'file' && msg.mediaUrl && (
-                <a
-                  href={`/uploads/${encodeURIComponent(
-                    msg.mediaUrl.split('/').pop() || ''
-                  )}`}
-                  download={msg.fileName ?? undefined}
-                >
-                  📎 {msg.fileName}
-                </a>
-              )}
 
               <MessageItem
                 key={msg.id}
