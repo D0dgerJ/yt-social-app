@@ -1,0 +1,30 @@
+.audio-recorder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ar-btn {
+    padding: 6px 10px;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+
+    &--start { border-color: #f2b3b3; background: #ffeaea; }
+    &--stop { border-color: #f2b3b3; }
+    &--send { border-color: #b3d6f2; background: #eaf4ff; }
+    &--ghost { background: transparent; }
+  }
+
+  &__player { display: inline-block; min-width: 260px; }
+  &__timer { font-variant-numeric: tabular-nums; opacity: .7; }
+  &__error { color: #c50000; }
+}
