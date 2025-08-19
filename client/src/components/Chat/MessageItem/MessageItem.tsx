@@ -17,7 +17,7 @@ interface MessageItemProps {
   senderId: number;
   senderUsername: string;
   isOwnMessage: boolean;
-  mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file' | 'sticker';
+  mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file' | 'sticker'| 'audio';
   mediaUrl?: string;
   stickerUrl?: string;
   fileName?: string;
@@ -137,6 +137,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
           </span>
         </a>
+      )}
+
+      {mediaType === 'audio' && mediaUrl && (
+        <audio controls src={mediaUrl} className="message-audio" />
       )}
       
       {/* Реакции — всегда видны, если они есть */}

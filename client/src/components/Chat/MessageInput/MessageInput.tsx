@@ -10,11 +10,13 @@ import GifPicker from './GifPicker';
 import './MessageInput.scss';
 import FilePicker from './FilePicker';
 import { uploadFile } from '../../../utils/api/upload.api';
+import AudioRecorder from '../AudioRecorder/AudioRecorder';
 
 const MessageInput: React.FC = () => {
   const [content, setContent] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [showRecorder, setShowRecorder] = useState(false);
 
   const { currentConversationId } = useChatStore();
   const { user } = useAuth();
@@ -28,7 +30,7 @@ const MessageInput: React.FC = () => {
   }: {
     text: string;
     mediaUrl?: string;
-    mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file';
+    mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file' | 'audio';
   }) => {
     if (!currentConversationId || !socket || !user?.id) return;
 
@@ -61,7 +63,6 @@ const MessageInput: React.FC = () => {
     setShowEmoji(false);
     setShowGifPicker(false);
 
-    // ⚠️ Сборка payload без лишних null-полей
     const payload: any = {
       conversationId: currentConversationId,
       senderId: user.id,
@@ -71,7 +72,6 @@ const MessageInput: React.FC = () => {
     if (text.trim()) {
       payload.encryptedContent = encryptedContent;
     }
-
     if (mediaUrl) {
       payload.mediaUrl = mediaUrl;
       payload.mediaType = mediaType;
@@ -98,25 +98,25 @@ const MessageInput: React.FC = () => {
     if (!file) return;
 
     const allowedTypes = [
-      // 📸 Изображения
+      // Изображения
       'image/png',
       'image/jpeg',
       'image/webp',
       'image/gif',
 
-      // 📄 Документы
+      // Документы
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 
-      // 📦 Архивы
+      // Архивы
       'application/zip',
       'application/x-rar-compressed',
       'application/x-7z-compressed',
 
-      // 📄 Текст
+      // Текст
       'text/plain',
       'text/csv',
       'text/html',
@@ -125,15 +125,17 @@ const MessageInput: React.FC = () => {
       'application/x-typescript',
       'application/json',
 
-      // 🎵 Аудио
-      'audio/mpeg',
-
-      // 🎥 Видео
-      'video/mp4',
+      // Аудио
+      'audio/mpeg', 
+      'audio/webm', 
+      'audio/ogg', 
+      'audio/wav',
+      // видео
+      'video/mp4', 
       'video/x-matroska',
     ];
 
-    const mediaTypes = ['text', 'image', 'video', 'gif', 'file'] as const;
+    const mediaTypes = ['text', 'image', 'video', 'gif', 'file', 'audio'] as const;
     type MediaType = typeof mediaTypes[number];
 
     const isValidMediaType = (type: string): type is MediaType => {
@@ -147,7 +149,6 @@ const MessageInput: React.FC = () => {
 
     try {
       const { fileUrl, fileType } = await uploadFile(file);
-
       const mediaType: MediaType = isValidMediaType(fileType) ? fileType : 'file';
 
       sendMessage({
@@ -159,7 +160,6 @@ const MessageInput: React.FC = () => {
       console.error('Ошибка при загрузке файла:', error);
     }
   };
-
 
   const handleGifSelect = (gifUrl: string) => {
     sendMessage({ text: '', mediaUrl: gifUrl, mediaType: 'gif' });
@@ -174,6 +174,16 @@ const MessageInput: React.FC = () => {
 
   const handleEmojiClick = (emojiData: any) => {
     setContent((prev) => prev + emojiData.emoji);
+  };
+
+  const handleAudioSend = async (file: File) => {
+    try {
+      const { fileUrl } = await uploadFile(file);
+      sendMessage({ text: '', mediaUrl: fileUrl, mediaType: 'audio' });
+      setShowRecorder(false);
+    } catch (e) {
+      console.error('Ошибка загрузки аудио:', e);
+    }
   };
 
   return (
@@ -196,6 +206,21 @@ const MessageInput: React.FC = () => {
         {showGifPicker && (
           <div className="gif-picker-wrapper">
             <GifPicker onSelect={handleGifSelect} />
+          </div>
+        )}
+      </div>
+
+      <div className="audio-wrapper">
+        <button
+          className="audio-toggle-button"
+          onClick={() => setShowRecorder((v) => !v)}
+          title="Голосовое сообщение"
+        >
+          🎤
+        </button>
+        {showRecorder && (
+          <div className="audio-recorder-wrapper">
+            <AudioRecorder onSend={handleAudioSend} onCancel={() => setShowRecorder(false)} />
           </div>
         )}
       </div>
