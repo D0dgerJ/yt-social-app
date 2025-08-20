@@ -12,6 +12,7 @@ interface SendMessageInput {
   gifUrl?: string;
   stickerUrl?: string;
   repliedToId?: number;
+  clientMessageId?: string | null;
 }
 
 export const sendMessage = async (input: SendMessageInput) => {
@@ -30,22 +31,19 @@ export const sendMessage = async (input: SendMessageInput) => {
       repliedToId,
     } = data;
 
-    // ✅ Проверка: участник ли пользователь
     const isParticipant = await prisma.participant.findFirst({
-      where: {
-        conversationId,
-        userId: senderId,
-      },
+      where: { conversationId, userId: senderId },
+      select: { id: true },
     });
 
     if (!isParticipant) {
       throw new Error("Вы не являетесь участником этого чата");
     }
 
-    // ✅ Опционально: проверка на repliedToId в пределах чата
     if (repliedToId) {
       const original = await prisma.message.findUnique({
         where: { id: repliedToId },
+        select: { id: true, conversationId: true },
       });
 
       if (!original || original.conversationId !== conversationId) {
@@ -53,57 +51,95 @@ export const sendMessage = async (input: SendMessageInput) => {
       }
     }
 
-    // 💬 Создание сообщения
-    const message = await prisma.message.create({
-      data: {
-        conversationId,
-        senderId,
-        encryptedContent,
-        mediaUrl,
-        mediaType,
-        fileName,
-        gifUrl,
-        stickerUrl,
-        repliedToId,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
+    if (mediaType && mediaType !== "text") {
+      if (!mediaUrl) {
+        throw new Error("Для mediaType требуется mediaUrl");
+      }
+    }
+
+    const message = await prisma.$transaction(async (tx) => {
+
+      const created = await tx.message.create({
+        data: {
+          conversationId,
+          senderId,
+          encryptedContent: encryptedContent ?? null,
+          mediaUrl: mediaUrl ?? null,
+          mediaType: mediaType ?? null,
+          fileName: fileName ?? null,
+          gifUrl: gifUrl ?? null,
+          stickerUrl: stickerUrl ?? null,
+          repliedToId: repliedToId ?? null,
+        },
+        include: {
+          sender: {
+            select: { id: true, username: true, profilePicture: true },
+          },
+          repliedTo: {
+            select: {
+              id: true,
+              encryptedContent: true,
+              senderId: true,
+              mediaUrl: true,
+              mediaType: true,
+            },
           },
         },
-        repliedTo: {
-          select: {
-            id: true,
-            encryptedContent: true,
-            senderId: true,
-            mediaUrl: true,
-            mediaType: true,
+      });
+
+      if (mediaType && mediaType !== "text" && mediaUrl) {
+        await tx.mediaFile.create({
+          data: {
+            url: mediaUrl,
+            type: mediaType,
+            uploaderId: senderId,
+            messageId: created.id,
+          },
+        });
+      }
+
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageId: created.id,
+          updatedAt: new Date(),
+        },
+      });
+
+      const withRelations = await tx.message.findUnique({
+        where: { id: created.id },
+        include: {
+          sender: {
+            select: { id: true, username: true, profilePicture: true },
+          },
+          repliedTo: {
+            select: {
+              id: true,
+              encryptedContent: true,
+              senderId: true,
+              mediaUrl: true,
+              mediaType: true,
+            },
+          },
+          mediaFiles: {
+            select: { id: true, url: true, type: true, uploadedAt: true },
           },
         },
-      },
+      });
+
+      if (!withRelations) {
+        throw new Error("Не удалось получить созданное сообщение");
+      }
+
+      return withRelations;
     });
 
-    // 🕒 Обновляем данные чата
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: {
-        lastMessageId: message.id,
-        updatedAt: new Date(),
-      },
-    });
-
-    // 📡 Отправка по WebSocket
     getIO().to(String(conversationId)).emit("receiveMessage", message);
 
     return message;
   } catch (error) {
     console.error("❌ Ошибка при отправке сообщения:", error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось отправить сообщение");
   }
 };
