@@ -1,20 +1,34 @@
 import { Request, Response } from "express";
-import multer from "multer";
+import { upload } from "../upload/uploadFile.ts"
 import { uploadToStorage } from "../../../utils/uploadToStorage.ts";
 
-const upload = multer({ dest: "tmp/" }); // локальная временная директория
-
+/**
+ * Обработчик загрузки медиа (изображения, видео, аудио, документы).
+ * Поле в форме должно называться "file".
+ */
 export const uploadMediaHandler = [
   upload.single("file"),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     const file = req.file;
-    if (!file) return res.status(400).json({ error: "Нет файла" });
+
+    if (!file) {
+      res.status(400).json({ error: "Файл не был загружен" });
+      return;
+    }
 
     try {
-      const url = await uploadToStorage(file); // функция для загрузки в S3/Spaces/локально
-      res.json({ url });
+      // Отправляем в S3/Spaces или оставляем локально
+      const url = await uploadToStorage(file);
+
+      res.json({
+        success: true,
+        url, // ссылка на файл
+        type: file.mimetype, // например, audio/ogg
+        originalName: file.originalname,
+      });
     } catch (err) {
-      res.status(500).json({ error: "Ошибка загрузки" });
+      console.error("Ошибка при загрузке файла:", err);
+      res.status(500).json({ error: "Ошибка при загрузке файла" });
     }
   },
 ];
