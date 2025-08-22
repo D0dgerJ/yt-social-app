@@ -71,10 +71,6 @@ const Sidebar: React.FC = () => {
             <span>Questions</span>
           </li>
           <li className="sidebar-list-item">
-            <IoBriefcase className="sidebar-icon" />
-            <span>Jobs</span>
-          </li>
-          <li className="sidebar-list-item">
             <FaUserGraduate className="sidebar-icon" />
             <span>Courses</span>
           </li>
