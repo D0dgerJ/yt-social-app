@@ -11,6 +11,8 @@ interface NewsFeedProps {
   userPosts?: boolean;
 }
 
+type LikeEntity = number | string | { userId: number | string };
+
 interface PostType {
   id: number;
   desc: string;
@@ -23,7 +25,11 @@ interface PostType {
     username: string;
     profilePicture?: string;
   };
-  likes: number[];
+  likes: LikeEntity[];
+  _count?: {
+    likes: number;
+    comments: number;
+  };
 }
 
 const profileColumns = {
