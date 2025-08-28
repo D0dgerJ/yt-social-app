@@ -45,8 +45,10 @@ const Sidebar: React.FC = () => {
       <div className="sidebar-wrapper">
         <ul className="sidebar-list">
           <li className="sidebar-list-item">
-            <SiFeedly className="sidebar-icon" />
-            <span>Feeds</span>
+            <Link to="/" className="sidebar-link">
+              <SiFeedly className="sidebar-icon" />
+              <span>Feeds</span>
+            </Link>
           </li>
           <li className="sidebar-list-item">
             <BiSolidVideos className="sidebar-icon" />
