@@ -1,33 +1,28 @@
-/* Chat.scss — сетка под Home, цвета остаются */
-
 .chat-layout {
   display: flex;
   justify-content: center;
   width: 100%;
-  background-color: #f0f2f5; /* общий фон, как Home */
+  background-color: #f0f2f5; 
 }
 
-/* Левая колонка */
 .chat-sidebar-wrapper {
   width: 250px;
   flex: 0 0 250px;
 }
 
-/* Правая колонка */
 .rightbar-wrapper {
   width: 250px;
   flex: 0 0 250px;
 }
 
-/* Центральная колонка */
 .chat-wrapper {
-  width: 600px; /* фикс ширина как newsfeed-wrapper */
+  width: 600px; 
   min-height: calc(100vh - 50px);
 
   display: flex;
   flex-direction: column;
 
-  background-color: #16a34a; /* зелёный из чата */
+  background-color: #16a34a;
   color: white;
 
   &.chat-split {
@@ -61,9 +56,8 @@
   height: 100%;
 }
 
-/* Когда выбран чат — список фикс шириной */
 .chat-wrapper.chat-split .chat-list-pane {
-  flex: 0 0 250px;
+  flex: 0 0 120px;
 }
 
 .chat-window-pane {

@@ -26,6 +26,7 @@
 
       .chat-avatar {
         margin-right: 12px;
+        display: none;
 
         .chat-avatar-img {
           width: 42px;
@@ -75,7 +76,6 @@
       }
     }
 
-    // Стилизация скроллбара
     &::-webkit-scrollbar {
       width: 6px;
     }
