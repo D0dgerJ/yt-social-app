@@ -104,29 +104,39 @@ const Post: React.FC<PostProps> = ({ post }) => {
     }
   };
 
+  const openModal = () => setShowPostModal(true);
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+
   return (
-    <div className="post-container" style={{ breakInside: "avoid" }}>
+    <div
+      className="post-container"
+      style={{ breakInside: "avoid", cursor: "pointer" }}
+      onClick={openModal}
+    >
       <div className="post-top">
         <div className="post-user">
           <img
             src={user?.profilePicture || userPic}
             alt="Profile"
             className="post-avatar"
+            onClick={stop} 
           />
-          <Link to={`/profile/${user?.username}`}>
+          <Link to={`/profile/${user?.username}`} onClick={stop}>
             <span className="post-username">{user?.username}</span>
           </Link>
-          <span className="post-time">{moment(post.createdAt).fromNow()}</span>
+          <span className="post-time" onClick={stop}>
+            {moment(post.createdAt).fromNow()}
+          </span>
         </div>
-        <MdOutlineMoreVert className="options-icon" />
+        <MdOutlineMoreVert className="options-icon" onClick={stop} />
       </div>
 
       <div className="post-content">
-        {post.desc && <span>{post.desc}</span>}
+        {post.desc && <span onClick={stop}>{post.desc}</span>}
 
         {/* Изображения */}
         {images.length > 0 && (
-          <div className="post-image-grid">
+          <div className="post-image-grid" onClick={stop}>
             {images.map((url, index) => (
               <img
                 key={index}
@@ -146,7 +156,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         {/* Видео */}
         {videos.length > 0 &&
           videos.map((url, index) => (
-            <video key={index} controls className="post-video">
+            <video key={index} controls className="post-video" onClick={stop}>
               <source src={url} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
@@ -154,7 +164,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
         {/* Файлы */}
         {files.length > 0 && (
-          <div className="post-files">
+          <div className="post-files" onClick={stop}>
             {files.map((url, index) => {
               const fileName = url.split("/").pop();
               return (
@@ -164,6 +174,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="post-file-link"
+                    onClick={stop}
                   >
                     📎 {fileName}
                   </a>
@@ -175,7 +186,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
         {/* Локация */}
         {post.location && (
-          <div className="post-location">
+          <div className="post-location" onClick={stop}>
             📍 {post.location}
           </div>
         )}
@@ -206,9 +217,14 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
       {/* Теги */}
       {post.tags && post.tags.length > 0 && (
-        <div className="post-tags">
+        <div className="post-tags" onClick={stop}>
           {post.tags.map((tag, index) => (
-            <Link to={`/tags/${encodeURIComponent(tag)}`} key={index} className="post-tag">
+            <Link
+              to={`/tags/${encodeURIComponent(tag)}`}
+              key={index}
+              className="post-tag"
+              onClick={stop}
+            >
               #{tag}
             </Link>
           ))}
@@ -216,31 +232,36 @@ const Post: React.FC<PostProps> = ({ post }) => {
       )}
 
       <div className="post-bottom">
-        <div className="like-section">
+        <div className="like-section" onClick={stop}>
           <img
             src={likeIcon}
             alt="Like"
             className={`like-icon ${isLiked ? "liked" : ""}`}
-            onClick={handleLike}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
           />
           <img
             src={heartIcon}
             alt="Heart"
             className={`like-icon ${isLiked ? "liked" : ""}`}
-            onClick={handleLike}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
           />
           <span>{like} likes</span>
         </div>
-        <div
-            className="comment-section"
-            onClick={() => setShowPostModal(true)}
-          >
+
+        <div className="comment-section" onClick={(e) => e.stopPropagation()}>
           <span>{post._count?.comments || 0} comments</span>
         </div>
-        {showPostModal && (
-          <PostModal post={post} onClose={() => setShowPostModal(false)} />
-        )}
       </div>
+
+      {showPostModal && (
+        <PostModal post={post} onClose={() => setShowPostModal(false)} />
+      )}
     </div>
   );
 };
