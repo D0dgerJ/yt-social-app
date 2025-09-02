@@ -11,8 +11,19 @@ import { AuthContext } from "../../context/AuthContext";
 import { toggleLike } from "../../utils/api/post.api";
 import "./PostModal.scss";
 
+type LikeEntity = number | string | { userId: number | string };
+
 interface PostModalProps {
-  post: any;
+  post: {
+    id: number;
+    createdAt: string;
+    user?: { username: string };
+    images?: string[];
+    tags?: string[];
+    desc?: string;
+    likes?: LikeEntity[];
+    _count?: { likes: number; comments: number };
+  };
   onClose: () => void;
 }
 
@@ -24,10 +35,18 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
-    if (currentUser) {
-      setIsLiked(post.likes?.includes(currentUser.id));
-    }
-  }, [currentUser, post.likes]);
+    const uid = Number(currentUser?.id);
+    if (!uid || !Array.isArray(post.likes)) return;
+
+    const likedBy = post.likes.map((v: LikeEntity) => {
+      if (typeof v === "object" && v !== null && "userId" in v) {
+        return Number(v.userId);
+      }
+      return Number(v as number | string);
+    });
+
+    setIsLiked(likedBy.includes(uid));
+  }, [currentUser?.id, post.likes]);
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -38,7 +57,7 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
     try {
       const res = await toggleLike(post.id);
       setIsLiked(res.liked);
-      setLikeCount((prev: number) => (res.liked ? prev + 1 : Math.max(prev - 1, 0)));
+      setLikeCount((prev) => (res.liked ? prev + 1 : Math.max(prev - 1, 0)));
     } catch (err) {
       console.error("Like failed", err);
     }
@@ -48,9 +67,9 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
     <div className="post-modal-overlay" onClick={onClose}>
       <div className="post-modal" onClick={(e) => e.stopPropagation()}>
         <div className="post-modal-left">
-          {post.images?.length > 0 ? (
+          {post.images?.length ? (
             <div className="modal-image-grid">
-              {post.images.map((url: string, i: number) => (
+              {post.images.map((url, i) => (
                 <img
                   key={i}
                   src={url}
@@ -68,7 +87,7 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
             <Lightbox
               open={isLightboxOpen}
               close={() => setIsLightboxOpen(false)}
-              slides={post.images.map((url: string) => ({ src: url }))}
+              slides={(post.images ?? []).map((url) => ({ src: url }))}
               index={lightboxIndex}
               on={{ view: ({ index }) => setLightboxIndex(index) }}
               plugins={[Thumbnails]}
@@ -79,22 +98,18 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
         <div className="post-modal-right">
           <div className="modal-header">
             <span className="modal-username">{post.user?.username}</span>
-            <button className="modal-close" onClick={onClose}>
-              ×
-            </button>
+            <button className="modal-close" onClick={onClose}>×</button>
           </div>
 
           {post.desc && <div className="modal-description">{post.desc}</div>}
 
-          {post.tags?.length > 0 && (
+          {post.tags?.length ? (
             <div className="modal-tags">
-              {post.tags.map((tag: string, i: number) => (
-                <span key={i} className="modal-tag">
-                  #{tag}
-                </span>
+              {post.tags.map((tag, i) => (
+                <span key={i} className="modal-tag">#{tag}</span>
               ))}
             </div>
-          )}
+          ) : null}
 
           <div className="modal-meta">
             <span className="modal-time">{moment(post.createdAt).fromNow()}</span>
