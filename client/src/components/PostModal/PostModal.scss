@@ -111,18 +111,27 @@
   margin-bottom: 12px;
 
   .modal-likes {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
-    .like-icon {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
+  .like-icon {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.2s ease;
+    filter: grayscale(100%) brightness(0.65);
+
+    &:hover {
+      filter: grayscale(60%) brightness(0.85);
     }
-  }
-}
 
+    &.liked {
+      filter: none;
+    }
+   }
+ }
+}
 .comment-section {
   flex: 1;
   overflow-y: auto;
