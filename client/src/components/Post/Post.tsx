@@ -47,6 +47,7 @@ interface UserInfo {
 const Post: React.FC<PostProps> = ({ post }) => {
   const [like, setLike] = useState<number>(post._count?.likes || 0);
   const [isLiked, setIsLiked] = useState<boolean>(false);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
@@ -64,9 +65,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
     const uid = Number(userId);
     const likedBy = Array.isArray(post.likes)
       ? post.likes.map((v: LikeEntity) => {
-          if (typeof v === "object" && v !== null && "userId" in v) {
-            return Number(v.userId);
-          }
+          if (typeof v === "object" && v !== null && "userId" in v) return Number(v.userId);
           return Number(v as number | string);
         })
       : [];
@@ -87,8 +86,8 @@ const Post: React.FC<PostProps> = ({ post }) => {
   }, [post.userId]);
 
   const handleLike = async () => {
-    if (!userId) return;
-
+    if (!userId || isLiking) return;
+    setIsLiking(true);
     try {
       const res = await toggleLike(post.id);
       if (res.liked) {
@@ -101,42 +100,39 @@ const Post: React.FC<PostProps> = ({ post }) => {
     } catch (error: any) {
       console.error(error);
       toast.error(error.response?.data?.message || "Like failed");
+    } finally {
+      setIsLiking(false);
     }
   };
 
-  const openModal = () => setShowPostModal(true);
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
+  const handleModalToggleLike = (liked: boolean) => {
+    setIsLiked(liked);
+    setLike((prev) => (liked ? prev + 1 : Math.max(prev - 1, 0)));
+  };
 
   return (
-    <div
-      className="post-container"
-      style={{ breakInside: "avoid", cursor: "pointer" }}
-      onClick={openModal}
-    >
+    <div className="post-container" style={{ breakInside: "avoid" }}>
       <div className="post-top">
         <div className="post-user">
           <img
             src={user?.profilePicture || userPic}
             alt="Profile"
             className="post-avatar"
-            onClick={stop} 
           />
-          <Link to={`/profile/${user?.username}`} onClick={stop}>
+          <Link to={`/profile/${user?.username}`}>
             <span className="post-username">{user?.username}</span>
           </Link>
-          <span className="post-time" onClick={stop}>
-            {moment(post.createdAt).fromNow()}
-          </span>
+          <span className="post-time">{moment(post.createdAt).fromNow()}</span>
         </div>
-        <MdOutlineMoreVert className="options-icon" onClick={stop} />
+        <MdOutlineMoreVert className="options-icon" />
       </div>
 
       <div className="post-content">
-        {post.desc && <span onClick={stop}>{post.desc}</span>}
+        {post.desc && <span>{post.desc}</span>}
 
         {/* Изображения */}
         {images.length > 0 && (
-          <div className="post-image-grid" onClick={stop}>
+          <div className="post-image-grid">
             {images.map((url, index) => (
               <img
                 key={index}
@@ -156,7 +152,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         {/* Видео */}
         {videos.length > 0 &&
           videos.map((url, index) => (
-            <video key={index} controls className="post-video" onClick={stop}>
+            <video key={index} controls className="post-video">
               <source src={url} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
@@ -164,7 +160,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
         {/* Файлы */}
         {files.length > 0 && (
-          <div className="post-files" onClick={stop}>
+          <div className="post-files">
             {files.map((url, index) => {
               const fileName = url.split("/").pop();
               return (
@@ -174,7 +170,6 @@ const Post: React.FC<PostProps> = ({ post }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="post-file-link"
-                    onClick={stop}
                   >
                     📎 {fileName}
                   </a>
@@ -185,11 +180,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         )}
 
         {/* Локация */}
-        {post.location && (
-          <div className="post-location" onClick={stop}>
-            📍 {post.location}
-          </div>
-        )}
+        {post.location && <div className="post-location">📍 {post.location}</div>}
       </div>
 
       {/* Lightbox */}
@@ -217,14 +208,9 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
       {/* Теги */}
       {post.tags && post.tags.length > 0 && (
-        <div className="post-tags" onClick={stop}>
+        <div className="post-tags">
           {post.tags.map((tag, index) => (
-            <Link
-              to={`/tags/${encodeURIComponent(tag)}`}
-              key={index}
-              className="post-tag"
-              onClick={stop}
-            >
+            <Link to={`/tags/${encodeURIComponent(tag)}`} key={index} className="post-tag">
               #{tag}
             </Link>
           ))}
@@ -232,36 +218,33 @@ const Post: React.FC<PostProps> = ({ post }) => {
       )}
 
       <div className="post-bottom">
-        <div className="like-section" onClick={stop}>
+        <div className="like-section">
           <img
             src={likeIcon}
             alt="Like"
             className={`like-icon ${isLiked ? "liked" : ""}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleLike();
-            }}
+            onClick={handleLike}
           />
           <img
             src={heartIcon}
             alt="Heart"
             className={`like-icon ${isLiked ? "liked" : ""}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleLike();
-            }}
+            onClick={handleLike}
           />
           <span>{like} likes</span>
         </div>
-
-        <div className="comment-section" onClick={(e) => e.stopPropagation()}>
+        <div className="comment-section" onClick={() => setShowPostModal(true)}>
           <span>{post._count?.comments || 0} comments</span>
         </div>
-      </div>
 
-      {showPostModal && (
-        <PostModal post={post} onClose={() => setShowPostModal(false)} />
-      )}
+        {showPostModal && (
+          <PostModal
+            post={post}
+            onClose={() => setShowPostModal(false)}
+            onToggleLike={handleModalToggleLike}
+          />
+        )}
+      </div>
     </div>
   );
 };

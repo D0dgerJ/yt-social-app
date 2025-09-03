@@ -25,28 +25,33 @@ interface PostModalProps {
     _count?: { likes: number; comments: number };
   };
   onClose: () => void;
+  onToggleLike?: (liked: boolean) => void;
 }
 
-const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
+const PostModal: React.FC<PostModalProps> = ({ post, onClose, onToggleLike }) => {
   const { user: currentUser } = useContext(AuthContext);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [likeCount, setLikeCount] = useState(post._count?.likes || 0);
   const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     const uid = Number(currentUser?.id);
     if (!uid || !Array.isArray(post.likes)) return;
 
-    const likedBy = post.likes.map((v: LikeEntity) => {
-      if (typeof v === "object" && v !== null && "userId" in v) {
-        return Number(v.userId);
-      }
-      return Number(v as number | string);
-    });
+    const likedBy = post.likes.map((v: LikeEntity) =>
+      typeof v === "object" && v !== null && "userId" in v
+        ? Number(v.userId)
+        : Number(v as number | string)
+    );
 
     setIsLiked(likedBy.includes(uid));
   }, [currentUser?.id, post.likes]);
+
+  useEffect(() => {
+    setLikeCount(post._count?.likes || 0);
+  }, [post._count?.likes, post.id]);
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -54,12 +59,17 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
   };
 
   const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
     try {
       const res = await toggleLike(post.id);
       setIsLiked(res.liked);
       setLikeCount((prev) => (res.liked ? prev + 1 : Math.max(prev - 1, 0)));
+      onToggleLike?.(res.liked);
     } catch (err) {
       console.error("Like failed", err);
+    } finally {
+      setIsLiking(false);
     }
   };
 
