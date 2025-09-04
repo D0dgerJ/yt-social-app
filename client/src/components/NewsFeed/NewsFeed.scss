@@ -3,7 +3,6 @@
   margin-top: 20px;
 
   &--profile {
-    // Никаких column-count, только стили для Masonry
   }
 
   &--home {
@@ -13,10 +12,9 @@
   }
 }
 
-/* Сетка masonry */
 .masonry-grid {
   display: flex;
-  margin-left: -20px; // компенсируем отступы колонок
+  margin-left: -20px; 
   width: auto;
 }
 
@@ -25,7 +23,6 @@
   background-clip: padding-box;
 }
 
-/* Отступ между постами */
 .masonry-grid_column > .post-container {
   margin-bottom: 20px;
 }
