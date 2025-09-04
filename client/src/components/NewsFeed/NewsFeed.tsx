@@ -33,10 +33,8 @@ interface PostType {
 }
 
 const profileColumns = {
-  default: 4,
-  1200: 3,
-  900: 2,
-  600: 1,
+  default: 2,    
+  800: 1,       
 };
 
 const feedColumns = {
