@@ -45,7 +45,10 @@ interface UserInfo {
 }
 
 const Post: React.FC<PostProps> = ({ post }) => {
-  const [like, setLike] = useState<number>(post._count?.likes || 0);
+  const [like, setLike] = useState<number>(
+    post._count?.likes ??
+    (Array.isArray(post.likes) ? post.likes.length : 0)
+  );
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [isLiking, setIsLiking] = useState<boolean>(false);
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -109,6 +112,14 @@ const Post: React.FC<PostProps> = ({ post }) => {
     setIsLiked(liked);
     setLike((prev) => (liked ? prev + 1 : Math.max(prev - 1, 0)));
   };
+
+  const commentsCount =
+  post._count?.comments ??
+  (typeof (post as any).commentsCount === "number"
+    ? (post as any).commentsCount
+    : typeof (post as any).comment === "number"
+    ? (post as any).comment
+    : 0);
 
   return (
     <div className="post-container" style={{ breakInside: "avoid" }}>
@@ -234,7 +245,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
           <span>{like} likes</span>
         </div>
         <div className="comment-section" onClick={() => setShowPostModal(true)}>
-          <span>{post._count?.comments || 0} comments</span>
+          <span>{commentsCount} comments</span>
         </div>
 
         {showPostModal && (
