@@ -50,20 +50,45 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
   useEffect(() => {
     const timelinePosts = async () => {
       try {
-        const data = userPosts
+        const data: any[] = userPosts
           ? await getUserPostsByUsername(username as string)
           : await getFeedPosts();
-        setPosts(data);
+
+        const normalized: PostType[] = data.map((p: any) => {
+          const likesCount =
+            p?._count?.likes ?? (Array.isArray(p?.likes) ? p.likes.length : 0);
+
+          const commentsCount =
+            p?._count?.comments ??
+            (typeof p?.commentsCount === "number"
+              ? p.commentsCount
+              : typeof p?.comment === "number"
+              ? p.comment
+              : 0);
+
+          return {
+            ...p,
+            _count: { likes: likesCount, comments: commentsCount },
+          };
+        });
+
+        setPosts(normalized);
       } catch (error) {
         console.error("Failed to load posts", error);
       }
     };
+
     timelinePosts();
   }, [username, userPosts]);
 
   return (
-    <div className={`newsFeed ${userPosts ? "newsFeed--profile" : "newsFeed--home"}`}>
+    <div
+      className={`newsFeed ${
+        userPosts ? "newsFeed--profile" : "newsFeed--home"
+      }`}
+    >
       {(!username || username === user?.username) && <UploadPost />}
+
       <Masonry
         breakpointCols={userPosts ? profileColumns : feedColumns}
         className="masonry-grid"
@@ -78,3 +103,4 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
 };
 
 export default NewsFeed;
+

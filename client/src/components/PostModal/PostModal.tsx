@@ -32,7 +32,9 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose, onToggleLike }) =>
   const { user: currentUser } = useContext(AuthContext);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [likeCount, setLikeCount] = useState(post._count?.likes || 0);
+  const [likeCount, setLikeCount] = useState(
+    post._count?.likes ?? (Array.isArray(post.likes) ? post.likes.length : 0)
+  );
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
 
@@ -50,8 +52,10 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose, onToggleLike }) =>
   }, [currentUser?.id, post.likes]);
 
   useEffect(() => {
-    setLikeCount(post._count?.likes || 0);
-  }, [post._count?.likes, post.id]);
+    setLikeCount(
+      post._count?.likes ?? (Array.isArray(post.likes) ? post.likes.length : 0)
+    );
+  }, [post._count?.likes, post.likes, post.id]);
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
