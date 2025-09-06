@@ -21,7 +21,7 @@ interface PostType {
   videos?: string[];
   files?: string[];
   userId: number;
-  user: {
+  user?: {
     username: string;
     profilePicture?: string;
   };
@@ -33,13 +33,17 @@ interface PostType {
 }
 
 const profileColumns = {
-  default: 2,    
-  800: 1,       
+  default: 2,
+  800: 1,
 };
 
 const feedColumns = {
   default: 2,
   900: 1,
+};
+
+const toLikeArray = (likes: unknown): LikeEntity[] => {
+  return Array.isArray(likes) ? (likes as LikeEntity[]) : [];
 };
 
 const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
@@ -55,8 +59,13 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
           : await getFeedPosts();
 
         const normalized: PostType[] = data.map((p: any) => {
+          const likesArray = toLikeArray(p?.likes);
+
           const likesCount =
-            p?._count?.likes ?? (Array.isArray(p?.likes) ? p.likes.length : 0);
+            p?._count?.likes ??
+            (Array.isArray(likesArray) ? likesArray.length : 0) ??
+            p?.likesCount ??
+            0;
 
           const commentsCount =
             p?._count?.comments ??
@@ -68,6 +77,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
 
           return {
             ...p,
+            likes: likesArray,
             _count: { likes: likesCount, comments: commentsCount },
           };
         });
@@ -103,4 +113,3 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
 };
 
 export default NewsFeed;
-
