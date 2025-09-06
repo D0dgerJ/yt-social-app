@@ -46,12 +46,21 @@ interface UserInfo {
 
 const Post: React.FC<PostProps> = ({ post }) => {
   const [like, setLike] = useState<number>(
-    post._count?.likes ??
-    (Array.isArray(post.likes) ? post.likes.length : 0)
+    post._count?.likes ?? (Array.isArray(post.likes) ? post.likes.length : 0)
   );
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [isLiking, setIsLiking] = useState<boolean>(false);
-  const [user, setUser] = useState<UserInfo | null>(null);
+
+  const [user, setUser] = useState<UserInfo | null>(
+    (post as any).user
+      ? {
+          id: post.userId,
+          username: (post as any).user.username,
+          profilePicture: (post as any).user.profilePicture,
+        }
+      : null
+  );
+
   const [lightboxIndex, setLightboxIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const { user: currentUser } = useContext(AuthContext);
@@ -68,7 +77,8 @@ const Post: React.FC<PostProps> = ({ post }) => {
     const uid = Number(userId);
     const likedBy = Array.isArray(post.likes)
       ? post.likes.map((v: LikeEntity) => {
-          if (typeof v === "object" && v !== null && "userId" in v) return Number(v.userId);
+          if (typeof v === "object" && v !== null && "userId" in v)
+            return Number(v.userId);
           return Number(v as number | string);
         })
       : [];
@@ -77,6 +87,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
   }, [userId, post.likes]);
 
   useEffect(() => {
+    if (user) return;
     const getUserInfo = async () => {
       try {
         const res = await getUserById(post.userId);
@@ -86,7 +97,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
       }
     };
     getUserInfo();
-  }, [post.userId]);
+  }, [post.userId, user]);
 
   const handleLike = async () => {
     if (!userId || isLiking) return;
@@ -114,12 +125,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
   };
 
   const commentsCount =
-  post._count?.comments ??
-  (typeof (post as any).commentsCount === "number"
-    ? (post as any).commentsCount
-    : typeof (post as any).comment === "number"
-    ? (post as any).comment
-    : 0);
+    post._count?.comments ??
+    (typeof (post as any).commentsCount === "number"
+      ? (post as any).commentsCount
+      : typeof (post as any).comment === "number"
+      ? (post as any).comment
+      : 0);
 
   return (
     <div className="post-container" style={{ breakInside: "avoid" }}>
@@ -191,7 +202,9 @@ const Post: React.FC<PostProps> = ({ post }) => {
         )}
 
         {/* Локация */}
-        {post.location && <div className="post-location">📍 {post.location}</div>}
+        {post.location && (
+          <div className="post-location">📍 {post.location}</div>
+        )}
       </div>
 
       {/* Lightbox */}
@@ -199,7 +212,10 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <Lightbox
           open={isLightboxOpen}
           close={() => setIsLightboxOpen(false)}
-          slides={post.images.map((url, index) => ({ src: url, key: `slide-${index}` }))}
+          slides={post.images.map((url, index) => ({
+            src: url,
+            key: `slide-${index}`,
+          }))}
           index={lightboxIndex}
           on={{ view: ({ index }) => setLightboxIndex(index) }}
           plugins={[Thumbnails]}
@@ -221,7 +237,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
       {post.tags && post.tags.length > 0 && (
         <div className="post-tags">
           {post.tags.map((tag, index) => (
-            <Link to={`/tags/${encodeURIComponent(tag)}`} key={index} className="post-tag">
+            <Link
+              to={`/tags/${encodeURIComponent(tag)}`}
+              key={index}
+              className="post-tag"
+            >
               #{tag}
             </Link>
           ))}
