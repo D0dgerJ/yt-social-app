@@ -30,7 +30,7 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-     const fetchUserProfile = async () => {
+    const fetchUserProfile = async () => {
       try {
         if (username) {
           const res = await getUserByUsername(username);
@@ -40,7 +40,6 @@ const Profile: React.FC = () => {
         console.error("Failed to fetch user profile", error);
       }
     };
-
     fetchUserProfile();
   }, [username]);
 
@@ -80,11 +79,14 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="profile-page">
+    <>
       <Navbar />
-      <div className="profile-wrapper">
-        <Sidebar />
-        <div className="profile-content">
+      <div className="layout">
+        <div className="sidebar-wrapper">
+          <Sidebar />
+        </div>
+
+        <div className="newsfeed-wrapper">
           <div className="profile-top">
             <img
               src={user?.coverPicture || coverImage}
@@ -97,9 +99,11 @@ const Profile: React.FC = () => {
               className="profile-user-img"
             />
           </div>
+
           <div className="profile-info">
             <h1 className="profile-username">{user?.username}</h1>
             <span className="profile-desc">{user?.desc || "I am new here!"}</span>
+
             {username === currentUser?.username && (
               <>
                 {editMode ? (
@@ -127,17 +131,20 @@ const Profile: React.FC = () => {
                 )}
               </>
             )}
+
             {user && currentUser?.id !== user.id && (
               <FriendButton targetUserId={user.id} />
             )}
           </div>
-          <div className="profile-bottom">
-            <NewsFeed userPosts />
-            <Rightbar user={user || undefined} />
-          </div>
+
+          <NewsFeed userPosts />
+        </div>
+
+        <div className="rightbar-wrapper">
+          <Rightbar user={user || undefined} />
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
