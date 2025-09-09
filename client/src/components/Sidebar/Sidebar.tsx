@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useContext } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { SiFeedly } from "react-icons/si";
 import { BiSolidVideos } from "react-icons/bi";
 import { MdGroups } from "react-icons/md";
@@ -11,44 +11,26 @@ import {
 import { BsFillQuestionSquareFill } from "react-icons/bs";
 import { FaUserGraduate, FaCalendarDay } from "react-icons/fa";
 import FriendsList from "../FriendsList/FriendsList";
-import { getUserFriends } from "../../utils/api/user.api";
 import { AuthContext } from "../../context/AuthContext";
+import useFriends from "../../hooks/useFriends";
 import "./Sidebar.scss";
-
-interface FriendType {
-  id: number;
-  username: string;
-  profilePicture: string;
-}
 
 const Sidebar: React.FC = () => {
   const { user } = useContext(AuthContext);
-  const [friends, setFriends] = useState<FriendType[]>([]);
 
-  useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        if (user?.id) {
-          const data = await getUserFriends(user.id);
-          setFriends(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch friends", error);
-      }
-    };
-
-    fetchFriends();
-  }, [user?.id]);
+  const { data: friends, loading, error } = useFriends(
+    typeof user?.id === "number" ? user.id : undefined
+  );
 
   return (
     <div className="sidebar">
       <div className="sidebar-wrapper">
         <ul className="sidebar-list">
           <li className="sidebar-list-item">
-            <Link to="/" className="sidebar-link">
+            <NavLink to="/" className="sidebar-link">
               <SiFeedly className="sidebar-icon" />
               <span>Feeds</span>
-            </Link>
+            </NavLink>
           </li>
           <li className="sidebar-list-item">
             <BiSolidVideos className="sidebar-icon" />
@@ -59,10 +41,10 @@ const Sidebar: React.FC = () => {
             <span>Groups</span>
           </li>
           <li className="sidebar-list-item">
-            <Link to="/chat" className="sidebar-link">
+            <NavLink to="/chat" className="sidebar-link">
               <IoChatboxEllipsesSharp className="sidebar-icon" />
               <span>Chat</span>
-            </Link>
+            </NavLink>
           </li>
           <li className="sidebar-list-item">
             <IoBookmarks className="sidebar-icon" />
@@ -89,6 +71,8 @@ const Sidebar: React.FC = () => {
         <hr className="sidebar-hr" />
 
         <ul className="sidebar-friends-list">
+          {loading && <li>Loading...</li>}
+          {Boolean(error) && <li>Error loading friends</li>}
           {friends.map((friend) => (
             <FriendsList key={friend.id} friend={friend} />
           ))}
