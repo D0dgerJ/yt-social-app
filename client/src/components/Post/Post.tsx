@@ -1,127 +1,91 @@
 import React, { useContext, useEffect, useState } from "react";
 import { MdOutlineMoreVert } from "react-icons/md";
-import { toggleLike } from "../../utils/api/post.api";
-import { getUserById } from "../../utils/api/user.api";
-import { AuthContext } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import moment from "moment";
-import Lightbox from "yet-another-react-lightbox";
-import "yet-another-react-lightbox/styles.css";
-import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
-import "yet-another-react-lightbox/plugins/thumbnails.css";
-import likeIcon from "../../assets/like.png";
-import heartIcon from "../../assets/heart.png";
+
+import { getUserById } from "../../utils/api/user.api";
+import { AuthContext } from "../../context/AuthContext";
+import usePostLikes from "../../hooks/usePostLike";
+
+import PostModal from "../PostModal/PostModal";
+import PostGallery from "./parts/PostGallery";
+import PostMeta from "./parts/PostMeta";
+import PostTags from "./parts/PostTags";
+import PostVideos from "./parts/PostVideos";
+import PostFiles from "./parts/PostFiles";
+
 import userPic from "./assets/user.png";
 import "./Post.scss";
-import PostModal from "../PostModal/PostModal";
 
 type LikeEntity = number | string | { userId: number | string };
 
-interface PostProps {
+export interface PostProps {
   post: {
     id: number;
     userId: number;
-    desc?: string;
     createdAt: string;
-    likes: LikeEntity[];
-    comment?: number;
+    desc?: string;
     images?: string[];
     videos?: string[];
     files?: string[];
     tags?: string[];
     location?: string;
-    _count?: {
-      likes: number;
-      comments: number;
-    };
+    likes: LikeEntity[];
+    _count?: { likes?: number; comments?: number };
+    user?: { username: string; profilePicture?: string };
   };
 }
 
-interface UserInfo {
-  username: string;
-  profilePicture?: string;
-  id: number;
-}
+type UserInfo = { id: number; username: string; profilePicture?: string };
 
 const Post: React.FC<PostProps> = ({ post }) => {
-  const [like, setLike] = useState<number>(
-    post._count?.likes ?? (Array.isArray(post.likes) ? post.likes.length : 0)
-  );
-  const [isLiked, setIsLiked] = useState<boolean>(false);
-  const [isLiking, setIsLiking] = useState<boolean>(false);
+  const { user: currentUser } = useContext(AuthContext);
 
-  const [user, setUser] = useState<UserInfo | null>(
-    (post as any).user
+  const [author, setAuthor] = useState<UserInfo | null>(
+    post.user
       ? {
           id: post.userId,
-          username: (post as any).user.username,
-          profilePicture: (post as any).user.profilePicture,
+          username: post.user.username,
+          profilePicture: post.user.profilePicture,
         }
       : null
   );
 
-  const [lightboxIndex, setLightboxIndex] = useState<number>(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
-  const { user: currentUser } = useContext(AuthContext);
   const [showPostModal, setShowPostModal] = useState(false);
 
-  const userId = currentUser?.id;
-  const images = post.images ?? [];
-  const videos = post.videos ?? [];
-  const files = post.files ?? [];
-
   useEffect(() => {
-    if (!userId) return;
-
-    const uid = Number(userId);
-    const likedBy = Array.isArray(post.likes)
-      ? post.likes.map((v: LikeEntity) => {
-          if (typeof v === "object" && v !== null && "userId" in v)
-            return Number(v.userId);
-          return Number(v as number | string);
-        })
-      : [];
-
-    setIsLiked(likedBy.includes(uid));
-  }, [userId, post.likes]);
-
-  useEffect(() => {
-    if (user) return;
-    const getUserInfo = async () => {
+    if (author) return;
+    (async () => {
       try {
         const res = await getUserById(post.userId);
-        setUser(res);
-      } catch (error: any) {
-        console.log(error);
+        setAuthor(res);
+      } catch (e) {
+        console.error(e);
       }
-    };
-    getUserInfo();
-  }, [post.userId, user]);
+    })();
+  }, [post.userId, author]);
+
+  const {
+    count: likeCount,
+    isLiked,
+    loading: isLiking,
+    toggle: toggleLike,
+  } = usePostLikes({
+    postId: post.id,
+    likes: post.likes,
+    initialCount: post._count?.likes,
+    currentUserId: currentUser?.id,
+  });
 
   const handleLike = async () => {
-    if (!userId || isLiking) return;
-    setIsLiking(true);
+    if (!currentUser?.id || isLiking) return;
     try {
-      const res = await toggleLike(post.id);
-      if (res.liked) {
-        setLike((prev) => prev + 1);
-        setIsLiked(true);
-      } else {
-        setLike((prev) => Math.max(prev - 1, 0));
-        setIsLiked(false);
-      }
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Like failed");
-    } finally {
-      setIsLiking(false);
+      await toggleLike();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to like");
     }
-  };
-
-  const handleModalToggleLike = (liked: boolean) => {
-    setIsLiked(liked);
-    setLike((prev) => (liked ? prev + 1 : Math.max(prev - 1, 0)));
   };
 
   const commentsCount =
@@ -137,12 +101,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
       <div className="post-top">
         <div className="post-user">
           <img
-            src={user?.profilePicture || userPic}
+            src={author?.profilePicture || userPic}
             alt="Profile"
             className="post-avatar"
           />
-          <Link to={`/profile/${user?.username}`}>
-            <span className="post-username">{user?.username}</span>
+          <Link to={`/profile/${author?.username}`}>
+            <span className="post-username">{author?.username}</span>
           </Link>
           <span className="post-time">{moment(post.createdAt).fromNow()}</span>
         </div>
@@ -152,128 +116,43 @@ const Post: React.FC<PostProps> = ({ post }) => {
       <div className="post-content">
         {post.desc && <span>{post.desc}</span>}
 
-        {/* Изображения */}
-        {images.length > 0 && (
-          <div className="post-image-grid">
-            {images.map((url, index) => (
-              <img
-                key={index}
-                src={url}
-                alt={`Post image ${index + 1}`}
-                className="post-image-thumb"
-                onClick={() => {
-                  setLightboxIndex(index);
-                  setIsLightboxOpen(true);
-                }}
-                loading="lazy"
-              />
-            ))}
-          </div>
-        )}
+        <PostGallery
+          images={post.images}
+          gridClassName="post-image-grid"
+          imgClassName="post-image-thumb"
+          showEmpty={false}
+        />
 
-        {/* Видео */}
-        {videos.length > 0 &&
-          videos.map((url, index) => (
-            <video key={index} controls className="post-video">
-              <source src={url} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          ))}
+        <PostVideos videos={post.videos} />
+        <PostFiles files={post.files} />
 
-        {/* Файлы */}
-        {files.length > 0 && (
-          <div className="post-files">
-            {files.map((url, index) => {
-              const fileName = url.split("/").pop();
-              return (
-                <div className="post-file-wrapper" key={index}>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="post-file-link"
-                  >
-                    📎 {fileName}
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Локация */}
         {post.location && (
           <div className="post-location">📍 {post.location}</div>
         )}
       </div>
 
-      {/* Lightbox */}
-      {isLightboxOpen && post.images && (
-        <Lightbox
-          open={isLightboxOpen}
-          close={() => setIsLightboxOpen(false)}
-          slides={post.images.map((url, index) => ({
-            src: url,
-            key: `slide-${index}`,
-          }))}
-          index={lightboxIndex}
-          on={{ view: ({ index }) => setLightboxIndex(index) }}
-          plugins={[Thumbnails]}
-          render={{
-            buttonClose: () => (
-              <button
-                className="lightbox-close-button"
-                onClick={() => setIsLightboxOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-            ),
-          }}
-        />
-      )}
-
-      {/* Теги */}
-      {post.tags && post.tags.length > 0 && (
-        <div className="post-tags">
-          {post.tags.map((tag, index) => (
-            <Link
-              to={`/tags/${encodeURIComponent(tag)}`}
-              key={index}
-              className="post-tag"
-            >
-              #{tag}
-            </Link>
-          ))}
-        </div>
-      )}
+      <PostTags tags={post.tags} className="post-tags" />
 
       <div className="post-bottom">
-        <div className="like-section">
-          <img
-            src={likeIcon}
-            alt="Like"
-            className={`like-icon ${isLiked ? "liked" : ""}`}
-            onClick={handleLike}
-          />
-          <img
-            src={heartIcon}
-            alt="Heart"
-            className={`like-icon ${isLiked ? "liked" : ""}`}
-            onClick={handleLike}
-          />
-          <span>{like} likes</span>
-        </div>
+        <PostMeta
+          createdAt={post.createdAt}
+          isLiked={isLiked}
+          likes={likeCount}
+          onToggle={handleLike}
+          loading={isLiking}
+          rootClassName="post-bottom"
+          timeClassName="post-time"
+          likesClassName="like-section"
+          showTime={false}
+          asButton={false}
+        />
+
         <div className="comment-section" onClick={() => setShowPostModal(true)}>
           <span>{commentsCount} comments</span>
         </div>
 
         {showPostModal && (
-          <PostModal
-            post={post}
-            onClose={() => setShowPostModal(false)}
-            onToggleLike={handleModalToggleLike}
-          />
+          <PostModal post={post} onClose={() => setShowPostModal(false)} />
         )}
       </div>
     </div>
