@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 import { createChatSchema } from "../../../validation/chatSchemas.ts";
 
 interface CreateChatInput {
@@ -11,8 +12,7 @@ export const createChat = async (data: CreateChatInput) => {
   try {
     const { userIds: rawUserIds, name, creatorId } = createChatSchema.parse(data);
 
-    // Уникализируем и добавляем автора
-    const userIds = Array.from(new Set([...rawUserIds, creatorId]));
+    const userIds = Array.from(new Set([...rawUserIds, creatorId])).sort();
 
     if (userIds.length < 2) {
       throw new Error("Нужно как минимум два участника для создания чата");
@@ -20,51 +20,65 @@ export const createChat = async (data: CreateChatInput) => {
 
     const isGroup = userIds.length > 2 || !!name;
 
-    // 🔁 Проверка: если это личный чат, не создавать дубликат
     if (!isGroup) {
-      const existing = await prisma.conversation.findMany({
+      const [userA, userB] = userIds;
+
+      const existing = await prisma.conversation.findFirst({
         where: {
           isGroup: false,
           participants: {
-            some: { userId: userIds[0] },
+            every: {
+              OR: [{ userId: userA }, { userId: userB }],
+            },
           },
         },
-        include: { participants: true },
+        include: {
+          participants: { include: { user: true } },
+        },
       });
 
-      const found = existing.find(conv => {
-        const ids = conv.participants.map(p => p.userId).sort();
-        return ids.length === 2 && ids.includes(userIds[0]) && ids.includes(userIds[1]);
-      });
-
-      if (found) return found;
+      if (existing) return existing;
     }
 
-    // ✅ Создание нового чата
-    const conversation = await prisma.conversation.create({
-      data: {
-        name: isGroup ? name || "Групповой чат" : null,
-        isGroup,
-        participants: {
-          create: userIds.map(userId => ({
-            user: { connect: { id: userId } },
-            role: userId === creatorId ? "owner" : "member",
-          })),
+    const [conversation] = await prisma.$transaction([
+      prisma.conversation.create({
+        data: {
+          name: isGroup ? name || "Групповой чат" : null,
+          isGroup,
+          participants: {
+            create: userIds.map(userId => ({
+              user: { connect: { id: userId } },
+              role: userId === creatorId ? "owner" : "member",
+            })),
+          },
         },
-      },
-      include: {
-        participants: {
-          include: { user: true },
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
+              },
+            },
+          },
         },
-      },
-    });
+      }),
+    ]);
+
+    const io = getIO();
+    for (const participant of conversation.participants) {
+      io.to(String(participant.userId)).emit("chat:created", {
+        conversation,
+      });
+    }
 
     return conversation;
   } catch (error) {
     console.error("❌ Ошибка при создании чата:", error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось создать чат");
   }
 };

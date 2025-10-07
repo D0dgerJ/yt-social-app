@@ -1,0 +1,23 @@
+.msg-context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  padding: 6px;
+  min-width: 180px;
+}
+.msg-context-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.msg-context-menu__item:hover { background: #f6f6f6; }
+.msg-context-menu__item.is-danger { color: #d93025; }

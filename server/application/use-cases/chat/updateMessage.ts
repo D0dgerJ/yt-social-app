@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface UpdateMessageInput {
   messageId: number;
@@ -28,14 +29,17 @@ export const updateMessage = async (data: UpdateMessageInput) => {
 
     const existingMessage = await prisma.message.findUnique({
       where: { id: messageId },
+      include: { conversation: true },
     });
 
-    if (!existingMessage) throw new Error("Сообщение не найдено");
+    if (!existingMessage) {
+      throw new Error("Сообщение не найдено");
+    }
+
     if (existingMessage.senderId !== userId) {
       throw new Error("Вы не можете редактировать это сообщение");
     }
 
-    // 🔐 Проверка repliedToId (если указан)
     if (repliedToId) {
       const repliedTo = await prisma.message.findUnique({
         where: { id: repliedToId },
@@ -49,13 +53,13 @@ export const updateMessage = async (data: UpdateMessageInput) => {
     const updated = await prisma.message.update({
       where: { id: messageId },
       data: {
-        encryptedContent,
-        mediaUrl,
-        mediaType,
-        fileName,
-        gifUrl,
-        stickerUrl,
-        repliedToId,
+        encryptedContent: encryptedContent ?? existingMessage.encryptedContent,
+        mediaUrl: mediaUrl ?? existingMessage.mediaUrl,
+        mediaType: mediaType ?? existingMessage.mediaType,
+        fileName: fileName ?? existingMessage.fileName,
+        gifUrl: gifUrl ?? existingMessage.gifUrl,
+        stickerUrl: stickerUrl ?? existingMessage.stickerUrl,
+        repliedToId: repliedToId ?? existingMessage.repliedToId,
         isEdited: true,
         editedAt: new Date(),
       },
@@ -76,11 +80,18 @@ export const updateMessage = async (data: UpdateMessageInput) => {
             mediaType: true,
           },
         },
+        mediaFiles: {
+          select: {
+            id: true,
+            url: true,
+            type: true,
+            uploadedAt: true,
+          },
+        },
       },
     });
 
-    // 📡 TODO: Уведомить фронт о том, что сообщение было отредактировано (по WebSocket)
-    // getIO().to(String(existingMessage.conversationId)).emit("messageUpdated", updated);
+    getIO().to(String(existingMessage.conversationId)).emit("messageUpdated", updated);
 
     return updated;
   } catch (error) {

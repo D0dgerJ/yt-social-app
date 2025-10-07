@@ -14,6 +14,8 @@ import { getUserProfile } from "./utils/api/user.api";
 import { logoutUser } from "./utils/auth";
 import axios from "axios";
 
+import { SocketProvider } from "./context/SocketContext";
+
 function App(): JSX.Element {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -43,22 +45,24 @@ function App(): JSX.Element {
   if (!isAppReady) return <div className="loader">Loading...</div>;
 
   return (
-    <>
-      <ToastContainer />
-      <Routes>
-        <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
-        <Route path="/profile/:username" element={<Profile />} />
-        <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
-        <Route
-          path="/register"
-          element={user ? <Navigate to="/" /> : <Register />}
-        />
-        <Route
-          path="/login"
-          element={user ? <Navigate to="/" /> : <Login />}
-        />
-      </Routes>
-    </>
+    <SocketProvider>
+      <>
+        <ToastContainer />
+        <Routes>
+          <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
+          <Route
+            path="/register"
+            element={user ? <Navigate to="/" /> : <Register />}
+          />
+          <Route
+            path="/login"
+            element={user ? <Navigate to="/" /> : <Login />}
+          />
+        </Routes>
+      </>
+  </SocketProvider>
   );
 }
 

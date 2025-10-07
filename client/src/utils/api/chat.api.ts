@@ -1,93 +1,104 @@
 import axios from './axiosInstance';
 import { toast } from 'react-toastify';
 
-// Универсальный обработчик
+// Универсальный обработчик ошибок
 const handleRequest = async <T>(request: () => Promise<T>): Promise<T> => {
   try {
     return await request();
   } catch (error: any) {
-    const message = error.response?.data?.message || "Ошибка сервера";
+    const message = error?.response?.data?.message || 'Ошибка сервера';
     toast.error(message);
     throw error;
   }
 };
 
-// Создание чата
-export const createChat = async (userIds: number[], creatorId: number, name?: string) =>
-  handleRequest(() => axios.post('/chat', { userIds, creatorId, name }).then(res => res.data));
+// ----------------- Чаты -----------------
 
-// Получение всех чатов пользователя
+export const createChat = async (userIds: number[], creatorId: number, name?: string) =>
+  handleRequest(() =>
+    axios.post('/chat', { userIds, creatorId, name }).then(res => res.data)
+  );
+
 export const getUserConversations = async () =>
   handleRequest(() => axios.get('/chat').then(res => res.data));
 
-// Отправка сообщения
-export const sendMessage = async (
-  chatId: number,
-  message: {
-    content?: string;
-    mediaUrl?: string | null;
-    mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
-    fileName?: string;
-    gifUrl?: string;
-    stickerUrl?: string;
-    repliedToId?: number;
-  }
-) =>
-  handleRequest(() => axios.post(`/chat/${chatId}/messages`, message).then(res => res.data));
+// ----------------- Сообщения -----------------
 
-// Получение сообщений
-export const getChatMessages = async (chatId: number, page = 1, limit = 30) =>
+type SendMessageBody = {
+  content?: string;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
+  fileName?: string;
+  gifUrl?: string;
+  stickerUrl?: string;
+  repliedToId?: number;
+  clientMessageId?: string | null;
+};
+
+export const sendMessage = async (chatId: number, message: SendMessageBody) =>
   handleRequest(() =>
-    axios
-      .get(`/chat/${chatId}/messages`, { params: { page, limit } })
-      .then(res => res.data.messages)
+    axios.post(`/chat/${chatId}/messages`, message).then(res => res.data)
   );
 
-// Обновление сообщения
+// cursor-based история
+export const getChatMessages = async (
+  chatId: number,
+  opts: { cursorId?: number | null; direction?: 'forward' | 'backward'; limit?: number } = {}
+) =>
+  handleRequest(async () => {
+    const params: any = {};
+    if (opts.cursorId != null) params.cursorId = opts.cursorId;
+    if (opts.direction) params.direction = opts.direction;
+    if (opts.limit != null) params.limit = opts.limit;
+
+    const { data } = await axios.get(`/chat/${chatId}/messages`, { params });
+
+    const messages = Array.isArray(data) ? data : (data?.messages ?? []);
+    const nextCursor = data?.pageInfo?.nextCursor;
+    const prevCursor = data?.pageInfo?.prevCursor;
+
+    return { messages, nextCursor, prevCursor };
+  });
+
 export const updateMessage = async (chatId: number, messageId: number, content: string) =>
   handleRequest(() =>
     axios.patch(`/chat/${chatId}/messages/${messageId}`, { content }).then(res => res.data)
   );
 
-// Удаление сообщения
 export const deleteMessage = async (chatId: number, messageId: number) =>
-  handleRequest(() =>
-    axios.delete(`/chat/${chatId}/messages/${messageId}`).then(res => res.data)
-  );
+  handleRequest(() => axios.delete(`/chat/${chatId}/messages/${messageId}`).then(res => res.data));
 
-// Выйти из чата
+// ----------------- Участники -----------------
+
 export const leaveConversation = async (chatId: number) =>
   handleRequest(() =>
-    axios.delete(`/chat/${chatId}/leave`, {
-      data: { conversationId: chatId },
-    }).then(res => res.data)
+    axios.delete(`/chat/${chatId}/leave`).then(res => res.data)
   );
 
-// Добавить участника в чат
-export const addParticipant = async (chatId: number, userId: number) =>
+export const addParticipant = async (chatId: number, userId: number, role: 'member' | 'admin' | 'owner' = 'member') =>
   handleRequest(() =>
-    axios.post(`/chat/${chatId}/participants`, {
-      conversationId: chatId,
-      userId,
-    }).then(res => res.data)
+    axios.post(`/chat/${chatId}/participants`, { userId, role }).then(res => res.data)
   );
 
-// Получить реакции к сообщению
+// ----------------- Реакции -----------------
+
 export const getMessageReactions = async (messageId: number) =>
   handleRequest(() =>
-    axios.get(`/chat/messages/${messageId}/reactions`).then(res => res.data)
+    axios.get(`/chat/messages/${messageId}/reactions`).then(res => {
+      const d = res.data;
+      return Array.isArray(d) ? d : Array.isArray(d?.reactions) ? d.reactions : [];
+    })
   );
 
-// Поставить/обновить реакцию
 export const reactToMessage = async (messageId: number, emoji: string) =>
   handleRequest(() =>
     axios.post(`/chat/messages/${messageId}/react`, { emoji }).then(res => res.data)
   );
 
-// Отметить как доставленные
+// ----------------- Статусы -----------------
+
 export const markAsDelivered = async (chatId: number) =>
   handleRequest(() => axios.post(`/chat/${chatId}/delivered`).then(res => res.data));
 
-// Отметить как прочитанные
 export const markAsRead = async (chatId: number) =>
   handleRequest(() => axios.post(`/chat/${chatId}/read`).then(res => res.data));

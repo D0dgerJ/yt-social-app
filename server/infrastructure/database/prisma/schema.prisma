@@ -259,6 +259,10 @@ model Message {
   
   // 🆕 Защита от дублирования
   clientMessageId String? @unique
+
+  @@index([conversationId, createdAt])
+  @@index([conversationId, editedAt])
+  @@index([conversationId, deletedAt])
 }
 
 model EncryptionKey {
@@ -332,4 +336,6 @@ model Reaction {
   message Message @relation(fields: [messageId], references: [id])
 
   @@unique([userId, messageId]) // один пользователь — одна реакция на сообщение
+
+  @@index([messageId, createdAt])
 }

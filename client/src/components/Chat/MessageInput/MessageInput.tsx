@@ -1,250 +1,176 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useChatStore } from '@/stores/chatStore';
-import { useAuth } from '@/context/useAuth';
-import { useSocket } from '@/hooks/useSocket';
-import { useMessageStore, type Message } from '@/stores/messageStore';
-import { encrypt } from '@/utils/encryption';
-import { v4 as uuidv4 } from 'uuid';
-import EmojiPicker from 'emoji-picker-react';
-import GifPicker from './GifPicker';
+import { useSendMessage } from '@/hooks/useSendMessage';
+import { useTyping } from '@/hooks/useTyping';
+import { useComposerStore } from '@/stores/composerStore';
+import { useMessageActions } from '@/hooks/useMessageActions';
 import './MessageInput.scss';
-import FilePicker from './FilePicker';
-import { uploadFile } from '../../../utils/api/upload.api';
-import AudioRecorder from '../AudioRecorder/AudioRecorder';
 
 const MessageInput: React.FC = () => {
-  const [content, setContent] = useState('');
-  const [showEmoji, setShowEmoji] = useState(false);
-  const [showGifPicker, setShowGifPicker] = useState(false);
-  const [showRecorder, setShowRecorder] = useState(false);
-
   const { currentConversationId } = useChatStore();
-  const { user } = useAuth();
-  const { socket } = useSocket();
-  const { addMessage, replaceMessage } = useMessageStore();
+  const { send } = useSendMessage();
+  const { start: typingStart, stop: typingStop } = useTyping();
 
-  const sendMessage = ({
-    text,
-    mediaUrl,
-    mediaType = 'text',
-  }: {
-    text: string;
-    mediaUrl?: string;
-    mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file' | 'audio';
-  }) => {
-    if (!currentConversationId || !socket || !user?.id) return;
+  const replyTarget = useComposerStore((s) => s.replyTarget);
+  const setReplyTarget = useComposerStore((s) => s.setReplyTarget);
+  const editing = useComposerStore((s) => s.editing);
+  const endEdit = useComposerStore((s) => s.endEdit);
 
-    const encryptedContent = encrypt(text);
-    const clientMessageId = uuidv4();
-    const now = new Date().toISOString();
+  const { editMessage } = useMessageActions();
 
-    const tempMessage = {
-      id: `temp-${clientMessageId}`,
-      conversationId: currentConversationId,
-      senderId: user.id,
-      content: text,
-      mediaUrl,
-      mediaType,
-      isDelivered: false,
-      isRead: false,
-      createdAt: now,
-      updatedAt: now,
-      sender: {
-        id: user.id,
-        username: user.username,
-        profilePicture: user.profilePicture,
-      },
-      clientMessageId,
-    } as unknown as Message;
+  const [text, setText] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [isSending, setIsSending] = useState(false);
 
-    addMessage(tempMessage);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    if (mediaType === 'text') setContent('');
-    setShowEmoji(false);
-    setShowGifPicker(false);
-
-    const payload: any = {
-      conversationId: currentConversationId,
-      senderId: user.id,
-      clientMessageId,
-    };
-
-    if (text.trim()) {
-      payload.encryptedContent = encryptedContent;
+  useEffect(() => {
+    if (editing) {
+      setText(editing.content || '');
+      textareaRef.current?.focus();
     }
-    if (mediaUrl) {
-      payload.mediaUrl = mediaUrl;
-      payload.mediaType = mediaType;
-    }
+  }, [editing]);
 
-    socket.emit('sendMessage', payload, (response: any) => {
-      if (response.status === 'ok') {
-        replaceMessage(clientMessageId, {
-          ...response.message,
-          isDelivered: true,
-        });
-      } else {
-        console.error('Ошибка при отправке:', response.error);
+  const resetComposer = () => {
+    setText('');
+    setFiles([]);
+    if (replyTarget) setReplyTarget(undefined);
+    if (editing) endEdit();
+  };
+
+  const isEditMode = useMemo(() => Boolean(editing), [editing]);
+  const isReplyMode = useMemo(() => Boolean(replyTarget), [replyTarget]);
+
+  const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const fl = e.currentTarget.files;
+    if (!fl?.length) return;
+    setFiles((prev) => [...prev, ...Array.from(fl)]);
+    e.currentTarget.value = '';
+  };
+
+  const handleSend = async () => {
+    if (!currentConversationId || isSending) return;
+    const trimmed = text.trim();
+
+    if (isEditMode && editing) {
+      if (!trimmed) return;
+      setIsSending(true);
+      try {
+        await editMessage(editing, trimmed);
+        resetComposer();
+      } catch (err) {
+        console.error('Ошибка при редактировании:', err);
+      } finally {
+        setIsSending(false);
       }
-    });
-  };
-
-  const handleSend = () => {
-    if (!content.trim()) return;
-    sendMessage({ text: content.trim() });
-  };
-
-  const handleFileSelect = async (file: File) => {
-    if (!file) return;
-
-    const allowedTypes = [
-      // Изображения
-      'image/png',
-      'image/jpeg',
-      'image/webp',
-      'image/gif',
-
-      // Документы
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-
-      // Архивы
-      'application/zip',
-      'application/x-rar-compressed',
-      'application/x-7z-compressed',
-
-      // Текст
-      'text/plain',
-      'text/csv',
-      'text/html',
-      'text/css',
-      'application/javascript',
-      'application/x-typescript',
-      'application/json',
-
-      // Аудио
-      'audio/mpeg', 
-      'audio/webm', 
-      'audio/ogg', 
-      'audio/wav',
-      // видео
-      'video/mp4', 
-      'video/x-matroska',
-    ];
-
-    const mediaTypes = ['text', 'image', 'video', 'gif', 'file', 'audio'] as const;
-    type MediaType = typeof mediaTypes[number];
-
-    const isValidMediaType = (type: string): type is MediaType => {
-      return mediaTypes.includes(type as MediaType);
-    };
-
-    if (!allowedTypes.includes(file.type)) {
-      alert('Этот тип файла не поддерживается');
       return;
     }
 
-    try {
-      const { fileUrl, fileType } = await uploadFile(file);
-      const mediaType: MediaType = isValidMediaType(fileType) ? fileType : 'file';
+    if (!trimmed && files.length === 0) return;
 
-      sendMessage({
-        text: '',
-        mediaUrl: fileUrl,
-        mediaType,
+    setIsSending(true);
+    try {
+      await send({
+        conversationId: currentConversationId,
+        text: trimmed || undefined,
+        files,
+        replyToId: replyTarget?.id,
       });
-    } catch (error) {
-      console.error('Ошибка при загрузке файла:', error);
+      resetComposer();
+    } catch (err) {
+      console.error('Ошибка при отправке сообщения:', err);
+    } finally {
+      setIsSending(false);
     }
   };
 
-  const handleGifSelect = (gifUrl: string) => {
-    sendMessage({ text: '', mediaUrl: gifUrl, mediaType: 'gif' });
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleEmojiClick = (emojiData: any) => {
-    setContent((prev) => prev + emojiData.emoji);
-  };
-
-  const handleAudioSend = async (file: File) => {
-    try {
-      const { fileUrl } = await uploadFile(file);
-      sendMessage({ text: '', mediaUrl: fileUrl, mediaType: 'audio' });
-      setShowRecorder(false);
-    } catch (e) {
-      console.error('Ошибка загрузки аудио:', e);
+      void handleSend();
     }
   };
 
   return (
-    <div className="message-input-container">
-      <div className="emoji-wrapper">
-        <button className="emoji-toggle-button" onClick={() => setShowEmoji(!showEmoji)}>
-          😊
-        </button>
-        {showEmoji && (
-          <div className="emoji-picker-wrapper">
-            <EmojiPicker onEmojiClick={handleEmojiClick} height={300} />
-          </div>
-        )}
-      </div>
+    <div className="composer">
+      {(isReplyMode || isEditMode) && (
+        <div className="composer__bar">
+          {isReplyMode && (
+            <div className="composer__reply">
+              <span className="composer__bar-title">Ответ на сообщение</span>
+              <span className="composer__bar-preview">
+                {(replyTarget?.content || '[медиа]')?.slice(0, 80)}
+              </span>
+              <button
+                className="composer__bar-close"
+                onClick={() => setReplyTarget(undefined)}
+                aria-label="Снять ответ"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {isEditMode && (
+            <div className="composer__edit">
+              <span className="composer__bar-title">Редактирование</span>
+              <button
+                className="composer__bar-close"
+                onClick={endEdit}
+                aria-label="Отменить редактирование"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="gif-wrapper">
-        <button className="gif-toggle-button" onClick={() => setShowGifPicker(!showGifPicker)}>
-          🎬
-        </button>
-        {showGifPicker && (
-          <div className="gif-picker-wrapper">
-            <GifPicker onSelect={handleGifSelect} />
-          </div>
-        )}
-      </div>
+      <label className="composer__attach" title="Прикрепить файл">
+        📎
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={onPickFiles}
+        />
+      </label>
 
-      <div className="audio-wrapper">
-        <button
-          className="audio-toggle-button"
-          onClick={() => setShowRecorder((v) => !v)}
-          title="Голосовое сообщение"
-        >
-          🎤
-        </button>
-        {showRecorder && (
-          <div className="audio-recorder-wrapper">
-            <AudioRecorder onSend={handleAudioSend} onCancel={() => setShowRecorder(false)} />
-          </div>
-        )}
-      </div>
-
-      <div className="file-wrapper">
-        <FilePicker onSelect={handleFileSelect} />
-      </div>
-
-      <input
-        type="text"
-        placeholder="Напишите сообщение..."
-        className="message-input-field"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyPress}
+      <textarea
+        ref={textareaRef}
+        className="composer__input"
+        placeholder={isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          typingStart();
+        }}
+        onKeyDown={onKeyDown}
+        onFocus={typingStart}
+        onBlur={typingStop}
+        rows={1}
+        disabled={isSending}
       />
 
       <button
+        className="composer__send"
         onClick={handleSend}
-        disabled={!content.trim()}
-        className="message-send-button"
+        aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
+        disabled={isSending}
       >
-        Отправить
+        {isEditMode ? '💾' : '➡️'}
       </button>
+
+      {!!files.length && (
+        <div className="composer__previews">
+          {files.map((f, i) => (
+            <div key={`${f.name}-${i}`} className="composer__preview" title={f.name}>
+              {f.name}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

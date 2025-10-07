@@ -1,6 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface SendMessageInput {
   conversationId: number;
@@ -15,9 +14,9 @@ interface SendMessageInput {
   clientMessageId?: string | null;
 }
 
-export const sendMessage = async (input: SendMessageInput) => {
+export const sendMessage = async (rawInput: SendMessageInput) => {
   try {
-    const data = sendMessageSchema.parse(input);
+    const data = sendMessageSchema.parse(rawInput);
 
     const {
       conversationId,
@@ -31,11 +30,12 @@ export const sendMessage = async (input: SendMessageInput) => {
       repliedToId,
     } = data;
 
+    const clientMessageId = rawInput.clientMessageId ?? null;
+
     const isParticipant = await prisma.participant.findFirst({
       where: { conversationId, userId: senderId },
       select: { id: true },
     });
-
     if (!isParticipant) {
       throw new Error("Вы не являетесь участником этого чата");
     }
@@ -45,22 +45,41 @@ export const sendMessage = async (input: SendMessageInput) => {
         where: { id: repliedToId },
         select: { id: true, conversationId: true },
       });
-
       if (!original || original.conversationId !== conversationId) {
         throw new Error("Ответ на сообщение из другого чата запрещён");
       }
     }
 
-    if (mediaType && mediaType !== "text") {
-      if (!mediaUrl) {
-        throw new Error("Для mediaType требуется mediaUrl");
+    if (mediaType && mediaType !== "text" && !mediaUrl) {
+      throw new Error("Для mediaType требуется mediaUrl");
+    }
+
+    if (clientMessageId) {
+      const existing = await prisma.message.findUnique({
+        where: { clientMessageId },
+        include: {
+          sender: { select: { id: true, username: true, profilePicture: true } },
+          repliedTo: {
+            select: {
+              id: true,
+              encryptedContent: true,
+              senderId: true,
+              mediaUrl: true,
+              mediaType: true,
+            },
+          },
+          mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
+        },
+      });
+      if (existing) {
+        return existing;
       }
     }
 
     const message = await prisma.$transaction(async (tx) => {
-
       const created = await tx.message.create({
         data: {
+          clientMessageId,
           conversationId,
           senderId,
           encryptedContent: encryptedContent ?? null,
@@ -72,9 +91,7 @@ export const sendMessage = async (input: SendMessageInput) => {
           repliedToId: repliedToId ?? null,
         },
         include: {
-          sender: {
-            select: { id: true, username: true, profilePicture: true },
-          },
+          sender: { select: { id: true, username: true, profilePicture: true } },
           repliedTo: {
             select: {
               id: true,
@@ -100,18 +117,13 @@ export const sendMessage = async (input: SendMessageInput) => {
 
       await tx.conversation.update({
         where: { id: conversationId },
-        data: {
-          lastMessageId: created.id,
-          updatedAt: new Date(),
-        },
+        data: { lastMessageId: created.id, updatedAt: new Date() },
       });
 
       const withRelations = await tx.message.findUnique({
         where: { id: created.id },
         include: {
-          sender: {
-            select: { id: true, username: true, profilePicture: true },
-          },
+          sender: { select: { id: true, username: true, profilePicture: true } },
           repliedTo: {
             select: {
               id: true,
@@ -121,9 +133,7 @@ export const sendMessage = async (input: SendMessageInput) => {
               mediaType: true,
             },
           },
-          mediaFiles: {
-            select: { id: true, url: true, type: true, uploadedAt: true },
-          },
+          mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
         },
       });
 
@@ -133,8 +143,6 @@ export const sendMessage = async (input: SendMessageInput) => {
 
       return withRelations;
     });
-
-    getIO().to(String(conversationId)).emit("receiveMessage", message);
 
     return message;
   } catch (error) {

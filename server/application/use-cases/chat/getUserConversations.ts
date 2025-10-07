@@ -1,8 +1,7 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
 
 export const getUserConversations = async (userId: number) => {
   try {
-    // Проверка: пользователь существует (опционально, но полезно для стабильности)
     const userExists = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true },
@@ -12,7 +11,6 @@ export const getUserConversations = async (userId: number) => {
       throw new Error("Пользователь не найден");
     }
 
-    // Получаем беседы пользователя
     const conversations = await prisma.conversation.findMany({
       where: {
         participants: {
@@ -21,8 +19,7 @@ export const getUserConversations = async (userId: number) => {
       },
       include: {
         participants: {
-          select: {
-            isOnline: true,
+          include: {
             user: {
               select: {
                 id: true,
@@ -33,15 +30,13 @@ export const getUserConversations = async (userId: number) => {
           },
         },
         lastMessage: {
-          where: {
-            isDeleted: false,
-          },
           select: {
             id: true,
             encryptedContent: true,
             mediaUrl: true,
             mediaType: true,
             createdAt: true,
+            isDeleted: true,
             sender: {
               select: {
                 id: true,
@@ -52,14 +47,42 @@ export const getUserConversations = async (userId: number) => {
           },
         },
       },
-      orderBy: {
-        updatedAt: 'desc',
-      },
+      orderBy: { updatedAt: "desc" },
     });
 
-    return conversations;
+    const formatted = conversations.map((conv) => {
+      const participants = conv.participants
+        .filter((p) => p.user.id !== userId)
+        .map((p) => ({
+          id: p.user.id,
+          username: p.user.username,
+          profilePicture: p.user.profilePicture,
+          isOnline: p.isOnline,
+        }));
+
+      return {
+        id: conv.id,
+        name: conv.isGroup ? conv.name : participants[0]?.username || "Личный чат",
+        isGroup: conv.isGroup,
+        participants,
+        lastMessage: conv.lastMessage && !conv.lastMessage.isDeleted
+          ? {
+              id: conv.lastMessage.id,
+              sender: conv.lastMessage.sender,
+              mediaType: conv.lastMessage.mediaType,
+              encryptedContent: conv.lastMessage.encryptedContent,
+              mediaUrl: conv.lastMessage.mediaUrl,
+              createdAt: conv.lastMessage.createdAt,
+            }
+          : null,
+        updatedAt: conv.updatedAt,
+      };
+    });
+
+    return formatted;
   } catch (error) {
     console.error("❌ Ошибка при получении бесед пользователя:", error);
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось получить список бесед");
   }
 };

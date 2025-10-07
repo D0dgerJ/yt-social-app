@@ -1,65 +1,76 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
+import { deleteConversationIfEmpty } from "./deleteConversationIfEmpty.ts";
 
 interface LeaveConversationInput {
   conversationId: number;
-  userId: number;        // Кого удаляем
-  requestedById: number; // Кто делает действие
+  userId: number; 
+  requestedById: number;
 }
 
-export const leaveConversation = async ({ conversationId, userId, requestedById }: LeaveConversationInput) => {
+export const leaveConversation = async ({
+  conversationId,
+  userId,
+  requestedById,
+}: LeaveConversationInput) => {
   try {
-    // ✅ Проверка: существует ли участник
     const participant = await prisma.participant.findFirst({
-      where: {
-        conversationId,
-        userId,
-      },
+      where: { conversationId, userId },
     });
 
     if (!participant) {
       throw new Error("Пользователь не является участником этого чата");
     }
 
-    // ✅ Проверка прав инициатора, если он удаляет не себя
     if (requestedById !== userId) {
       const requester = await prisma.participant.findFirst({
-        where: {
-          conversationId,
-          userId: requestedById,
-        },
+        where: { conversationId, userId: requestedById },
       });
 
       if (!requester || !["admin", "owner"].includes(requester.role)) {
         throw new Error("Недостаточно прав для удаления участника");
       }
 
-      // Нельзя удалять владельца
       if (participant.role === "owner") {
         throw new Error("Нельзя удалить владельца чата");
       }
     }
 
-    // 🧹 Удаляем участника
-    await prisma.participant.delete({
-      where: { id: participant.id },
+    await prisma.$transaction(async (tx) => {
+      await tx.participant.delete({ where: { id: participant.id } });
+
+      if (participant.role === "owner") {
+        const next = await tx.participant.findFirst({
+          where: { conversationId },
+          orderBy: { joinedAt: "asc" },
+        });
+
+        if (next) {
+          await tx.participant.update({
+            where: { id: next.id },
+            data: { role: "owner" },
+          });
+        }
+      }
     });
 
-    // 🧪 Проверяем, остались ли участники
-    const remaining = await prisma.participant.count({
-      where: { conversationId },
+    const io = getIO();
+    io.to(String(conversationId)).emit("participant:removed", {
+      conversationId,
+      userId,
+      removedBy: requestedById,
     });
 
-    if (remaining === 0) {
-      // 💥 Удаляем все связанные данные (сообщения + чат)
-      await prisma.message.deleteMany({ where: { conversationId } });
-      await prisma.conversation.delete({ where: { id: conversationId } });
+    const conversationDeleted = await deleteConversationIfEmpty(conversationId);
 
-      return { conversationDeleted: true };
+    if (conversationDeleted) {
+      io.to(String(conversationId)).emit("chat:deleted", { conversationId });
     }
 
-    return { conversationDeleted: false };
+    return { conversationDeleted };
   } catch (error) {
     console.error("❌ Ошибка при выходе из чата:", error);
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось выйти из чата");
   }
 };

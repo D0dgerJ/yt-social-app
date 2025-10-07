@@ -1,84 +1,100 @@
-import React, { useEffect, useRef } from 'react';
-import { useMessageStore } from '@/stores/messageStore';
-import { useChatSocket } from '@/hooks/useChatSocket';
-import { useChatStore } from '@/stores/chatStore';
-import { getChatMessages } from '@/utils/api/chat.api';
-import { decrypt } from '@/utils/encryption';
-import { MessageItem } from '../MessageItem/MessageItem';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserStore } from '@/stores/userStore';
+import { useChatStore } from '@/stores/chatStore';
+import { useMessageStore } from '@/stores/messageStore';
+import { useMessagesDecrypted } from '@/hooks/useMessages';
+import MessageList from './MessageList/MessageList';
+import TypingIndicator from '@/components/Chat/Indicators/TypingIndicator';
+import { useReadReceipts } from '@/hooks/useReadReceipts';
+import { useMessageActions } from '@/hooks/useMessageActions';
+import { getChatMessages } from '@/services/chatApi';
 import './ChatWindow.scss';
 
-const ChatWindow = () => {
-  const { messages, setMessages, clearMessages } = useMessageStore();
+const PAGE_SIZE = 30;
+
+const ChatWindow: React.FC = () => {
+  const meId = useUserStore((s) => s.currentUser?.id) as number | undefined;
   const { currentConversationId } = useChatStore();
-  const currentUser = useUserStore((state) => state.currentUser);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const hasMedia = (msg: any): boolean => {
-    return !!(msg.mediaUrl || msg.stickerUrl || msg.gifUrl || msg.fileName);
-  };
 
-  useChatSocket();
+  const { conversationId, messages } = useMessagesDecrypted();
 
-  // Загрузка истории сообщений
-  useEffect(() => {
-    const loadMessages = async () => {
-      if (!currentConversationId) return;
+  const { loadHistory, setActiveConversation } = useMessageStore.getState();
+
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [hasMoreOlder, setHasMoreOlder] = useState(true);
+
+  const oldestCursorRef = useRef<number | null>(null);
+  const loadedOnceRef = useRef<Record<number, boolean>>({});
+
+  useReadReceipts();
+  const { reactToMessage, setReplyTarget, beginEditMessage, deleteMessage } = useMessageActions();
+
+  const initialLoad = useCallback(
+    async (convId: number) => {
+      setIsLoadingOlder(true);
       try {
-        clearMessages(); // Очищаем старые сообщения перед загрузкой новых
-        const data = await getChatMessages(currentConversationId);
-        setMessages(data);
-      } catch (error) {
-        console.error("❌ Ошибка загрузки сообщений:", error);
+        const res = await getChatMessages(convId, { limit: PAGE_SIZE });
+        loadHistory(convId, res.messages, true);
+
+        oldestCursorRef.current = res.nextCursor ?? null;
+        setHasMoreOlder(Boolean(res.nextCursor));
+        loadedOnceRef.current[convId] = true;
+      } finally {
+        setIsLoadingOlder(false);
       }
-    };
+    },
+    [loadHistory]
+  );
 
-    loadMessages();
-  }, [currentConversationId, setMessages, clearMessages]);
-
-  // Автоскролл вниз
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (!currentConversationId) return;
+    setActiveConversation(currentConversationId);
+    if (!loadedOnceRef.current[currentConversationId]) {
+      void initialLoad(currentConversationId);
+    }
+  }, [currentConversationId, setActiveConversation, initialLoad]);
+
+  const loadOlder = useCallback(async () => {
+    if (!conversationId || isLoadingOlder || !hasMoreOlder) return;
+
+    setIsLoadingOlder(true);
+    try {
+      const res = await getChatMessages(conversationId, {
+        limit: PAGE_SIZE,
+        cursorId: oldestCursorRef.current ?? undefined,
+        direction: 'backward',
+      });
+
+      if (res.messages.length) {
+        loadHistory(conversationId, res.messages, true);
+        oldestCursorRef.current = res.nextCursor ?? null;
+        setHasMoreOlder(Boolean(res.nextCursor));
+      } else {
+        setHasMoreOlder(false);
+      }
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [conversationId, hasMoreOlder, isLoadingOlder, loadHistory]);
+
+  if (!currentConversationId || !meId) return null;
 
   return (
-    <div className="chat-window">
-      <div className="messages">
-        {messages.length === 0 ? (
-          <p className="empty">Нет сообщений</p>
-        ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className="message">
-
-              <MessageItem
-                key={msg.id}
-                messageId={msg.id}
-                content={
-                  msg.encryptedContent
-                    ? (() => {
-                        try {
-                          return decrypt(msg.encryptedContent);
-                        } catch {
-                          return '[ошибка]';
-                        }
-                      })()
-                    : !hasMedia(msg)
-                    ? '[нет контента]'
-                    : ''
-                }
-                currentUserId={currentUser?.id ?? 0}
-                senderId={msg.senderId}
-                senderUsername={msg.sender.username}
-                isOwnMessage={msg.senderId === currentUser?.id}
-                mediaType={msg.mediaType}
-                mediaUrl={msg.mediaUrl}
-                stickerUrl={msg.stickerUrl}
-                fileName={msg.fileName}
-              />
-            </div>
-          ))
-        )}
-        <div ref={bottomRef} />
-      </div>
+    <div className="chat-window chat-scroll">
+      <MessageList
+        meId={meId}
+        messages={messages}
+        isLoadingOlder={isLoadingOlder}
+        hasMoreOlder={hasMoreOlder}
+        loadOlder={loadOlder}
+        onRetry={(m) => console.log('retry', m)}
+        onReply={(m) => setReplyTarget(m)}
+        onReact={(m, emoji) => reactToMessage(m, emoji)}
+        onOpenAttachment={(url) => window.open(url, '_blank')}
+        onEdit={(m) => beginEditMessage(m)}
+        onDelete={(m) => deleteMessage(m)}
+      />
+      <TypingIndicator conversationId={currentConversationId} />
     </div>
   );
 };
