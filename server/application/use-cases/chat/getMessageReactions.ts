@@ -8,21 +8,28 @@ interface GroupedReaction {
     username: string;
     profilePicture: string | null;
   }[];
+  isMyReaction?: boolean;
 }
 
-export const getMessageReactions = async (messageId: number): Promise<GroupedReaction[]> => {
+interface GetMessageReactionsInput {
+  messageId: number;
+  userId?: number;
+}
+
+export const getMessageReactions = async ({
+  messageId,
+  userId,
+}: GetMessageReactionsInput): Promise<GroupedReaction[]> => {
   try {
-    // ✅ Проверка: сообщение существует и не удалено
     const message = await prisma.message.findUnique({
       where: { id: messageId },
-      select: { isDeleted: true },
+      select: { id: true, isDeleted: true },
     });
 
     if (!message || message.isDeleted) {
       throw new Error("Сообщение не найдено или было удалено");
     }
 
-    // ✅ Загружаем реакции с данными пользователей
     const reactions = await prisma.reaction.findMany({
       where: { messageId },
       include: {
@@ -36,33 +43,39 @@ export const getMessageReactions = async (messageId: number): Promise<GroupedRea
       },
     });
 
-    // ✅ Группировка по emoji
+    if (reactions.length === 0) return [];
+
     const groupedMap = new Map<string, GroupedReaction>();
 
-    for (const reaction of reactions) {
-      const { emoji, user } = reaction;
+    for (const { emoji, user } of reactions) {
       const userInfo = {
         id: user.id,
         username: user.username,
         profilePicture: user.profilePicture,
       };
 
-      if (groupedMap.has(emoji)) {
-        const group = groupedMap.get(emoji)!;
-        group.count++;
-        group.users.push(userInfo);
-      } else {
+      if (!groupedMap.has(emoji)) {
         groupedMap.set(emoji, {
           emoji,
           count: 1,
           users: [userInfo],
+          isMyReaction: userId ? userId === user.id : undefined,
         });
+      } else {
+        const group = groupedMap.get(emoji)!;
+        group.count++;
+        group.users.push(userInfo);
+        if (userId && user.id === userId) {
+          group.isMyReaction = true;
+        }
       }
     }
+    const grouped = Array.from(groupedMap.values()).sort((a, b) => b.count - a.count);
 
-    return Array.from(groupedMap.values());
+    return grouped;
   } catch (error) {
     console.error("❌ Ошибка при получении реакций:", error);
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось получить реакции на сообщение");
   }
 };

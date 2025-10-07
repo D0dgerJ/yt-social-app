@@ -83,3 +83,27 @@
     }
   }
 }
+.chat-scroll {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-scroll-thumb, #16a34a) var(--chat-scroll-track, #89e27e);
+
+  /* WebKit/Chromium */
+  &::-webkit-scrollbar { width: 10px; height: 10px; }
+  &::-webkit-scrollbar-track {
+    background: var(--chat-scroll-track, #89e27e); /* лаймовый трек */
+    border-radius: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--chat-scroll-thumb, #16a34a); /* тёмнее ползунок */
+    border-radius: 8px;
+    border: 2px solid var(--chat-scroll-track, #89e27e); /* «канал» вокруг */
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--chat-scroll-thumb-hover, #16a34a);
+  }
+  &::-webkit-scrollbar-corner { background: var(--chat-scroll-track, #89e27e); }
+}
+
+/* чтобы скролл работал корректно во flex-контейнере */
+.chat-window { min-height: 0; }

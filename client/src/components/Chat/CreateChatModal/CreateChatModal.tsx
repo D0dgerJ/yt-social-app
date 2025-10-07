@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { createChat } from '@/utils/api/chat.api';
-import { getUserFriends } from '@/utils/api/user.api';
-import { useUserStore } from '@/stores/userStore';
+import React, { useEffect, useState } from "react";
+import { createChat } from "@/utils/api/chat.api";
+import { getUserFriends } from "@/utils/api/user.api";
+import { useUserStore } from "@/stores/userStore";
 import "./CreateChatModal.scss";
 
 interface Friend {
@@ -18,40 +18,52 @@ interface Props {
 const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const { currentUser } = useUserStore();
 
   useEffect(() => {
-    console.log('currentUser:', currentUser);
-    console.log('Попробуем получить друзей...');
-
     const fetchFriends = async () => {
       if (!currentUser?.id) return;
+      setIsLoading(true);
+      setError(null);
       try {
         const res = await getUserFriends(currentUser.id);
-        console.log("Полученные друзья:", res);
-        setFriends(res);
+        setFriends(res || []);
       } catch (e) {
-        console.error("Не удалось получить друзей", e);
+        console.error("❌ Не удалось получить друзей:", e);
+        setError("Не удалось загрузить список друзей");
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchFriends();
   }, [currentUser]);
 
   const toggleSelect = (id: number) => {
-    setSelected(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
   const handleCreate = async () => {
-    if (selected.length > 0 && currentUser?.id) {
-      try {
-        await createChat(selected, currentUser.id);
-        onCreated();
-        onClose();
-      } catch (error) {
-        console.error("Ошибка при создании чата:", error);
-      }
+    if (selected.length === 0 || !currentUser?.id) return;
+
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      await createChat(selected, currentUser.id);
+      onCreated();
+      onClose();
+    } catch (e) {
+      console.error("❌ Ошибка при создании чата:", e);
+      setError("Ошибка при создании чата. Попробуйте позже.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -59,11 +71,16 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
     <div className="modal-backdrop">
       <div className="modal">
         <h2>Создать чат</h2>
-        {friends.length === 0 ? (
-          <p>У вас нет друзей</p>
+
+        {isLoading ? (
+          <p>Загрузка списка друзей...</p>
+        ) : error ? (
+          <p className="error">{error}</p>
+        ) : friends.length === 0 ? (
+          <p>У вас пока нет друзей</p>
         ) : (
           <ul className="friend-list">
-            {friends.map(friend => (
+            {friends.map((friend) => (
               <li key={friend.id}>
                 <label>
                   <input
@@ -71,16 +88,27 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
                     checked={selected.includes(friend.id)}
                     onChange={() => toggleSelect(friend.id)}
                   />
-                  {friend.username}
+                  <img
+                    src={friend.profilePicture || "/default-avatar.png"}
+                    alt={friend.username}
+                    className="friend-avatar"
+                  />
+                  <span>{friend.username}</span>
                 </label>
               </li>
             ))}
           </ul>
         )}
-        <button onClick={handleCreate} disabled={selected.length === 0}>
-          Создать
-        </button>
-        <button onClick={onClose}>Отмена</button>
+
+        <div className="modal-actions">
+          <button
+            onClick={handleCreate}
+            disabled={selected.length === 0 || isCreating}
+          >
+            {isCreating ? "Создание..." : "Создать"}
+          </button>
+          <button onClick={onClose}>Отмена</button>
+        </div>
       </div>
     </div>
   );

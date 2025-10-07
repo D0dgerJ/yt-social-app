@@ -1,33 +1,56 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
-/**
- * Удаляет чат и связанные с ним сообщения, если в нём больше не осталось участников.
- * @param conversationId ID чата
- * @returns true, если чат был удалён; false, если участники ещё есть
- */
 export const deleteConversationIfEmpty = async (conversationId: number): Promise<boolean> => {
   try {
     const participantCount = await prisma.participant.count({
       where: { conversationId },
     });
 
-    if (participantCount === 0) {
-      // Удаляем все связанные сообщения
-      await prisma.message.deleteMany({
+    if (participantCount > 0) return false;
+
+    await prisma.$transaction(async (tx) => {
+      const messages = await tx.message.findMany({
         where: { conversationId },
+        select: { id: true },
       });
 
-      // Удаляем сам чат
-      await prisma.conversation.delete({
+      const messageIds = messages.map(m => m.id);
+
+      if (messageIds.length > 0) {
+        await tx.reaction.deleteMany({
+          where: { messageId: { in: messageIds } },
+        });
+
+        await tx.mediaFile.deleteMany({
+          where: { messageId: { in: messageIds } },
+        });
+
+        await tx.report.deleteMany({
+          where: { messageId: { in: messageIds } },
+        });
+
+        await tx.messageDelivery.deleteMany({
+          where: { messageId: { in: messageIds } },
+        });
+
+        await tx.message.deleteMany({
+          where: { id: { in: messageIds } },
+        });
+      }
+
+      await tx.conversation.delete({
         where: { id: conversationId },
       });
+    });
 
-      return true;
-    }
+    const io = getIO();
+    io.to(String(conversationId)).emit("chat:deleted", { conversationId });
 
-    return false;
+    console.log(`🗑️ Чат ${conversationId} удалён, участников не осталось.`);
+    return true;
   } catch (error) {
-    console.error(`❌ Ошибка при попытке удалить чат ${conversationId}:`, error);
+    console.error(`❌ Ошибка при удалении пустого чата ${conversationId}:`, error);
     return false;
   }
 };

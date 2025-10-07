@@ -1,0 +1,9 @@
+.msg-status {
+  font-size: 11px;
+  color: #888;
+  margin-left: 8px;
+}
+.msg-status--sending { opacity: .7; }
+.msg-status--delivered { color: #666; }
+.msg-status--read { color: #0a84ff; }
+.msg-status--failed { color: #d93025; }

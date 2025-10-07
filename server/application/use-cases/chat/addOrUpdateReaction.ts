@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface AddReactionInput {
   userId: number;
@@ -8,7 +9,6 @@ interface AddReactionInput {
 
 export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReactionInput) => {
   try {
-    // 🔍 Проверка: существует ли сообщение и не удалено
     const message = await prisma.message.findUnique({
       where: { id: messageId },
       select: { id: true, isDeleted: true, conversationId: true },
@@ -18,7 +18,6 @@ export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReact
       throw new Error("Сообщение не найдено или было удалено");
     }
 
-    // ✅ Проверка: является ли пользователь участником беседы
     const isParticipant = await prisma.participant.findFirst({
       where: {
         conversationId: message.conversationId,
@@ -30,46 +29,61 @@ export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReact
       throw new Error("Вы не можете взаимодействовать с этим сообщением");
     }
 
-    // 🔁 Проверка: есть ли уже реакция
     const existing = await prisma.reaction.findFirst({
       where: { userId, messageId },
     });
 
+    let toggledOn = true;
+
     if (existing) {
       if (existing.emoji === emoji) {
-        // 🧹 Удаление (повторное нажатие = отмена)
         await prisma.reaction.delete({ where: { id: existing.id } });
-
-        // Можно добавить emit к WebSocket: reactionRemoved
-        return null;
+        toggledOn = false;
       } else {
-        // 🔄 Обновление эмоджи
-        const updated = await prisma.reaction.update({
+        await prisma.reaction.update({
           where: { id: existing.id },
           data: { emoji },
         });
-
-        // Можно добавить emit: reactionUpdated
-        return updated;
       }
+    } else {
+      await prisma.reaction.create({
+        data: {
+          userId,
+          messageId,
+          emoji,
+        },
+      });
     }
 
-    // 🆕 Создание новой реакции
-    const created = await prisma.reaction.create({
-      data: {
-        userId,
-        messageId,
-        emoji,
-      },
+    const groupedReactions = await prisma.reaction.groupBy({
+      by: ["emoji"],
+      where: { messageId },
+      _count: true,
     });
 
-    // Можно добавить emit: reactionAdded
-    return created;
+    const io = getIO();
+
+    io.to(String(message.conversationId)).emit("message:reaction", {
+      conversationId: message.conversationId,
+      messageId,
+      emoji,
+      userId,
+      toggledOn,
+    });
+
+    io.to(String(message.conversationId)).emit("reaction:updated", {
+      conversationId: message.conversationId,
+      messageId,
+      groupedReactions: groupedReactions.map((r) => ({
+        emoji: r.emoji,
+        count: r._count,
+      })),
+    });
+
+    return { toggledOn };
   } catch (error) {
     console.error("❌ Ошибка при добавлении/обновлении реакции:", error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось обработать реакцию");
   }
 };

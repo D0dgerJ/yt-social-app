@@ -20,7 +20,6 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
       throw new Error("Вы не можете удалить это сообщение");
     }
 
-    // 🔕 Мягкое удаление (soft delete)
     const softDeleted = await prisma.message.update({
       where: { id: messageId },
       data: {
@@ -36,7 +35,6 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
       },
     });
 
-    // 🧠 Обновление lastMessageId, если это было последнее сообщение
     const conversation = await prisma.conversation.findUnique({
       where: { id: message.conversationId },
       select: { lastMessageId: true },
@@ -61,10 +59,9 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
       });
     }
 
-    // 📡 WebSocket: уведомление участников чата
-    getIO().to(String(message.conversationId)).emit("messageDeleted", {
-      messageId: softDeleted.id,
+    getIO().to(String(message.conversationId)).emit("message:delete", {
       conversationId: message.conversationId,
+      messageId: softDeleted.id,
     });
 
     return softDeleted;

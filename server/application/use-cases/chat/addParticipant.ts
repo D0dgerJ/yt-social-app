@@ -1,39 +1,40 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface AddParticipantInput {
   conversationId: number;
   userId: number;
-  role?: 'member' | 'admin' | 'owner'; // по умолчанию — member
+  addedById: number;
+  role?: "member" | "admin" | "owner";
 }
 
 export const addParticipant = async ({
   conversationId,
   userId,
-  role = 'member',
+  addedById,
+  role = "member",
 }: AddParticipantInput) => {
   try {
-    // 🔍 Проверка существования чата
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
+      include: { participants: true },
     });
 
     if (!conversation) {
       throw new Error("Чат не найден");
     }
 
-    // 👥 Проверка: не добавлен ли уже
-    const isAlreadyParticipant = await prisma.participant.findFirst({
-      where: {
-        conversationId,
-        userId,
-      },
-    });
-
-    if (isAlreadyParticipant) {
-      throw new Error("Пользователь уже участвует в чате");
+    const addedBy = conversation.participants.find(p => p.userId === addedById);
+    if (!addedBy || !["admin", "owner"].includes(addedBy.role)) {
+      throw new Error("У вас нет прав добавлять участников");
     }
 
-    // ➕ Добавление участника
+    const existing = await prisma.participant.findFirst({
+      where: { conversationId, userId },
+    });
+    if (existing) {
+      throw new Error("Пользователь уже участвует в чате");
+    }
     const participant = await prisma.participant.create({
       data: {
         conversationId,
@@ -51,15 +52,16 @@ export const addParticipant = async ({
       },
     });
 
-    // (Опционально) WebSocket уведомление другим участникам чата
-    // getIO().to(String(conversationId)).emit("participantAdded", participant);
+    const io = getIO();
+    io.to(String(conversationId)).emit("participant:added", {
+      conversationId,
+      participant,
+    });
 
     return participant;
   } catch (error) {
     console.error("❌ Ошибка при добавлении участника:", error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
+    if (error instanceof Error) throw new Error(error.message);
     throw new Error("Не удалось добавить участника");
   }
 };

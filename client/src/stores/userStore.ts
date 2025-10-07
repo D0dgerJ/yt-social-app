@@ -18,7 +18,7 @@ export interface User {
 interface UserStore {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
-  updateCurrentUser: (data: Partial<User>) => void;
+  updateCurrentUser: (patch: Partial<User>) => void;
   clearUser: () => void;
 }
 
@@ -27,9 +27,9 @@ export const useUserStore = create<UserStore>((set) => ({
 
   setCurrentUser: (user) => set({ currentUser: user }),
 
-  updateCurrentUser: (data) =>
+  updateCurrentUser: (patch) =>
     set((state) => ({
-      currentUser: state.currentUser ? { ...state.currentUser, ...data } : null,
+      currentUser: state.currentUser ? { ...state.currentUser, ...patch } : null,
     })),
 
   clearUser: () => set({ currentUser: null }),

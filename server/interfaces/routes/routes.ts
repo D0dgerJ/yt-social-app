@@ -9,6 +9,8 @@ import notificationRoutes from "./notification.route.ts";
 import chatRoutes from "./chat.route.ts";
 import uploadRoutes from "./uploadRoutes.ts";
 import downloadRoutes from "./downloadRoutes.ts";
+import mediaRoutes from "./media.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 
 const router = express.Router();
 
@@ -19,7 +21,9 @@ router.use("/stories", storyRoutes);
 router.use("/comments", commentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/chat", chatRoutes);
-router.use("/upload", uploadRoutes);
-router.use(downloadRoutes);
+
+router.use("/upload", authMiddleware, uploadRoutes);
+router.use("/download", authMiddleware, downloadRoutes);
+router.use(mediaRoutes);
 
 export default router;

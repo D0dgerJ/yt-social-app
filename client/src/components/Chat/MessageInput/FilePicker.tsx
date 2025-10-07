@@ -1,83 +1,67 @@
+import React, { useMemo, useRef } from "react";
 import { Paperclip } from "lucide-react";
-import React, { useRef } from "react";
+import { IMAGE_MIME, VIDEO_MIME, FILE_MIME, MAX_FILE_MB } from "@/constants/mime";
+import { assertAllowed } from "@/utils/fileGuards";
 
 interface FilePickerProps {
-  onSelect: (file: File) => void;
+  onSelect: (files: File[]) => void;
+  title?: string;
 }
 
-const MAX_FILE_SIZE_MB = 25;
-
-const FilePicker: React.FC<FilePickerProps> = ({ onSelect }) => {
+const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикрепить файл" }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleClick = () => {
-    inputRef.current?.click();
+  const accept = useMemo(() => {
+    const all = [...IMAGE_MIME, ...VIDEO_MIME, ...FILE_MIME];
+    return Array.from(new Set(all.filter(Boolean))).join(",");
+  }, []);
+
+  const handleClick = () => inputRef.current?.click();
+
+  const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const fl = e.currentTarget.files;
+    if (!fl?.length) return;
+
+    const accepted: File[] = [];
+    const issues: string[] = [];
+
+    Array.from(fl).forEach((f) => {
+      const res = assertAllowed(f);
+      if (!res.ok) {
+        issues.push(`${f.name}: ${res.reason}`);
+      } else {
+        accepted.push(f);
+      }
+    });
+
+    if (issues.length) {
+      alert(issues.join("\n"));
+    }
+    if (accepted.length) {
+      onSelect(accepted);
+    }
+
+    e.currentTarget.value = "";
   };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = [
-      // 📸 Изображения
-      'image/png',
-      'image/jpeg',
-      'image/webp',
-      'image/gif',
-
-      // 📄 Документы
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-
-      // 📦 Архивы
-      'application/zip',
-      'application/x-rar-compressed',
-      'application/x-7z-compressed',
-
-      // 📄 Текст
-      'text/plain',
-      'text/csv',
-      'text/html',
-      'text/css',
-      'application/javascript',
-      'application/x-typescript',
-      'application/json',
-
-      // 🎵 Аудио
-      'audio/mpeg',
-
-      // 🎥 Видео
-      'video/mp4',
-      'video/x-matroska',
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      alert('Этот тип файла не поддерживается!');
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      alert(`Файл слишком большой. Максимальный размер — ${MAX_FILE_SIZE_MB}MB.`);
-      return;
-    }
-
-    onSelect(file);
-    };
 
   return (
     <>
-      <button onClick={handleClick} className="file-picker-button" title="Прикрепить файл">
+      <button
+        type="button"
+        onClick={handleClick}
+        className="file-picker-button"
+        title={title}
+        aria-label={title}
+      >
         <Paperclip size={20} />
       </button>
       <input
         ref={inputRef}
         type="file"
         hidden
+        multiple
         onChange={handleChange}
-        accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.doc,.docx,.txt,.zip,.rar,.7z,.mp3,.mp4,.avi,.mkv,.csv,.xlsx,.json,.xml,.html,.css,.js,.ts"
+        accept={accept}
       />
     </>
   );

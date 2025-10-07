@@ -1,0 +1,27 @@
+.msg-virtuoso-wrap { height: 100%; }
+.msg-virtuoso { height: 100%; }
+
+.msg-separator {
+  text-align: center;
+  font-size: 12px;
+  color: #777;
+  margin: 8px 0;
+}
+
+.msg-system {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  color: #666;
+  font-size: 13px;
+  padding: 6px 0;
+}
+.msg-system__text { background: #f3f3f3; padding: 4px 8px; border-radius: 8px; }
+.msg-system__time { font-size: 11px; color: #999; align-self: center; }
+
+.msg-loader-top {
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  padding: 8px 0;
+}

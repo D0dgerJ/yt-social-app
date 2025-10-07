@@ -1,48 +1,242 @@
-import { useEffect, useRef } from "react";
-import { useUserStore } from "@/stores/userStore";
-import { useChatStore } from "@/stores/chatStore";
-import { useMessageStore } from "@/stores/messageStore";
-import { useSocket } from "@/hooks/useSocket";
-import { Message } from "@/utils/types/MessageTypes";
+import { useEffect, useRef } from 'react';
+import { useUserStore } from '@/stores/userStore';
+import { useChatStore } from '@/stores/chatStore';
+import { useMessageStore } from '@/stores/messageStore';
+import { useTypingStore } from '@/stores/typingStore';
+import { useSocket } from '@/context/SocketContext';
+import type { Message as ServerMessage } from '@/utils/types/MessageTypes';
+import type { GroupedReaction } from '@/stores/messageStore';
 
+/**
+ * Единый хук подписок на чатовые события по сокету:
+ * - receiveMessage / message:ack → обновление optimistic
+ * - delivered/read
+ * - edit/delete
+ * - реакции
+ * - typing start/stop
+ * - join/leave при смене беседы
+ */
 export const useChatSocket = () => {
   const { currentUser } = useUserStore();
+  const meId = currentUser?.id;
   const { currentConversationId } = useChatStore();
-  const { addMessage } = useMessageStore();
   const { socket } = useSocket();
 
+  const {
+    addMessage,
+    replaceOptimistic,
+    markStatus,
+    updateMessage,
+    removeMessage,
+    setActiveConversation,
+    toggleReaction,
+    updateMessageReactions,
+    isHandled,
+    markHandled,
+  } = useMessageStore();
+
   const prevConversationIdRef = useRef<number | null>(null);
+  const purgeTimerRef = useRef<number | null>(null);
+
+  const toClientMessage = (msg: ServerMessage) => ({ ...(msg as any) });
 
   useEffect(() => {
-    if (!socket || !currentUser || currentConversationId === null) return;
+    if (!socket) return;
 
-    // Подписка на входящие сообщения
-    const handleReceiveMessage = (message: Message) => {
-      if (message.conversationId === currentConversationId) {
-        addMessage(message);
+    const onConnect = () => {
+      if (currentConversationId != null) {
+        socket.emit('joinConversation', currentConversationId);
       }
     };
 
-    socket.on("receiveMessage", handleReceiveMessage);
+    socket.on('connect', onConnect);
 
-    // Переподключение к комнате
-    if (prevConversationIdRef.current !== currentConversationId) {
-      if (prevConversationIdRef.current !== null) {
-        socket.emit("leaveConversation", prevConversationIdRef.current);
+    return () => {
+      socket.off('connect', onConnect);
+    };
+  }, [socket, currentConversationId]);
+
+  useEffect(() => {
+    if (!socket || !currentUser) return;
+    const typingApi = useTypingStore.getState();
+
+    const onReceiveMessage = (msg: ServerMessage) => {
+      if (msg.conversationId !== currentConversationId) return;
+      const clientMsg = toClientMessage(msg);
+
+      if (msg.clientMessageId && isHandled?.(msg.clientMessageId)) return;
+      if (msg.clientMessageId) markHandled?.(msg.clientMessageId);
+
+      if (msg.clientMessageId) {
+        replaceOptimistic?.(msg.clientMessageId, { ...clientMsg, localStatus: 'sent' });
+      } else {
+        addMessage?.({ ...clientMsg, localStatus: 'sent' });
       }
 
-      socket.emit("joinConversation", currentConversationId);
-      prevConversationIdRef.current = currentConversationId;
+      const isIncoming = typeof meId === 'number' ? msg.senderId !== meId : true;
+      if (isIncoming) {
+        markStatus?.(msg.conversationId, msg.id, { isDelivered: true });
+        socket.emit?.('messageDelivered', {
+          conversationId: msg.conversationId,
+          messageId: msg.id,
+        });
+      }
+    };
+
+    const onMessageAck = (msg: ServerMessage) => {
+      if (!msg.clientMessageId || isHandled?.(msg.clientMessageId)) return;
+      markHandled?.(msg.clientMessageId);
+      replaceOptimistic?.(msg.clientMessageId, {
+        ...toClientMessage(msg),
+        localStatus: 'sent',
+      });
+    };
+
+    const onMessageEdit = (payload: { message: ServerMessage }) => {
+      if (!payload?.message) return;
+      updateMessage?.({ ...(payload.message as any) });
+    };
+
+    const onMessageDelete = (payload: { messageId: number }) => {
+      if (!payload?.messageId) return;
+      removeMessage?.(payload.messageId);
+    };
+
+    const onDelivered = (p: { conversationId: number; messageId: number }) =>
+      markStatus?.(p.conversationId, p.messageId, { isDelivered: true });
+    const onRead = (p: { conversationId: number; messageId: number }) =>
+      markStatus?.(p.conversationId, p.messageId, { isDelivered: true, isRead: true });
+
+    const onReactionsUpdated = (p: {
+      conversationId: number;
+      messageId: number;
+      groupedReactions: GroupedReaction[];
+    }) => {
+      if (p.conversationId !== currentConversationId) return;
+      updateMessageReactions?.(p.conversationId, p.messageId, p.groupedReactions, meId);
+    };
+
+    const onMessageReaction = (payload: {
+      conversationId: number;
+      messageId: number;
+      emoji: string;
+      userId: number;
+      toggledOn?: boolean;
+    }) => {
+      if (payload.conversationId !== currentConversationId) return;
+      toggleReaction?.(
+        payload.conversationId,
+        payload.messageId,
+        payload.emoji,
+        payload.userId,
+        payload.toggledOn
+      );
+    };
+
+    const onTypingStart = (p: {
+      conversationId: number;
+      userId: number;
+      username?: string;
+      displayName?: string;
+      timestamp?: number;
+    }) => {
+      if (p.conversationId !== currentConversationId) return;
+      if (meId && p.userId === meId) return;
+      typingApi.setTyping(p.conversationId, {
+        userId: p.userId,
+        username: p.username,
+        displayName: p.displayName,
+        lastAt: p.timestamp ?? Date.now(),
+      });
+    };
+
+    const onTypingStop = (p: { conversationId: number; userId: number }) => {
+      if (p.conversationId !== currentConversationId) return;
+      if (meId && p.userId === meId) return;
+      typingApi.stopTyping(p.conversationId, p.userId);
+    };
+
+    socket.on('receiveMessage', onReceiveMessage);
+    socket.on('message:ack', onMessageAck);
+    socket.on('message:edit', onMessageEdit);
+    socket.on('message:delete', onMessageDelete);
+    socket.on('message:delivered', onDelivered);
+    socket.on('message:read', onRead);
+    socket.on('reaction:updated', onReactionsUpdated);
+    socket.on('message:reaction', onMessageReaction);
+    socket.on('typing:start', onTypingStart);
+    socket.on('typing:stop', onTypingStop);
+
+    if (purgeTimerRef.current) {
+      window.clearInterval(purgeTimerRef.current);
+      purgeTimerRef.current = null;
+    }
+    if (currentConversationId != null) {
+      purgeTimerRef.current = window.setInterval(() => {
+        useTypingStore.getState().purgeOlderThan(currentConversationId, 4000);
+      }, 1500) as unknown as number;
     }
 
     return () => {
-      socket.off("receiveMessage", handleReceiveMessage);
+      [
+        'receiveMessage',
+        'message:ack',
+        'message:edit',
+        'message:delete',
+        'message:delivered',
+        'message:read',
+        'reaction:updated',
+        'message:reaction',
+        'typing:start',
+        'typing:stop',
+      ].forEach((e) => socket.off(e));
 
-      if (currentConversationId !== null) {
-        socket.emit("leaveConversation", currentConversationId);
+      if (purgeTimerRef.current) {
+        window.clearInterval(purgeTimerRef.current);
+        purgeTimerRef.current = null;
       }
+      if (currentConversationId != null) {
+        useTypingStore.getState().clear(currentConversationId);
+      }
+    };
+  }, [
+    socket,
+    currentUser,
+    currentConversationId,
+    meId,
+    addMessage,
+    replaceOptimistic,
+    markStatus,
+    updateMessage,
+    removeMessage,
+    toggleReaction,
+    updateMessageReactions,
+    isHandled,
+    markHandled,
+  ]);
 
+  useEffect(() => {
+    if (!socket) return;
+
+    const prev = prevConversationIdRef.current;
+    const next = currentConversationId ?? null;
+
+    if (prev != null && prev !== next && socket.connected) {
+      socket.emit('leaveConversation', prev);
+    }
+    if (next != null && prev !== next && socket.connected) {
+      socket.emit('joinConversation', next);
+      setActiveConversation?.(next);
+    }
+
+    prevConversationIdRef.current = next;
+
+    return () => {
+      const cur = prevConversationIdRef.current;
+      if (cur != null && socket.connected) {
+        socket.emit('leaveConversation', cur);
+      }
       prevConversationIdRef.current = null;
     };
-  }, [socket, currentUser, currentConversationId, addMessage]);
+  }, [socket, currentConversationId, setActiveConversation]);
 };
