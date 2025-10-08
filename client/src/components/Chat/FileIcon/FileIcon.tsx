@@ -25,7 +25,7 @@ export function getExt(nameOrUrl: string): string {
   try {
     const url = new URL(nameOrUrl);
     nameOrUrl = url.pathname;
-  } catch {}
+  } catch {/**/}
   const fname = nameOrUrl.split('/').pop() || '';
   const dot = fname.lastIndexOf('.');
   return dot >= 0 ? fname.slice(dot + 1).toLowerCase() : '';
