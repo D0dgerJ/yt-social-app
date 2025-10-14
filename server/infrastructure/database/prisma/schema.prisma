@@ -225,13 +225,20 @@ model Message {
   conversationId Int
   senderId       Int
 
-  encryptedContent String? // base64 от зашифрованного текста
+  encryptedContent String?
   mediaUrl         String?
   mediaType        String? // image | video | file | gif | audio | text
   fileName         String?
   gifUrl           String?
   stickerUrl       String?
   audioText        String?
+
+  audioOriginalUrl String? // URL оригинала
+  audioUrl         String? // URL сконвертированного файла
+  audioMime        String? // итоговый MIME
+  audioDurationSec Int? // длительность в секундах
+  audioWaveform    Int[]             @default([]) // компактная волна (32–64 значений)
+  processingStatus ProcessingStatus? // PENDING | PROCESSING | READY | FAILED
 
   isDelivered Boolean   @default(false)
   isRead      Boolean   @default(false)
@@ -256,13 +263,13 @@ model Message {
   reports    Report[]
   mediaFiles MediaFile[]
   deliveries MessageDelivery[]
-  
-  // 🆕 Защита от дублирования
+
   clientMessageId String? @unique
 
   @@index([conversationId, createdAt])
   @@index([conversationId, editedAt])
   @@index([conversationId, deletedAt])
+  @@index([processingStatus, createdAt])
 }
 
 model EncryptionKey {
@@ -336,6 +343,12 @@ model Reaction {
   message Message @relation(fields: [messageId], references: [id])
 
   @@unique([userId, messageId]) // один пользователь — одна реакция на сообщение
-
   @@index([messageId, createdAt])
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
 }
