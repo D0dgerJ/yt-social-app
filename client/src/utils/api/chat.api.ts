@@ -1,7 +1,6 @@
 import axios from './axiosInstance';
 import { toast } from 'react-toastify';
 
-// Универсальный обработчик ошибок
 const handleRequest = async <T>(request: () => Promise<T>): Promise<T> => {
   try {
     return await request();
@@ -15,32 +14,36 @@ const handleRequest = async <T>(request: () => Promise<T>): Promise<T> => {
 // ----------------- Чаты -----------------
 
 export const createChat = async (userIds: number[], creatorId: number, name?: string) =>
-  handleRequest(() =>
-    axios.post('/chat', { userIds, creatorId, name }).then(res => res.data)
-  );
+  handleRequest(() => axios.post('/chat', { userIds, creatorId, name }).then(res => res.data));
 
 export const getUserConversations = async () =>
   handleRequest(() => axios.get('/chat').then(res => res.data));
 
 // ----------------- Сообщения -----------------
 
-type SendMessageBody = {
+export type SendMessageBody = {
   content?: string;
+  encryptedContent?: string;
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
+  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
   fileName?: string;
   gifUrl?: string;
   stickerUrl?: string;
   repliedToId?: number;
+
   clientMessageId?: string | null;
 };
 
 export const sendMessage = async (chatId: number, message: SendMessageBody) =>
+  handleRequest(() => axios.post(`/chat/${chatId}/messages`, message).then(res => res.data));
+
+export const sendMessageREST = async (
+  body: { conversationId: number } & SendMessageBody
+) =>
   handleRequest(() =>
-    axios.post(`/chat/${chatId}/messages`, message).then(res => res.data)
+    axios.post(`/chat/${body.conversationId}/messages`, body).then(res => res.data)
   );
 
-// cursor-based история
 export const getChatMessages = async (
   chatId: number,
   opts: { cursorId?: number | null; direction?: 'forward' | 'backward'; limit?: number } = {}
@@ -65,17 +68,28 @@ export const updateMessage = async (chatId: number, messageId: number, content: 
     axios.patch(`/chat/${chatId}/messages/${messageId}`, { content }).then(res => res.data)
   );
 
+export const updateMessageByClientId = async (
+  chatId: number,
+  clientMessageId: string,
+  content: string
+) =>
+  handleRequest(() =>
+    axios.patch(`/chat/${chatId}/messages/0`, { clientMessageId, content }).then(res => res.data)
+  );
+
 export const deleteMessage = async (chatId: number, messageId: number) =>
   handleRequest(() => axios.delete(`/chat/${chatId}/messages/${messageId}`).then(res => res.data));
 
 // ----------------- Участники -----------------
 
 export const leaveConversation = async (chatId: number) =>
-  handleRequest(() =>
-    axios.delete(`/chat/${chatId}/leave`).then(res => res.data)
-  );
+  handleRequest(() => axios.delete(`/chat/${chatId}/leave`).then(res => res.data));
 
-export const addParticipant = async (chatId: number, userId: number, role: 'member' | 'admin' | 'owner' = 'member') =>
+export const addParticipant = async (
+  chatId: number,
+  userId: number,
+  role: 'member' | 'admin' | 'owner' = 'member'
+) =>
   handleRequest(() =>
     axios.post(`/chat/${chatId}/participants`, { userId, role }).then(res => res.data)
   );

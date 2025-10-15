@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { useUserStore } from '@/stores/userStore';
 import { useMessageStore, type Message } from '@/stores/messageStore';
 import { uploadFiles, sendMessageREST } from '@/services/chatApi';
-import { useSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/context/SocketContext';
 
 type SendOptions = {
   conversationId: number;
@@ -15,18 +15,30 @@ type SendOptions = {
 const ACK_WAIT_SOCKET_MS = 4_000;
 const ACK_TIMEOUT_MS = 12_000;
 
-type SendMessageDto = {
+type SendMessageBody = {
   clientMessageId: string;
   conversationId: number;
   encryptedContent?: string;
   content?: string;
-  media?: { url: string; name: string; mime: string };
-  replyToId?: number;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
+  fileName?: string;
+  gifUrl?: string;
+  stickerUrl?: string;
+  repliedToId?: number;
 };
 
 async function encryptText(plain?: string): Promise<string | undefined> {
   if (!plain) return undefined;
   return `b64:${btoa(unescape(encodeURIComponent(plain)))}`;
+}
+
+function mimeToMediaType(mime?: string): SendMessageBody['mediaType'] {
+  if (!mime) return null;
+  if (mime.startsWith('image/')) return 'image';
+  if (mime.startsWith('video/')) return 'video';
+  if (mime.startsWith('audio/')) return 'audio';
+  return 'file';
 }
 
 export function useSendMessage() {
@@ -108,24 +120,29 @@ export function useSendMessage() {
       try {
         const encryptedContent = await encryptText(text);
 
-        let uploaded: SendMessageDto['media'] | undefined;
+        let mediaUrl: string | undefined;
+        let mediaType: SendMessageBody['mediaType'] = text ? 'text' : null;
+        let fileName: string | undefined;
+
         if (files.length > 0) {
           const { urls } = await uploadFiles(files);
           const u = urls?.[0];
           if (u?.url) {
-            const mime = u.mime || firstFile?.type || 'application/octet-stream';
-            const name = u.name || firstFile?.name || '';
-            uploaded = { url: u.url, name, mime };
+            mediaUrl = u.url;
+            mediaType = mimeToMediaType(u.mime || firstFile?.type);
+            fileName = u.name || firstFile?.name || undefined;
           }
         }
 
-        const payload: SendMessageDto = {
+        const body: SendMessageBody = {
           clientMessageId,
           conversationId,
-          encryptedContent,
+          encryptedContent,    
           content: undefined,
-          media: uploaded,
-          replyToId,
+          mediaUrl: mediaUrl ?? null,
+          mediaType: mediaType ?? (text ? 'text' : null),
+          fileName,
+          repliedToId: replyToId,
         };
 
         const trySocket = async () => {
@@ -143,9 +160,8 @@ export function useSendMessage() {
 
           try {
             const emitVariants = ['message:send', 'sendMessage'];
-
             for (const event of emitVariants) {
-              socket.emit(event, payload, (resp?: any) => {
+              socket.emit(event, body, (resp?: any) => {
                 if (resp?.status === 'ok' && resp.message?.clientMessageId === clientMessageId) {
                   socket.off('message:ack', complete);
                   socket.off('receiveMessage', complete);
@@ -153,7 +169,6 @@ export function useSendMessage() {
                 }
               });
             }
-
             await new Promise<void>((resolve) => setTimeout(resolve, ACK_WAIT_SOCKET_MS));
           } finally {
             socket.off('message:ack', complete);
@@ -166,7 +181,7 @@ export function useSendMessage() {
         const okBySocket = await trySocket();
 
         if (!okBySocket && !acked) {
-          const serverMsg = await sendMessageREST(payload);
+          const serverMsg = await sendMessageREST(body);
           if (serverMsg?.id) {
             finalizeOk(serverMsg);
           } else {
