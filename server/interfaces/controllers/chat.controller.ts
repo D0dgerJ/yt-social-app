@@ -68,18 +68,45 @@ export const send = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { messageId, content, mediaUrl, mediaType, fileName, gifUrl, repliedToId } = req.body;
+
+    const conversationId = Number(req.params.chatId);
+    const messageIdParam = req.params.messageId;
+    const messageId = Number.isFinite(Number(messageIdParam)) ? Number(messageIdParam) : undefined;
+
+    const {
+      content,
+      mediaUrl,
+      mediaType,
+      fileName,
+      gifUrl,
+      stickerUrl,
+      repliedToId,
+      clientMessageId,
+    } = req.body;
+
+    if (!messageId && !clientMessageId) {
+      res.status(400).json({ message: "Нужно указать messageId (в URL) или clientMessageId (в body)" });
+      return;
+    }
+    if (!Number.isFinite(conversationId)) {
+      res.status(400).json({ message: "Некорректный chatId" });
+      return;
+    }
 
     const message = await updateMessage({
       messageId,
+      clientMessageId,
+      conversationId,      
       userId,
       encryptedContent: content,
       mediaUrl,
       mediaType,
       fileName,
       gifUrl,
+      stickerUrl,
       repliedToId,
     });
+
     res.status(200).json(message);
   } catch (error: any) {
     res.status(400).json({ message: error.message });

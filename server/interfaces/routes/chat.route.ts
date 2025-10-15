@@ -32,13 +32,25 @@ router.delete("/:chatId/leave", authMiddleware, leave); // DELETE /api/v1/chat/:
 router.get("/:chatId/messages", authMiddleware, getConversationMessages); // GET /api/v1/chat/:chatId/messages
 router.post("/:chatId/messages", authMiddleware, send); // POST /api/v1/chat/:chatId/messages
 
-router.patch("/:chatId/messages/:messageId", authMiddleware,
+router.patch(
+  "/:chatId/messages/:messageId",
+  authMiddleware,
   checkOwnership(async (req) => {
     const messageId = Number(req.params.messageId);
-    if (isNaN(messageId)) return undefined;
-    
-    const message = await prisma.message.findUnique({
-      where: { id: messageId },
+
+    if (Number.isFinite(messageId)) {
+      const message = await prisma.message.findUnique({ where: { id: messageId } });
+      return message?.senderId;
+    }
+
+    const conversationId = Number(req.params.chatId);
+    const clientMessageId = req.body?.clientMessageId as string | undefined;
+
+    if (!clientMessageId || !Number.isFinite(conversationId)) return undefined;
+
+    const message = await prisma.message.findFirst({
+      where: { conversationId, clientMessageId },
+      select: { senderId: true },
     });
     return message?.senderId;
   }),

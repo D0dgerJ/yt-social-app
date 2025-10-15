@@ -6,7 +6,7 @@ interface SendMessageInput {
   encryptedContent?: string;
   senderId: number;
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
+  mediaType?: "image" | "video" | "file" | "gif" | "audio" | "text" | "sticker";
   fileName?: string;
   gifUrl?: string;
   stickerUrl?: string;
@@ -71,80 +71,100 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
           mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
         },
       });
-      if (existing) {
-        return existing;
-      }
+      if (existing) return existing;
     }
 
-    const message = await prisma.$transaction(async (tx) => {
-      const created = await tx.message.create({
-        data: {
-          clientMessageId,
-          conversationId,
-          senderId,
-          encryptedContent: encryptedContent ?? null,
-          mediaUrl: mediaUrl ?? null,
-          mediaType: mediaType ?? null,
-          fileName: fileName ?? null,
-          gifUrl: gifUrl ?? null,
-          stickerUrl: stickerUrl ?? null,
-          repliedToId: repliedToId ?? null,
-        },
-        include: {
-          sender: { select: { id: true, username: true, profilePicture: true } },
-          repliedTo: {
-            select: {
-              id: true,
-              encryptedContent: true,
-              senderId: true,
-              mediaUrl: true,
-              mediaType: true,
-            },
-          },
-        },
-      });
-
-      if (mediaType && mediaType !== "text" && mediaUrl) {
-        await tx.mediaFile.create({
+    try {
+      const message = await prisma.$transaction(async (tx) => {
+        const created = await tx.message.create({
           data: {
-            url: mediaUrl,
-            type: mediaType,
-            uploaderId: senderId,
-            messageId: created.id,
+            clientMessageId,
+            conversationId,
+            senderId,
+            encryptedContent: encryptedContent ?? null,
+            mediaUrl: mediaUrl ?? null,
+            mediaType: mediaType ?? null,
+            fileName: fileName ?? null,
+            gifUrl: gifUrl ?? null,
+            stickerUrl: stickerUrl ?? null,
+            repliedToId: repliedToId ?? null,
+          },
+          include: {
+            sender: { select: { id: true, username: true, profilePicture: true } },
+            repliedTo: {
+              select: {
+                id: true,
+                encryptedContent: true,
+                senderId: true,
+                mediaUrl: true,
+                mediaType: true,
+              },
+            },
           },
         });
-      }
 
-      await tx.conversation.update({
-        where: { id: conversationId },
-        data: { lastMessageId: created.id, updatedAt: new Date() },
-      });
-
-      const withRelations = await tx.message.findUnique({
-        where: { id: created.id },
-        include: {
-          sender: { select: { id: true, username: true, profilePicture: true } },
-          repliedTo: {
-            select: {
-              id: true,
-              encryptedContent: true,
-              senderId: true,
-              mediaUrl: true,
-              mediaType: true,
+        if (mediaType && mediaType !== "text" && mediaUrl) {
+          await tx.mediaFile.create({
+            data: {
+              url: mediaUrl,
+              type: mediaType,
+              uploaderId: senderId,
+              messageId: created.id,
             },
+          });
+        }
+
+        await tx.conversation.update({
+          where: { id: conversationId },
+          data: { lastMessageId: created.id, updatedAt: new Date() },
+        });
+
+        const withRelations = await tx.message.findUnique({
+          where: { id: created.id },
+          include: {
+            sender: { select: { id: true, username: true, profilePicture: true } },
+            repliedTo: {
+              select: {
+                id: true,
+                encryptedContent: true,
+                senderId: true,
+                mediaUrl: true,
+                mediaType: true,
+              },
+            },
+            mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
           },
-          mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
-        },
+        });
+
+        if (!withRelations) throw new Error("Не удалось получить созданное сообщение");
+        return withRelations;
       });
 
-      if (!withRelations) {
-        throw new Error("Не удалось получить созданное сообщение");
+      return message;
+    } catch (e: any) {
+      const isP2002 =
+        typeof e?.code === "string" && e.code === "P2002";
+      if (isP2002 && clientMessageId) {
+        const existing = await prisma.message.findUnique({
+          where: { clientMessageId },
+          include: {
+            sender: { select: { id: true, username: true, profilePicture: true } },
+            repliedTo: {
+              select: {
+                id: true,
+                encryptedContent: true,
+                senderId: true,
+                mediaUrl: true,
+                mediaType: true,
+              },
+            },
+            mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
+          },
+        });
+        if (existing) return existing;
       }
-
-      return withRelations;
-    });
-
-    return message;
+      throw e;
+    }
   } catch (error) {
     console.error("❌ Ошибка при отправке сообщения:", error);
     if (error instanceof Error) throw new Error(error.message);
