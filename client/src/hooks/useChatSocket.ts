@@ -8,7 +8,7 @@ import type { Message as ServerMessage } from '@/utils/types/MessageTypes';
 import type { GroupedReaction } from '@/stores/messageStore';
 
 /**
- * Единый хук подписок на чатовые события по сокету:
+ * Единый хук подписок на чатовые события по сокету.
  * - receiveMessage / message:ack → обновление optimistic
  * - delivered/read
  * - edit/delete
@@ -20,7 +20,7 @@ export const useChatSocket = () => {
   const { currentUser } = useUserStore();
   const meId = currentUser?.id;
   const { currentConversationId } = useChatStore();
-  const { socket } = useSocket();
+  const { socket, joinConversation, leaveConversation } = useSocket();
 
   const {
     addMessage,
@@ -45,16 +45,15 @@ export const useChatSocket = () => {
 
     const onConnect = () => {
       if (currentConversationId != null) {
-        socket.emit('joinConversation', currentConversationId);
+        joinConversation(currentConversationId);
       }
     };
 
     socket.on('connect', onConnect);
-
     return () => {
       socket.off('connect', onConnect);
     };
-  }, [socket, currentConversationId]);
+  }, [socket, currentConversationId, joinConversation]);
 
   useEffect(() => {
     if (!socket || !currentUser) return;
@@ -92,9 +91,10 @@ export const useChatSocket = () => {
       });
     };
 
-    const onMessageEdit = (payload: { message: ServerMessage }) => {
-      if (!payload?.message) return;
-      updateMessage?.({ ...(payload.message as any) });
+    const onMessageUpdated = (updated: ServerMessage | { message?: ServerMessage }) => {
+      const msg = (updated as any)?.message ?? updated;
+      if (!msg) return;
+      updateMessage?.({ ...(msg as any) });
     };
 
     const onMessageDelete = (payload: { messageId: number }) => {
@@ -104,6 +104,7 @@ export const useChatSocket = () => {
 
     const onDelivered = (p: { conversationId: number; messageId: number }) =>
       markStatus?.(p.conversationId, p.messageId, { isDelivered: true });
+
     const onRead = (p: { conversationId: number; messageId: number }) =>
       markStatus?.(p.conversationId, p.messageId, { isDelivered: true, isRead: true });
 
@@ -158,7 +159,8 @@ export const useChatSocket = () => {
 
     socket.on('receiveMessage', onReceiveMessage);
     socket.on('message:ack', onMessageAck);
-    socket.on('message:edit', onMessageEdit);
+    socket.on('messageUpdated', onMessageUpdated);
+    socket.on('message:edit', onMessageUpdated);
     socket.on('message:delete', onMessageDelete);
     socket.on('message:delivered', onDelivered);
     socket.on('message:read', onRead);
@@ -181,6 +183,7 @@ export const useChatSocket = () => {
       [
         'receiveMessage',
         'message:ack',
+        'messageUpdated',
         'message:edit',
         'message:delete',
         'message:delivered',
@@ -221,11 +224,11 @@ export const useChatSocket = () => {
     const prev = prevConversationIdRef.current;
     const next = currentConversationId ?? null;
 
-    if (prev != null && prev !== next && socket.connected) {
-      socket.emit('leaveConversation', prev);
+    if (prev != null && prev !== next) {
+      leaveConversation(prev);
     }
-    if (next != null && prev !== next && socket.connected) {
-      socket.emit('joinConversation', next);
+    if (next != null && prev !== next) {
+      joinConversation(next);
       setActiveConversation?.(next);
     }
 
@@ -233,10 +236,10 @@ export const useChatSocket = () => {
 
     return () => {
       const cur = prevConversationIdRef.current;
-      if (cur != null && socket.connected) {
-        socket.emit('leaveConversation', cur);
+      if (cur != null) {
+        leaveConversation(cur);
       }
       prevConversationIdRef.current = null;
     };
-  }, [socket, currentConversationId, setActiveConversation]);
+  }, [socket, currentConversationId, setActiveConversation, joinConversation, leaveConversation]);
 };

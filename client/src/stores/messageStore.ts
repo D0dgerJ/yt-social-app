@@ -65,7 +65,7 @@ interface MessageState {
     idOrClientId: number | string,
     patch: Partial<Pick<Message, 'isDelivered' | 'isRead' | 'localStatus'>>
   ) => void;
-  updateMessage: (patch: Partial<Message> & { id: number }) => void;
+  updateMessage: (patch: Partial<Message> & { id?: number; clientMessageId?: string }) => void;
   removeMessage: (id: number) => void;
   clearMessages: () => void;
 
@@ -86,7 +86,17 @@ interface MessageState {
 }
 
 const sortByCreatedAtAsc = (arr: Message[]) =>
-  arr.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  arr.sort((a, b) => {
+    const ta = new Date(a.createdAt).getTime();
+    const tb = new Date(b.createdAt).getTime();
+    if (ta !== tb) return ta - tb;
+    const aid = a.id ?? Number.MAX_SAFE_INTEGER;
+    const bid = b.id ?? Number.MAX_SAFE_INTEGER;
+    if (aid !== bid) return aid - bid;
+    const ac = a.clientMessageId ?? '';
+    const bc = b.clientMessageId ?? '';
+    return ac.localeCompare(bc);
+  });
 
 const upsertWithDedupe = (list: Message[], incoming: Message): Message[] => {
   const byId = incoming.id != null ? list.findIndex((m) => m.id === incoming.id) : -1;
@@ -210,24 +220,39 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     }),
 
   updateMessage: (patch) =>
-    set((state) => {
-      const convId =
-        Object.keys(state.byConv).map(Number).find((cid) => state.byConv[cid]?.some((m) => m.id === patch.id)) ??
-        state.activeConversationId;
+  set((state) => {
+    const convId: number | null =
+      (patch as any).conversationId ??
+      Object.keys(state.byConv)
+        .map((k) => Number(k))
+        .find((cid) =>
+          state.byConv[cid]?.some(
+            (m) =>
+              (patch.id != null && m.id === patch.id) ||
+              (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
+          )
+        ) ??
+      state.activeConversationId;
 
-      if (convId == null) return state;
+    if (convId == null) return state;
 
-      const list = state.byConv[convId] ?? [];
-      const idx = list.findIndex((m) => m.id === patch.id);
-      if (idx < 0) return state;
+    const list = state.byConv[convId] ?? [];
+    const idx = list.findIndex(
+      (m) =>
+        (patch.id != null && m.id === patch.id) ||
+        (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
+    );
+    if (idx < 0) return state;
 
-      const next = [...list];
-      next[idx] = { ...next[idx], ...patch };
-      return {
-        byConv: { ...state.byConv, [convId]: next },
-        messages: state.activeConversationId === convId ? [...next] : state.messages,
-      };
-    }),
+    const next = [...list];
+    next[idx] = { ...next[idx], ...patch };
+    const sorted = sortByCreatedAtAsc(next);
+
+    return {
+      byConv: { ...state.byConv, [convId]: sorted },
+      messages: state.activeConversationId === convId ? [...sorted] : state.messages,
+    };
+  }),
 
   removeMessage: (id) =>
     set((state) => {
