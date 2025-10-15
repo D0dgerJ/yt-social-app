@@ -2,11 +2,23 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 interface UpdateMessageInput {
-  messageId: number;
+  messageId?: number;
+  clientMessageId?: string | null;
+  conversationId?: number;
+
   userId: number;
+
   encryptedContent?: string;
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
+  mediaType?:
+    | "image"
+    | "video"
+    | "file"
+    | "gif"
+    | "audio"
+    | "text"
+    | "sticker"
+    | null;
   fileName?: string | null;
   gifUrl?: string | null;
   stickerUrl?: string | null;
@@ -17,6 +29,8 @@ export const updateMessage = async (data: UpdateMessageInput) => {
   try {
     const {
       messageId,
+      clientMessageId,
+      conversationId,
       userId,
       encryptedContent,
       mediaUrl,
@@ -27,13 +41,26 @@ export const updateMessage = async (data: UpdateMessageInput) => {
       repliedToId,
     } = data;
 
-    const existingMessage = await prisma.message.findUnique({
-      where: { id: messageId },
-      include: { conversation: true },
-    });
+    if (!messageId && !clientMessageId) {
+      throw new Error("Нужно указать messageId или clientMessageId");
+    }
+
+    const existingMessage = messageId
+      ? await prisma.message.findUnique({
+          where: { id: messageId },
+          include: { conversation: true },
+        })
+      : await prisma.message.findFirst({
+          where: { clientMessageId: clientMessageId ?? undefined, conversationId },
+          include: { conversation: true },
+        });
 
     if (!existingMessage) {
       throw new Error("Сообщение не найдено");
+    }
+
+    if (clientMessageId && conversationId && existingMessage.conversationId !== conversationId) {
+      throw new Error("Неверный чат для данного clientMessageId");
     }
 
     if (existingMessage.senderId !== userId) {
@@ -51,25 +78,26 @@ export const updateMessage = async (data: UpdateMessageInput) => {
     }
 
     const updated = await prisma.message.update({
-      where: { id: messageId },
+      where: { id: existingMessage.id },
       data: {
-        encryptedContent: encryptedContent ?? existingMessage.encryptedContent,
-        mediaUrl: mediaUrl ?? existingMessage.mediaUrl,
-        mediaType: mediaType ?? existingMessage.mediaType,
-        fileName: fileName ?? existingMessage.fileName,
-        gifUrl: gifUrl ?? existingMessage.gifUrl,
-        stickerUrl: stickerUrl ?? existingMessage.stickerUrl,
-        repliedToId: repliedToId ?? existingMessage.repliedToId,
+        encryptedContent:
+          encryptedContent !== undefined
+            ? encryptedContent
+            : existingMessage.encryptedContent,
+        mediaUrl: mediaUrl !== undefined ? mediaUrl : existingMessage.mediaUrl,
+        mediaType: mediaType !== undefined ? mediaType : existingMessage.mediaType,
+        fileName: fileName !== undefined ? fileName : existingMessage.fileName,
+        gifUrl: gifUrl !== undefined ? gifUrl : existingMessage.gifUrl,
+        stickerUrl:
+          stickerUrl !== undefined ? stickerUrl : existingMessage.stickerUrl,
+        repliedToId:
+          repliedToId !== undefined ? repliedToId : existingMessage.repliedToId,
         isEdited: true,
         editedAt: new Date(),
       },
       include: {
         sender: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
-          },
+          select: { id: true, username: true, profilePicture: true },
         },
         repliedTo: {
           select: {
@@ -81,12 +109,7 @@ export const updateMessage = async (data: UpdateMessageInput) => {
           },
         },
         mediaFiles: {
-          select: {
-            id: true,
-            url: true,
-            type: true,
-            uploadedAt: true,
-          },
+          select: { id: true, url: true, type: true, uploadedAt: true },
         },
       },
     });
