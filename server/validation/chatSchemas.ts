@@ -2,15 +2,25 @@ import { z } from "zod";
 
 export const sendMessageSchema = z
   .object({
-    conversationId: z.number({ invalid_type_error: "conversationId must be a number" }),
-    senderId: z.number({ invalid_type_error: "senderId must be a number" }),
-    encryptedContent: z.string().optional(),
+    conversationId: z.number({ invalid_type_error: "conversationId must be a number" }).int().positive(),
+    senderId: z.number({ invalid_type_error: "senderId must be a number" }).int().positive(),
+
+    encryptedContent: z.string().optional().nullable(),
+
     mediaUrl: z.string().url().optional().nullable(),
-    mediaType: z.enum(['image', 'video', 'file', 'gif', 'audio', 'text', 'sticker']).optional(),
+    mediaType: z
+      .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
+      .optional()
+      .nullable(),
+
     fileName: z.string().optional(),
+
     gifUrl: z.string().url().optional().nullable(),
     stickerUrl: z.string().url().optional().nullable(),
-    repliedToId: z.number().optional(),
+
+    repliedToId: z.number().int().positive().optional().nullable(),
+
+    clientMessageId: z.string().optional().nullable(),
   })
   .refine(
     (data) =>
@@ -18,14 +28,38 @@ export const sendMessageSchema = z
       !!data.mediaUrl ||
       !!data.gifUrl ||
       !!data.stickerUrl,
-    {
-      message: "Нельзя отправить пустое сообщение",
-    }
+    { message: "Нельзя отправить пустое сообщение" }
   );
-
 
 export const createChatSchema = z.object({
   userIds: z.array(z.number()).min(1, "At least one participant is required"),
   name: z.string().optional().nullable(),
-  creatorId: z.number({ invalid_type_error: "creatorId must be a number" }),
+  creatorId: z.number({ invalid_type_error: "creatorId must be a number" }).int().positive(),
 });
+
+export const updateMessageSchema = z
+  .object({
+    messageId: z.number().int().positive().optional(),
+
+    clientMessageId: z.string().optional().nullable(),
+    conversationId: z.number().int().positive().optional(),
+
+    userId: z.number().int().positive(),
+
+    encryptedContent: z.string().optional().nullable(),
+    mediaUrl: z.string().url().optional().nullable(),
+    mediaType: z
+      .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
+      .optional()
+      .nullable(),
+    fileName: z.string().optional().nullable(),
+    gifUrl: z.string().url().optional().nullable(),
+    stickerUrl: z.string().url().optional().nullable(),
+    repliedToId: z.number().int().positive().optional().nullable(),
+  })
+  .refine(
+    (data) =>
+      !!data.messageId ||
+      (!!data.clientMessageId && !!data.conversationId),
+    { message: "Нужно указать messageId или пару clientMessageId + conversationId" }
+  );

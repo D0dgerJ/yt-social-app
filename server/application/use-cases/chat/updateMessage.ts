@@ -106,6 +106,11 @@ export const updateMessage = async (data: UpdateMessageInput) => {
             senderId: true,
             mediaUrl: true,
             mediaType: true,
+            fileName: true,    
+            isDeleted: true,  
+            sender: {   
+              select: { id: true, username: true, profilePicture: true },
+            },
           },
         },
         mediaFiles: {
