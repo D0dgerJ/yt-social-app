@@ -57,8 +57,12 @@ export const getConversationMessages = async ({
             encryptedContent: true,
             mediaUrl: true,
             mediaType: true,
+            fileName: true,    
             senderId: true,
             isDeleted: true,
+            sender: {            
+              select: { id: true, username: true, profilePicture: true },
+            },
           },
         },
         mediaFiles: {

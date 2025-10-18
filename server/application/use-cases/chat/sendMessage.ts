@@ -62,10 +62,13 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
           repliedTo: {
             select: {
               id: true,
-              encryptedContent: true,
               senderId: true,
+              encryptedContent: true,
               mediaUrl: true,
               mediaType: true,
+              fileName: true,
+              isDeleted: true,
+              sender: { select: { id: true, username: true, profilePicture: true } },
             },
           },
           mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
@@ -94,10 +97,13 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             repliedTo: {
               select: {
                 id: true,
-                encryptedContent: true,
                 senderId: true,
+                encryptedContent: true,
                 mediaUrl: true,
                 mediaType: true,
+                fileName: true,
+                isDeleted: true,
+                sender: { select: { id: true, username: true, profilePicture: true } },
               },
             },
           },
@@ -126,10 +132,13 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             repliedTo: {
               select: {
                 id: true,
-                encryptedContent: true,
                 senderId: true,
+                encryptedContent: true,
                 mediaUrl: true,
                 mediaType: true,
+                fileName: true,
+                isDeleted: true,
+                sender: { select: { id: true, username: true, profilePicture: true } },
               },
             },
             mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
@@ -142,8 +151,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
 
       return message;
     } catch (e: any) {
-      const isP2002 =
-        typeof e?.code === "string" && e.code === "P2002";
+      const isP2002 = typeof e?.code === "string" && e.code === "P2002";
       if (isP2002 && clientMessageId) {
         const existing = await prisma.message.findUnique({
           where: { clientMessageId },
@@ -152,10 +160,13 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             repliedTo: {
               select: {
                 id: true,
-                encryptedContent: true,
                 senderId: true,
+                encryptedContent: true,
                 mediaUrl: true,
                 mediaType: true,
+                fileName: true,
+                isDeleted: true,
+                sender: { select: { id: true, username: true, profilePicture: true } },
               },
             },
             mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
