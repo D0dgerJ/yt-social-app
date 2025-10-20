@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import { useUserStore } from '@/stores/userStore';
 import { useMessageStore, type Message } from '@/stores/messageStore';
-import { uploadFiles, sendMessageREST } from '@/services/chatApi';
+import { uploadFiles, sendMessage as sendMessageREST } from '@/utils/api/chat.api';
 import { useSocket } from '@/context/SocketContext';
 
 type SendOptions = {
@@ -10,6 +10,7 @@ type SendOptions = {
   text?: string;
   files?: File[];
   replyToId?: number;
+  repliedToId?: number;
 };
 
 const ACK_WAIT_SOCKET_MS = 4_000;
@@ -50,8 +51,10 @@ export function useSendMessage() {
 
   const send = useCallback(
     async (opts: SendOptions) => {
-      const { conversationId, text, files = [], replyToId } = opts;
+      const { conversationId, text, files = [] } = opts;
       if (!me?.id) throw new Error('Not authenticated');
+
+      const repliedToId = opts.repliedToId ?? opts.replyToId;
 
       const clientMessageId = `optimistic-${nanoid(8)}`;
       const createdAt = new Date().toISOString();
@@ -74,10 +77,10 @@ export function useSendMessage() {
         encryptedContent: undefined,
         mediaUrl: firstFile ? URL.createObjectURL(firstFile) : null,
         mediaType: guessMediaType(firstFile),
-        fileName: firstFile?.name,
+        fileName: firstFile?.name ?? null,
         gifUrl: undefined,
         stickerUrl: undefined,
-        repliedToId: replyToId,
+        repliedToId: repliedToId ?? null, // <<< ключевой момент
         isDelivered: false,
         isRead: false,
         localStatus: 'sending',
@@ -137,12 +140,12 @@ export function useSendMessage() {
         const body: SendMessageBody = {
           clientMessageId,
           conversationId,
-          encryptedContent,    
+          encryptedContent,
           content: undefined,
           mediaUrl: mediaUrl ?? null,
           mediaType: mediaType ?? (text ? 'text' : null),
           fileName,
-          repliedToId: replyToId,
+          repliedToId,
         };
 
         const trySocket = async () => {
@@ -181,7 +184,14 @@ export function useSendMessage() {
         const okBySocket = await trySocket();
 
         if (!okBySocket && !acked) {
-          const serverMsg = await sendMessageREST(body);
+          const serverMsg = await sendMessageREST(conversationId, {
+            content: text,
+            mediaUrl: body.mediaUrl,
+            mediaType: body.mediaType,
+            fileName: body.fileName,
+            repliedToId,    
+            clientMessageId,
+          });
           if (serverMsg?.id) {
             finalizeOk(serverMsg);
           } else {
