@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type MediaType = 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker';
+export type MediaType = 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
 
 export interface Reaction {
   emoji: string;
@@ -15,33 +15,51 @@ export interface GroupedReaction {
   users: UserLite[];
 }
 
+export type RepliedToLite = {
+  id: number;
+  senderId: number;
+
+  encryptedContent?: string | null;
+  content?: string;
+
+  mediaUrl?: string | null;
+  mediaType?: MediaType;
+  fileName?: string | null;
+
+  isDeleted?: boolean;
+  sender?: UserLite | null;
+};
+
 export interface Message {
   id: number;
   conversationId: number;
-  clientMessageId?: string;
+  clientMessageId?: string | null;
   senderId: number;
 
   content?: string;
-  encryptedContent?: string;
+  encryptedContent?: string | null;
+
   mediaUrl?: string | null;
   mediaType?: MediaType;
-  fileName?: string;
-  gifUrl?: string;
-  stickerUrl?: string;
-  repliedToId?: number;
+  fileName?: string | null;
+  gifUrl?: string | null;
+  stickerUrl?: string | null;
+
+  repliedToId?: number | null;
+  repliedTo?: RepliedToLite | null;
 
   isDelivered: boolean;
   isRead: boolean;
   localStatus?: 'sending' | 'sent' | 'failed';
 
   createdAt: string;
-  updatedAt?: string;
+  updatedAt?: string | null;
 
   reactions?: Reaction[];
-
   groupedReactions?: GroupedReaction[];
-
   myReactions?: string[];
+
+  sender?: UserLite | null;
 }
 
 type MessageMap = Record<number, Message[]>;
@@ -52,8 +70,8 @@ interface MessageState {
   messages: Message[];
 
   handled: Set<string>;
-  isHandled: (clientMessageId?: string) => boolean;
-  markHandled: (clientMessageId?: string) => void;
+  isHandled: (clientMessageId?: string | null) => boolean;
+  markHandled: (clientMessageId?: string | null) => void;
 
   setActiveConversation: (conversationId: number | null) => void;
   setMessages: (msgs: Message[]) => void;
@@ -65,7 +83,9 @@ interface MessageState {
     idOrClientId: number | string,
     patch: Partial<Pick<Message, 'isDelivered' | 'isRead' | 'localStatus'>>
   ) => void;
-  updateMessage: (patch: Partial<Message> & { id?: number; clientMessageId?: string }) => void;
+
+  updateMessage: (patch: Partial<Message> & { id?: number; clientMessageId?: string | null }) => void;
+
   removeMessage: (id: number) => void;
   clearMessages: () => void;
 
@@ -83,6 +103,8 @@ interface MessageState {
     userId: number,
     toggledOn?: boolean
   ) => void;
+
+  getById: (conversationId: number, id: number) => Message | undefined;
 }
 
 const sortByCreatedAtAsc = (arr: Message[]) =>
@@ -90,9 +112,11 @@ const sortByCreatedAtAsc = (arr: Message[]) =>
     const ta = new Date(a.createdAt).getTime();
     const tb = new Date(b.createdAt).getTime();
     if (ta !== tb) return ta - tb;
+
     const aid = a.id ?? Number.MAX_SAFE_INTEGER;
     const bid = b.id ?? Number.MAX_SAFE_INTEGER;
     if (aid !== bid) return aid - bid;
+
     const ac = a.clientMessageId ?? '';
     const bc = b.clientMessageId ?? '';
     return ac.localeCompare(bc);
@@ -220,39 +244,39 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     }),
 
   updateMessage: (patch) =>
-  set((state) => {
-    const convId: number | null =
-      (patch as any).conversationId ??
-      Object.keys(state.byConv)
-        .map((k) => Number(k))
-        .find((cid) =>
-          state.byConv[cid]?.some(
-            (m) =>
-              (patch.id != null && m.id === patch.id) ||
-              (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
-          )
-        ) ??
-      state.activeConversationId;
+    set((state) => {
+      const convId: number | null =
+        (patch as any).conversationId ??
+        Object.keys(state.byConv)
+          .map((k) => Number(k))
+          .find((cid) =>
+            state.byConv[cid]?.some(
+              (m) =>
+                (patch.id != null && m.id === patch.id) ||
+                (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
+            )
+          ) ??
+        state.activeConversationId;
 
-    if (convId == null) return state;
+      if (convId == null) return state;
 
-    const list = state.byConv[convId] ?? [];
-    const idx = list.findIndex(
-      (m) =>
-        (patch.id != null && m.id === patch.id) ||
-        (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
-    );
-    if (idx < 0) return state;
+      const list = state.byConv[convId] ?? [];
+      const idx = list.findIndex(
+        (m) =>
+          (patch.id != null && m.id === patch.id) ||
+          (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
+      );
+      if (idx < 0) return state;
 
-    const next = [...list];
-    next[idx] = { ...next[idx], ...patch };
-    const sorted = sortByCreatedAtAsc(next);
+      const next = [...list];
+      next[idx] = { ...next[idx], ...patch };
+      const sorted = sortByCreatedAtAsc(next);
 
-    return {
-      byConv: { ...state.byConv, [convId]: sorted },
-      messages: state.activeConversationId === convId ? [...sorted] : state.messages,
-    };
-  }),
+      return {
+        byConv: { ...state.byConv, [convId]: sorted },
+        messages: state.activeConversationId === convId ? [...sorted] : state.messages,
+      };
+    }),
 
   removeMessage: (id) =>
     set((state) => {
@@ -360,4 +384,9 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         messages: state.activeConversationId === conversationId ? [...next] : state.messages,
       };
     }),
+
+  getById: (conversationId, id) => {
+    const list = get().byConv[conversationId] ?? [];
+    return list.find((m) => m.id === id);
+  },
 }));

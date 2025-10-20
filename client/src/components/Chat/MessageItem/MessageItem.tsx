@@ -2,6 +2,8 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MessageReactions } from '../MessageReactions/MessageReactions';
 import { getReactionsREST } from '@/services/chatApi';
 import FileIcon from '../FileIcon/FileIcon';
+import ReplyPreview from '@/components/Chat/ReplyPreview/ReplyPreview';
+import { useMessageStore, type RepliedToLite } from '@/stores/messageStore';
 import './MessageItem.scss';
 
 interface GroupedReaction {
@@ -12,8 +14,11 @@ interface GroupedReaction {
 
 interface MessageItemProps {
   conversationId?: number;
+
   messageId: number;
+
   content: string;
+
   currentUserId: number;
   senderId: number;
   senderUsername: string;
@@ -32,6 +37,9 @@ interface MessageItemProps {
   onReactToggle?: (emoji: string) => void;
 
   resolveName?: (userId: number) => string | undefined;
+
+  repliedToId?: number | null;
+  repliedTo?: RepliedToLite | null;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL ?? window.location.origin;
@@ -54,6 +62,7 @@ function isImageByExt(url: string): boolean {
 }
 
 export const MessageItem: React.FC<MessageItemProps> = ({
+  conversationId,
   messageId,
   content,
   currentUserId,
@@ -70,6 +79,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   onDelete,
   onReactToggle,
   resolveName,
+  repliedToId,
+  repliedTo,
 }) => {
   const [showReactionsPopup, setShowReactionsPopup] = useState(false);
   const [reactions, setReactions] = useState<GroupedReaction[]>(groupedReactions ?? []);
@@ -79,6 +90,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const [imageFailed, setImageFailed] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const longPressTimer = useRef<number | null>(null);
+
+  const getById = useMessageStore((s) => s.getById);
 
   const ensureReactions = useCallback(async () => {
     if (reactionsLoaded || loadingReactions) return;
@@ -174,6 +187,51 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     return `User#${senderId}`;
   }, [resolveName, senderId, senderUsername]);
 
+ const replyData: RepliedToLite | null = useMemo(() => {
+  if (repliedTo) return repliedTo;
+  if (conversationId && repliedToId) {
+    const original = getById(conversationId, repliedToId);
+    if (original) {
+      return {
+        id: original.id,
+        senderId: original.senderId,
+        encryptedContent: original.encryptedContent ?? null,
+        content: (original as any).content,
+        mediaUrl: original.mediaUrl ?? null,
+        mediaType: (original.mediaType as any) ?? null,
+        fileName: original.fileName ?? null,
+        isDeleted: false,
+        sender: original.sender
+          ? {
+              id: original.sender.id,
+              username: original.sender.username,
+              profilePicture: original.sender.profilePicture ?? null,
+            }
+          : null,
+      };
+    }
+  }
+  return null;
+}, [repliedTo, conversationId, repliedToId, getById]);
+
+
+  const handleJumpToOriginal = useCallback(() => {
+    if (!repliedToId) return;
+
+    const el =
+      document.querySelector<HTMLElement>(`[data-message-id="${repliedToId}"]`) ||
+      document.querySelector<HTMLElement>(`[data-id="${repliedToId}"]`);
+
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prevBoxShadow = el.style.boxShadow;
+      el.style.boxShadow = '0 0 0 2px #10b981';
+      setTimeout(() => {
+        el.style.boxShadow = prevBoxShadow;
+      }, 1200);
+    }
+  }, [repliedToId]);
+
   return (
     <div
       className={`message-item ${isOwnMessage ? 'own' : ''}`}
@@ -181,6 +239,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       data-id={messageId}
+      data-message-id={messageId}
       role="article"
       aria-label="Сообщение"
     >
@@ -218,6 +277,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         )}
       </div>
+
+      {/* Плашка цитаты */}
+      {(repliedTo || repliedToId) && (
+        <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />
+      )}
 
       {/* Текст */}
       {content && <div className="message-content">{content}</div>}

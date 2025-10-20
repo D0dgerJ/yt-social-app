@@ -32,9 +32,7 @@ function withDateSeparators(messages: Message[]): ListItem[] {
   const seen = new Set<string>();
 
   for (const m of messages) {
-    const sig = m.clientMessageId
-      ? `c:${m.clientMessageId}`
-      : `s:${m.id}`;
+    const sig = m.clientMessageId ? `c:${m.clientMessageId}` : `s:${m.id}`;
     if (seen.has(sig)) continue;
     seen.add(sig);
 
@@ -137,7 +135,7 @@ const MessageList: React.FC<Props> = ({
                 senderId={m.senderId}
                 senderUsername={(m as any).senderUsername ?? resolveName(m.senderId) ?? String(m.senderId)}
                 isOwnMessage={m.senderId === meId}
-                mediaType={m.mediaType}
+                mediaType={m.mediaType as any}
                 mediaUrl={m.mediaUrl ?? undefined}
                 fileName={m.fileName}
                 stickerUrl={m.stickerUrl}
@@ -147,6 +145,8 @@ const MessageList: React.FC<Props> = ({
                 onDelete={() => onDelete?.(m)}
                 onReactToggle={(emoji) => onReact?.(m, emoji)}
                 resolveName={resolveName}
+                repliedToId={m.repliedToId ?? null}
+                repliedTo={(m as any).repliedTo ?? null}
               />
             </div>
           );
