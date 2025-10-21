@@ -1,5 +1,6 @@
 import React from 'react';
 import type { RepliedToLite, MediaType, UserLite } from '@/stores/messageStore';
+import './ReplyPreview.scss';
 
 type Props = {
   reply?: RepliedToLite | null;
@@ -41,20 +42,17 @@ export const ReplyPreview: React.FC<Props> = ({ reply, onClick, className }) => 
     <button
       type="button"
       onClick={onClick}
-      className={[
-        'group w-full text-left cursor-pointer mb-1 rounded-lg border-l-4',
-        'border-emerald-400 bg-emerald-50/70 hover:bg-emerald-100/80',
-        'px-2 py-1 transition-colors',
-        className || '',
-      ].join(' ')}
+      className={['reply-preview', className || ''].join(' ')}
       title="Показать исходное сообщение"
     >
-      <div className="text-xs text-emerald-700/80 mb-0.5 font-medium">
-        Ответ на {authorName(reply.sender)}
-      </div>
+      <div className="reply-preview__content">
+        <div className="reply-preview__author">
+          Ответ на {authorName(reply.sender)}
+        </div>
 
-      <div className="text-sm text-emerald-900 line-clamp-2 whitespace-pre-wrap">
-        {hasText ? reply.content : (label || 'Без текста')}
+        <div className="reply-preview__text">
+          {hasText ? reply.content : (label || 'Без текста')}
+        </div>
       </div>
     </button>
   );
