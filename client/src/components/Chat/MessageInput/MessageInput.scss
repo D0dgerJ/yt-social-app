@@ -8,6 +8,8 @@
   padding: 8px;
   background: transparent;
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.06);
+
+  --composer-btn-size: 36px;
 }
 
 .composer__bar {
@@ -70,17 +72,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: var(--composer-btn-size);
+  height: var(--composer-btn-size);
   border-radius: 10px;
   border: 1px dashed rgba(0, 0, 0, 0.25);
   background: transparent;
   cursor: pointer;
   user-select: none;
-
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover { background: rgba(0, 0, 0, 0.06); }
+}
+
+.composer__emoji-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--composer-btn-size);
+  height: var(--composer-btn-size);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0 4px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  line-height: 0;    
+  font-size: 20px;   
+  cursor: pointer;
+
+  &:hover  { opacity: .85; }
+  &:active { opacity: .7; }
 }
 
 .composer__input {
@@ -89,7 +110,7 @@
   max-height: 180px;
   padding: 9px 12px;
 
-  resize: none;         
+  resize: none;
   overflow: auto;
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.22);
@@ -113,13 +134,18 @@
 
 .composer__send {
   appearance: none; -webkit-appearance: none;
-  min-width: 36px; height: 36px;
-  padding: 0 12px;
+  width: var(--composer-btn-size);
+  height: var(--composer-btn-size);
+  padding: 0;
   border: 0; border-radius: 10px;
   background: #89e27e;
   color: #fff;
   font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 
   transition: background-color 0.2s ease, opacity 0.2s ease;
 
