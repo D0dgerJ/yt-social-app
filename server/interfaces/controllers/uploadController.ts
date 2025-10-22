@@ -1,5 +1,15 @@
 import { Request, Response } from "express";
 
+function getBaseUrl(req: Request) {
+  const proto =
+    (req.headers["x-forwarded-proto"] as string) ||
+    req.protocol;
+  const host =
+    (req.headers["x-forwarded-host"] as string) ||
+    req.get("host");
+  return `${proto}://${host}`;
+}
+
 export const handleUpload = async (req: Request, res: Response): Promise<void> => {
   const multi = (req.files as Record<string, Express.Multer.File[]>) || {};
   const list: Express.Multer.File[] = [
@@ -14,8 +24,10 @@ export const handleUpload = async (req: Request, res: Response): Promise<void> =
   }
 
   try {
+    const base = getBaseUrl(req);
+
     const results = list.map((f) => ({
-      url: `/uploads/${f.filename}`, 
+      url: `${base}/uploads/${f.filename}`, 
       name: f.originalname,
       mime: f.mimetype,
       size: f.size,
@@ -34,9 +46,12 @@ export const handleFileUpload = async (req: Request, res: Response): Promise<voi
     res.status(400).json({ error: "Файл не загружен" });
     return;
   }
+
+  const base = getBaseUrl(req);
+
   res.json({
     message: "✅ Файл успешно загружен",
-    fileUrl: `/uploads/${f.filename}`,
+    fileUrl: `${base}/uploads/${f.filename}`, 
     fileName: f.originalname,
     fileSize: f.size,
     fileType: f.mimetype,

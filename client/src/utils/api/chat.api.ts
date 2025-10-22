@@ -11,6 +11,25 @@ const handleRequest = async <T>(request: () => Promise<T>): Promise<T> => {
   }
 };
 
+// ----------------- Типы -----------------
+export type Attachment = {
+  url: string;
+  mime: string;
+  name?: string;
+  size?: number;
+  type?: 'image' | 'video' | 'file' | 'gif' | 'audio';
+};
+
+export type SendMessageBody = {
+  encryptedContent?: string;
+  content?: string;
+
+  repliedToId?: number;
+  attachments?: Attachment[]; 
+
+  clientMessageId?: string | null;
+};
+
 // ----------------- Загрузка файлов -----------------
 export const uploadFiles = async (files: File[]) =>
   handleRequest(async () => {
@@ -37,7 +56,6 @@ export const uploadFiles = async (files: File[]) =>
   });
 
 // ----------------- Чаты -----------------
-
 export const createChat = async (userIds: number[], creatorId: number, name?: string) =>
   handleRequest(() => axios.post('/chat', { userIds, creatorId, name }).then((res) => res.data));
 
@@ -45,23 +63,9 @@ export const getUserConversations = async () =>
   handleRequest(() => axios.get('/chat').then((res) => res.data));
 
 // ----------------- Сообщения -----------------
-
-export type SendMessageBody = {
-  content?: string;
-  encryptedContent?: string;
-  mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
-  fileName?: string;
-  gifUrl?: string;
-  stickerUrl?: string;
-  repliedToId?: number;
-  clientMessageId?: string | null;
-};
-
 export const sendMessage = async (chatId: number, message: SendMessageBody) =>
   handleRequest(() => axios.post(`/chat/${chatId}/messages`, message).then((res) => res.data));
 
-// cursor-based история
 export const getChatMessages = async (
   chatId: number,
   opts: { cursorId?: number | null; direction?: 'forward' | 'backward'; limit?: number } = {},
@@ -101,7 +105,6 @@ export const deleteMessage = async (chatId: number, messageId: number) =>
   handleRequest(() => axios.delete(`/chat/${chatId}/messages/${messageId}`).then((res) => res.data));
 
 // ----------------- Участники -----------------
-
 export const leaveConversation = async (chatId: number) =>
   handleRequest(() => axios.delete(`/chat/${chatId}/leave`).then((res) => res.data));
 
@@ -115,7 +118,6 @@ export const addParticipant = async (
   );
 
 // ----------------- Реакции -----------------
-
 export const getMessageReactions = async (messageId: number) =>
   handleRequest(() =>
     axios.get(`/chat/messages/${messageId}/reactions`).then((res) => {
@@ -130,7 +132,6 @@ export const reactToMessage = async (messageId: number, emoji: string) =>
   );
 
 // ----------------- Статусы -----------------
-
 export const markAsDelivered = async (chatId: number) =>
   handleRequest(() => axios.post(`/chat/${chatId}/delivered`).then((res) => res.data));
 

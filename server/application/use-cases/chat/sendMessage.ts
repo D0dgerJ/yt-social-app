@@ -1,16 +1,31 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
 
+type MediaKind = "image" | "video" | "file" | "gif" | "audio";
+
+function mapMimeToType(mime?: string | null): MediaKind | undefined {
+  if (!mime) return;
+  const m = mime.toLowerCase();
+  if (m.startsWith("image/")) return m === "image/gif" ? "gif" : "image";
+  if (m.startsWith("video/")) return "video";
+  if (m.startsWith("audio/")) return "audio";
+  return "file";
+}
+
 interface SendMessageInput {
   conversationId: number;
-  encryptedContent?: string;
+  encryptedContent?: string | null;
   senderId: number;
+
+  attachments?: Array<{ url: string; mime: string; name?: string; size?: number; type?: MediaKind }>;
+
   mediaUrl?: string | null;
-  mediaType?: "image" | "video" | "file" | "gif" | "audio" | "text" | "sticker";
+  mediaType?: MediaKind | "text" | "sticker" | null;
   fileName?: string;
-  gifUrl?: string;
-  stickerUrl?: string;
-  repliedToId?: number;
+  gifUrl?: string | null;
+  stickerUrl?: string | null;
+
+  repliedToId?: number | null;
   clientMessageId?: string | null;
 }
 
@@ -22,9 +37,10 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       conversationId,
       senderId,
       encryptedContent,
-      mediaUrl,
-      mediaType,
-      fileName,
+      attachments: attachmentsIn,
+      mediaUrl: legacyMediaUrl,
+      mediaType: legacyMediaType,
+      fileName: legacyFileName,
       gifUrl,
       stickerUrl,
       repliedToId,
@@ -50,32 +66,31 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       }
     }
 
-    if (mediaType && mediaType !== "text" && !mediaUrl) {
+    let attachments =
+      (attachmentsIn && attachmentsIn.length ? attachmentsIn : undefined) ?? [];
+
+    if (attachments.length === 0 && legacyMediaUrl) {
+      const guessed = mapMimeToType(
+        (rawInput as any).mime ?? undefined
+      );
+      attachments = [
+        {
+          url: legacyMediaUrl,
+          mime: "application/octet-stream",
+          name: legacyFileName,
+          type: (legacyMediaType as MediaKind) ?? guessed ?? "file",
+        },
+      ];
+    }
+
+    if (legacyMediaType && legacyMediaType !== "text" && !legacyMediaUrl && attachments.length === 0) {
       throw new Error("Для mediaType требуется mediaUrl");
     }
 
-    if (clientMessageId) {
-      const existing = await prisma.message.findUnique({
-        where: { clientMessageId },
-        include: {
-          sender: { select: { id: true, username: true, profilePicture: true } },
-          repliedTo: {
-            select: {
-              id: true,
-              senderId: true,
-              encryptedContent: true,
-              mediaUrl: true,
-              mediaType: true,
-              fileName: true,
-              isDeleted: true,
-              sender: { select: { id: true, username: true, profilePicture: true } },
-            },
-          },
-          mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
-        },
-      });
-      if (existing) return existing;
-    }
+    const first = attachments[0];
+    const messageMediaUrl = first?.url ?? legacyMediaUrl ?? null;
+    const messageMediaType = (first?.type ?? (legacyMediaType as MediaKind | null)) ?? null;
+    const messageFileName = first?.name ?? legacyFileName ?? null;
 
     try {
       const message = await prisma.$transaction(async (tx) => {
@@ -85,9 +100,11 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             conversationId,
             senderId,
             encryptedContent: encryptedContent ?? null,
-            mediaUrl: mediaUrl ?? null,
-            mediaType: mediaType ?? null,
-            fileName: fileName ?? null,
+
+            mediaUrl: messageMediaUrl,
+            mediaType: messageMediaType,
+            fileName: messageFileName,
+
             gifUrl: gifUrl ?? null,
             stickerUrl: stickerUrl ?? null,
             repliedToId: repliedToId ?? null,
@@ -109,11 +126,19 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
           },
         });
 
-        if (mediaType && mediaType !== "text" && mediaUrl) {
+        if (attachments.length > 0) {
+          const rows = attachments.slice(0, 10).map((a) => ({
+            url: a.url,
+            type: (a.type ?? mapMimeToType(a.mime) ?? "file") as MediaKind,
+            uploaderId: senderId,
+            messageId: created.id,
+          }));
+          await Promise.all(rows.map((r) => tx.mediaFile.create({ data: r })));
+        } else if (messageMediaType && messageMediaUrl) {
           await tx.mediaFile.create({
             data: {
-              url: mediaUrl,
-              type: mediaType,
+              url: messageMediaUrl,
+              type: messageMediaType as MediaKind,
               uploaderId: senderId,
               messageId: created.id,
             },
