@@ -1,0 +1,64 @@
+.composer__popup {
+  position: fixed;
+  z-index: 1000;
+  width: 360px;
+  max-height: 70vh;
+
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.composer__popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+  min-height: 40px;
+}
+
+.composer__tab {
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+
+  &.is-active { background: #e6f3ff; }
+}
+
+.composer__popup-close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: .6;
+  padding: 0 6px;
+
+  &:hover { opacity: 1; }
+}
+
+.composer__emoji-pane,
+.composer__gif-pane {
+  height: calc(70vh - 40px); 
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.composer__emoji-pane .em-emoji-picker {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}

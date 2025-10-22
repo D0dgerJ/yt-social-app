@@ -4,6 +4,7 @@ import { useSendMessage } from '@/hooks/useSendMessage';
 import { useTyping } from '@/hooks/useTyping';
 import { useComposerStore } from '@/stores/composerStore';
 import { useMessageActions } from '@/hooks/useMessageActions';
+import { EmojiGifPopup } from './EmojiGifPopup';
 import './MessageInput.scss';
 
 const MessageInput: React.FC = () => {
@@ -24,6 +25,9 @@ const MessageInput: React.FC = () => {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const replyIdNum: number | undefined =
+    replyTarget?.id != null ? Number(replyTarget.id) : undefined;
 
   useEffect(() => {
     if (editing) {
@@ -75,7 +79,7 @@ const MessageInput: React.FC = () => {
         conversationId: currentConversationId,
         text: trimmed || undefined,
         files,
-        replyToId: replyTarget?.id,
+        replyToId: replyIdNum, // ← число
       });
       resetComposer();
     } catch (err) {
@@ -136,6 +140,8 @@ const MessageInput: React.FC = () => {
           onChange={onPickFiles}
         />
       </label>
+
+      <EmojiGifPopup textareaRef={textareaRef} replyToId={replyIdNum} />
 
       <textarea
         ref={textareaRef}
