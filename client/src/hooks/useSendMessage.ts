@@ -2,41 +2,33 @@ import { useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import { useUserStore } from '@/stores/userStore';
 import { useMessageStore, type Message } from '@/stores/messageStore';
-import { uploadFiles, sendMessage as sendMessageREST } from '@/utils/api/chat.api';
+import {
+  uploadFiles,
+  sendMessage as sendMessageREST,
+  type Attachment,
+  type SendMessageBody,
+} from '@/utils/api/chat.api';
 import { useSocket } from '@/context/SocketContext';
 
 type SendOptions = {
   conversationId: number;
   text?: string;
   files?: File[];
-  replyToId?: number;
-  repliedToId?: number;
+  replyToId?: number;    
+  repliedToId?: number;   
 };
 
 const ACK_WAIT_SOCKET_MS = 4_000;
 const ACK_TIMEOUT_MS = 12_000;
-
-type SendMessageBody = {
-  clientMessageId: string;
-  conversationId: number;
-  encryptedContent?: string;
-  content?: string;
-  mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
-  fileName?: string;
-  gifUrl?: string;
-  stickerUrl?: string;
-  repliedToId?: number;
-};
 
 async function encryptText(plain?: string): Promise<string | undefined> {
   if (!plain) return undefined;
   return `b64:${btoa(unescape(encodeURIComponent(plain)))}`;
 }
 
-function mimeToMediaType(mime?: string): SendMessageBody['mediaType'] {
-  if (!mime) return null;
-  if (mime.startsWith('image/')) return 'image';
+function mapMimeToType(mime?: string): Attachment['type'] {
+  if (!mime) return 'file';
+  if (mime.startsWith('image/')) return mime === 'image/gif' ? 'gif' : 'image';
   if (mime.startsWith('video/')) return 'video';
   if (mime.startsWith('audio/')) return 'audio';
   return 'file';
@@ -56,18 +48,37 @@ export function useSendMessage() {
 
       const repliedToId = opts.repliedToId ?? opts.replyToId;
 
+      if (files.length > 1) {
+        await send({
+          conversationId,
+          text,
+          files: [files[0]],
+          repliedToId,
+        });
+
+        for (let i = 1; i < files.length; i++) {
+          await send({
+            conversationId,
+            files: [files[i]],
+          });
+        }
+        return;
+      }
+
+      if (!text?.trim() && files.length === 0) return;
+
       const clientMessageId = `optimistic-${nanoid(8)}`;
       const createdAt = new Date().toISOString();
 
+      const firstFile = files[0];
       const guessMediaType = (f?: File): Message['mediaType'] => {
         if (!f) return text ? 'text' : 'file';
-        if (f.type.startsWith('image/')) return 'image';
+        if (f.type.startsWith('image/')) return f.type === 'image/gif' ? 'gif' : 'image';
         if (f.type.startsWith('video/')) return 'video';
         if (f.type.startsWith('audio/')) return 'audio';
         return 'file';
       };
 
-      const firstFile = files[0];
       const optimistic: Message = {
         id: -1,
         clientMessageId,
@@ -80,14 +91,13 @@ export function useSendMessage() {
         fileName: firstFile?.name ?? null,
         gifUrl: undefined,
         stickerUrl: undefined,
-        repliedToId: repliedToId ?? null, // <<< ключевой момент
+        repliedToId: repliedToId ?? null,
         isDelivered: false,
         isRead: false,
         localStatus: 'sending',
         createdAt,
         updatedAt: createdAt,
       };
-
       addMessage(optimistic);
 
       let acked = false;
@@ -96,15 +106,8 @@ export function useSendMessage() {
       const finalizeOk = (serverMsg: any) => {
         if (acked) return;
         acked = true;
-
-        replaceOptimistic(clientMessageId, {
-          ...(serverMsg as any),
-          localStatus: 'sent',
-        });
-
-        if (optimistic.mediaUrl?.startsWith('blob:')) {
-          URL.revokeObjectURL(optimistic.mediaUrl);
-        }
+        replaceOptimistic(clientMessageId, { ...(serverMsg as any), localStatus: 'sent' });
+        if (optimistic.mediaUrl?.startsWith('blob:')) URL.revokeObjectURL(optimistic.mediaUrl);
         if (failTimer) {
           clearTimeout(failTimer);
           failTimer = null;
@@ -114,38 +117,33 @@ export function useSendMessage() {
       failTimer = setTimeout(() => {
         if (!acked) {
           markStatus(conversationId, clientMessageId, { localStatus: 'failed' });
-          if (optimistic.mediaUrl?.startsWith('blob:')) {
-            URL.revokeObjectURL(optimistic.mediaUrl);
-          }
+          if (optimistic.mediaUrl?.startsWith('blob:')) URL.revokeObjectURL(optimistic.mediaUrl);
         }
       }, ACK_TIMEOUT_MS);
 
       try {
         const encryptedContent = await encryptText(text);
 
-        let mediaUrl: string | undefined;
-        let mediaType: SendMessageBody['mediaType'] = text ? 'text' : null;
-        let fileName: string | undefined;
+        const uploaded = files.length
+          ? await uploadFiles(files)
+          : { urls: [] as Array<{ url: string; mime: string; name?: string }> };
 
-        if (files.length > 0) {
-          const { urls } = await uploadFiles(files);
-          const u = urls?.[0];
-          if (u?.url) {
-            mediaUrl = u.url;
-            mediaType = mimeToMediaType(u.mime || firstFile?.type);
-            fileName = u.name || firstFile?.name || undefined;
-          }
-        }
+        const attachments: Attachment[] = uploaded.urls.map(
+          (u: { url: string; mime: string; name?: string }) => ({
+            url: u.url,
+            mime: u.mime,
+            name: u.name,
+            type: mapMimeToType(u.mime),
+          })
+        );
 
-        const body: SendMessageBody = {
+        const body: SendMessageBody & { conversationId: number } = {
           clientMessageId,
-          conversationId,
           encryptedContent,
           content: undefined,
-          mediaUrl: mediaUrl ?? null,
-          mediaType: mediaType ?? (text ? 'text' : null),
-          fileName,
           repliedToId,
+          attachments: attachments.length ? attachments : undefined, 
+          conversationId,
         };
 
         const trySocket = async () => {
@@ -162,9 +160,9 @@ export function useSendMessage() {
           socket.on('receiveMessage', complete);
 
           try {
-            const emitVariants = ['message:send', 'sendMessage'];
-            for (const event of emitVariants) {
-              socket.emit(event, body, (resp?: any) => {
+            const events = ['message:send', 'sendMessage'] as const;
+            for (const ev of events) {
+              socket.emit(ev, body, (resp?: any) => {
                 if (resp?.status === 'ok' && resp.message?.clientMessageId === clientMessageId) {
                   socket.off('message:ack', complete);
                   socket.off('receiveMessage', complete);
@@ -172,7 +170,7 @@ export function useSendMessage() {
                 }
               });
             }
-            await new Promise<void>((resolve) => setTimeout(resolve, ACK_WAIT_SOCKET_MS));
+            await new Promise<void>((r) => setTimeout(r, ACK_WAIT_SOCKET_MS));
           } finally {
             socket.off('message:ack', complete);
             socket.off('receiveMessage', complete);
@@ -184,14 +182,7 @@ export function useSendMessage() {
         const okBySocket = await trySocket();
 
         if (!okBySocket && !acked) {
-          const serverMsg = await sendMessageREST(conversationId, {
-            content: text,
-            mediaUrl: body.mediaUrl,
-            mediaType: body.mediaType,
-            fileName: body.fileName,
-            repliedToId,    
-            clientMessageId,
-          });
+          const serverMsg = await sendMessageREST(conversationId, body);
           if (serverMsg?.id) {
             finalizeOk(serverMsg);
           } else {
@@ -202,9 +193,7 @@ export function useSendMessage() {
         console.error(err);
         if (!acked) {
           markStatus(conversationId, clientMessageId, { localStatus: 'failed' });
-          if (optimistic.mediaUrl?.startsWith('blob:')) {
-            URL.revokeObjectURL(optimistic.mediaUrl);
-          }
+          if (optimistic.mediaUrl?.startsWith('blob:')) URL.revokeObjectURL(optimistic.mediaUrl);
           if (failTimer) {
             clearTimeout(failTimer);
             failTimer = null;

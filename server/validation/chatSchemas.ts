@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const AttachmentSchema = z.object({
+  url: z.string().url(),
+  mime: z.string().min(1),
+  name: z.string().optional(),
+  size: z.number().int().nonnegative().optional(),
+  type: z.enum(["image", "video", "file", "gif", "audio"]).optional(),
+});
+
 export const sendMessageSchema = z
   .object({
     conversationId: z.number({ invalid_type_error: "conversationId must be a number" }).int().positive(),
@@ -7,12 +15,13 @@ export const sendMessageSchema = z
 
     encryptedContent: z.string().optional().nullable(),
 
+    attachments: z.array(AttachmentSchema).max(10).optional(),
+
     mediaUrl: z.string().url().optional().nullable(),
     mediaType: z
       .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
       .optional()
       .nullable(),
-
     fileName: z.string().optional(),
 
     gifUrl: z.string().url().optional().nullable(),
@@ -25,11 +34,13 @@ export const sendMessageSchema = z
   .refine(
     (data) =>
       !!data.encryptedContent ||
-      !!data.mediaUrl ||
+      !!(data.attachments && data.attachments.length > 0) ||
       !!data.gifUrl ||
-      !!data.stickerUrl,
+      !!data.stickerUrl ||
+      !!data.mediaUrl, 
     { message: "Нельзя отправить пустое сообщение" }
   );
+
 
 export const createChatSchema = z.object({
   userIds: z.array(z.number()).min(1, "At least one participant is required"),

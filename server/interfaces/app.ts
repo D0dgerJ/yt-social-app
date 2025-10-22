@@ -22,6 +22,8 @@ try {
   await import("../cron/storyCleaner.ts");
 
   app = express();
+  
+  app.set('trust proxy', true);
 
   app.use(
     "/uploads",

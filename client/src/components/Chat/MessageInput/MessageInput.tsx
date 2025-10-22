@@ -141,7 +141,11 @@ const MessageInput: React.FC = () => {
         />
       </label>
 
-      <EmojiGifPopup textareaRef={textareaRef} replyToId={replyIdNum} />
+      <EmojiGifPopup
+        textareaRef={textareaRef}
+        replyToId={replyIdNum}
+        onAddFile={(file) => setFiles(prev => [...prev, file])}
+      />
 
       <textarea
         ref={textareaRef}

@@ -3,45 +3,41 @@ import GifPicker from './GifPicker';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { insertAtCursor } from './insertAtCursor';
-import { useGifSender } from './useGifSender';
+import { makeGifFile } from './makeGifFile';
 import './EmojiGifPopup.scss';
 
 type Tab = 'emoji' | 'gif';
 
 interface Props {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
-  replyToId?: number;
+  replyToId?: number; 
+  onAddFile: (file: File) => void; 
 }
 
-export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId }) => {
+export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFile }) => {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('emoji');
   const btnRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-  const { sendGif } = useGifSender(replyToId);
 
   const style = useMemo<React.CSSProperties>(() => {
     const btn = btnRef.current;
     if (!btn) return { display: 'none' };
 
     const rect = btn.getBoundingClientRect();
-
     const pad = 8;
-    const left = Math.min(
-        Math.max(pad, rect.left),
-        window.innerWidth - 360 - pad
-    );
-
+    const left = Math.min(Math.max(pad, rect.left), window.innerWidth - 360 - pad);
     const bottom = Math.max(pad, window.innerHeight - rect.bottom + pad);
 
     return { position: 'fixed', left, bottom, zIndex: 1000 };
-    }, [open]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (popupRef.current && !popupRef.current.contains(t) && btnRef.current && !btnRef.current.contains(t)) {
+      if (popupRef.current && !popupRef.current.contains(t) &&
+          btnRef.current && !btnRef.current.contains(t)) {
         setOpen(false);
       }
     };
@@ -66,36 +62,45 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId }) => {
             <button
               className={`composer__tab ${activeTab === 'emoji' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('emoji')}
+              type="button"
             >
               Emoji
             </button>
             <button
               className={`composer__tab ${activeTab === 'gif' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('gif')}
+              type="button"
             >
               GIF
             </button>
-            <button
-              className="composer__popup-close"
-              onClick={() => setOpen(false)}
-            >
+            <button className="composer__popup-close" onClick={() => setOpen(false)} type="button">
               ✕
             </button>
           </div>
 
           {activeTab === 'emoji' && (
             <Picker
-                data={data}
-                onEmojiSelect={(e: any) => {
+              data={data}
+              onEmojiSelect={(e: any) => {
                 insertAtCursor(textareaRef, e.native);
                 setOpen(false);
-                }}
-                previewPosition="none"
+              }}
+              previewPosition="none"
             />
-            )}
+          )}
 
           {activeTab === 'gif' && (
-            <GifPicker onSelect={(url) => { sendGif(url); setOpen(false); }} />
+            <GifPicker
+              onSelect={async (url) => {
+                try {
+                  const file = await makeGifFile(url);
+                  onAddFile(file);
+                  setOpen(false);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+            />
           )}
         </div>
       )}
