@@ -10,11 +10,12 @@ type Tab = 'emoji' | 'gif';
 
 interface Props {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
-  replyToId?: number; 
-  onAddFile: (file: File) => void; 
+  replyToId?: number;
+  onAddFile: (file: File) => void;
+  onTextInsert?: (text: string) => void;
 }
 
-export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFile }) => {
+export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFile, onTextInsert }) => {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('emoji');
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -23,12 +24,10 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
   const style = useMemo<React.CSSProperties>(() => {
     const btn = btnRef.current;
     if (!btn) return { display: 'none' };
-
     const rect = btn.getBoundingClientRect();
     const pad = 8;
     const left = Math.min(Math.max(pad, rect.left), window.innerWidth - 360 - pad);
     const bottom = Math.max(pad, window.innerHeight - rect.bottom + pad);
-
     return { position: 'fixed', left, bottom, zIndex: 1000 };
   }, [open]);
 
@@ -52,6 +51,7 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
         type="button"
         className="composer__emoji-btn"
         onClick={() => setOpen(v => !v)}
+        aria-label="Вставить эмодзи или GIF"
       >
         😊
       </button>
@@ -81,11 +81,12 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
           {activeTab === 'emoji' && (
             <Picker
               data={data}
+              previewPosition="none"
               onEmojiSelect={(e: any) => {
-                insertAtCursor(textareaRef, e.native);
+                insertAtCursor(textareaRef, e.native); 
+                onTextInsert?.(e.native);     
                 setOpen(false);
               }}
-              previewPosition="none"
             />
           )}
 
