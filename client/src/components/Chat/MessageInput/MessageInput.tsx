@@ -145,6 +145,7 @@ const MessageInput: React.FC = () => {
         textareaRef={textareaRef}
         replyToId={replyIdNum}
         onAddFile={(file) => setFiles(prev => [...prev, file])}
+        onTextInsert={(s) => setText(prev => (prev ?? '') + s)}
       />
 
       <textarea
