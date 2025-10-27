@@ -45,7 +45,17 @@ export const send = async (req: Request, res: Response) => {
       return;
     }
 
-    const { content, mediaUrl, mediaType, fileName, gifUrl, repliedToId, clientMessageId } = req.body;
+    const {
+      content,
+      mediaUrl,
+      mediaType,
+      fileName,
+      gifUrl,
+      stickerUrl,
+      repliedToId,
+      clientMessageId,
+      attachments,      
+    } = req.body;
 
     const message = await sendMessage({
       conversationId,
@@ -55,8 +65,10 @@ export const send = async (req: Request, res: Response) => {
       mediaType,
       fileName,
       gifUrl,
+      stickerUrl,
       repliedToId,
       clientMessageId,
+      attachments, 
     });
 
     res.status(201).json(message);
