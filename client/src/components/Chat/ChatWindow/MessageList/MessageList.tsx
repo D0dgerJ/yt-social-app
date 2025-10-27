@@ -3,7 +3,7 @@ import { Virtuoso } from 'react-virtuoso';
 import { Message } from '@/stores/messageStore';
 import { DateSeparator } from './DateSeparator';
 import { SystemMessage } from './SystemMessage';
-import { MessageItem } from '@/components/Chat/MessageItem/MessageItem';
+import  MessageItem  from '@/components/Chat/MessageItem/MessageItem';
 import MessageContextMenu from '@/components/Chat/MessageItem/MessageContextMenu';
 import { useChatStore } from '@/stores/chatStore';
 import './MessageList.scss';
@@ -128,26 +128,44 @@ const MessageList: React.FC<Props> = ({
           return (
             <div onContextMenu={(e) => openContextMenu(e, m)}>
               <MessageItem
-                conversationId={m.conversationId}
-                messageId={m.id}
-                content={m.content || ''}
-                currentUserId={meId}
-                senderId={m.senderId}
-                senderUsername={(m as any).senderUsername ?? resolveName(m.senderId) ?? String(m.senderId)}
-                isOwnMessage={m.senderId === meId}
-                mediaType={m.mediaType as any}
-                mediaUrl={m.mediaUrl ?? undefined}
-                fileName={m.fileName}
-                stickerUrl={m.stickerUrl}
-                groupedReactions={(m as any).groupedReactions ?? []}
-                onReply={() => onReply?.(m)}
-                onEdit={() => onEdit?.(m)}
-                onDelete={() => onDelete?.(m)}
-                onReactToggle={(emoji) => onReact?.(m, emoji)}
-                resolveName={resolveName}
-                repliedToId={m.repliedToId ?? null}
-                repliedTo={(m as any).repliedTo ?? null}
-              />
+              conversationId={m.conversationId}
+              messageId={m.id}
+              clientMessageId={m.clientMessageId}    
+
+              content={m.content || ''}
+              encryptedContent={m.encryptedContent ?? null}  
+
+              currentUserId={meId}
+              senderId={m.senderId}
+              displayName={resolveName(m.senderId)}   
+              senderUsername={(m as any).senderUsername ?? undefined}
+              isOwnMessage={m.senderId === meId}
+
+              mediaType={m.mediaType as any}
+              mediaUrl={m.mediaUrl ?? undefined}
+              fileName={m.fileName ?? undefined}
+
+              mediaFiles={m.mediaFiles ?? []}   
+
+              gifUrl={m.gifUrl ?? null}
+              stickerUrl={m.stickerUrl ?? null}
+
+              isDelivered={m.isDelivered}   
+              isRead={m.isRead}
+              localStatus={m.localStatus}
+              createdAt={m.createdAt}
+
+              groupedReactions={(m as any).groupedReactions ?? []}
+
+              onReply={() => onReply?.(m)}
+              onEdit={() => onEdit?.(m)}
+              onDelete={() => onDelete?.(m)}
+              onReactToggle={(emoji) => onReact?.(m, emoji)}
+
+              resolveName={resolveName}
+              repliedToId={m.repliedToId ?? null}
+              repliedTo={(m as any).repliedTo ?? null}
+            />
             </div>
           );
         }

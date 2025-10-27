@@ -3,7 +3,7 @@ import { MessageReactions } from '../MessageReactions/MessageReactions';
 import { getReactionsREST } from '@/services/chatApi';
 import FileIcon from '../FileIcon/FileIcon';
 import ReplyPreview from '@/components/Chat/ReplyPreview/ReplyPreview';
-import { useMessageStore, type RepliedToLite } from '@/stores/messageStore';
+import { useMessageStore, type RepliedToLite, type Message } from '@/stores/messageStore';
 import './MessageItem.scss';
 
 interface GroupedReaction {
@@ -16,18 +16,30 @@ interface MessageItemProps {
   conversationId?: number;
 
   messageId: number;
+  clientMessageId?: string | null;
 
-  content: string;
-
-  currentUserId: number;
+  currentUserId?: number;
   senderId: number;
-  senderUsername: string;
-  isOwnMessage: boolean;
+  senderUsername?: string;
+  displayName?: string;
+  isOwnMessage?: boolean;
 
-  mediaType?: 'text' | 'image' | 'video' | 'gif' | 'file' | 'sticker' | 'audio';
-  mediaUrl?: string;
-  stickerUrl?: string;
-  fileName?: string;
+  content?: string;
+  encryptedContent?: string | null;
+
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
+  fileName?: string | null;
+
+  mediaFiles?: Message['mediaFiles'];
+
+  gifUrl?: string | null;
+  stickerUrl?: string | null;
+
+  isDelivered?: boolean;
+  isRead?: boolean;
+  localStatus?: 'sending' | 'sent' | 'failed';
+  createdAt?: string;
 
   groupedReactions?: GroupedReaction[];
 
@@ -44,7 +56,7 @@ interface MessageItemProps {
 
 const API_BASE = import.meta.env.VITE_API_URL ?? window.location.origin;
 
-function toAbsoluteUrl(url?: string): string {
+function toAbsoluteUrl(url?: string | null): string {
   if (!url) return '';
   try {
     new URL(url);
@@ -56,40 +68,98 @@ function toAbsoluteUrl(url?: string): string {
   }
 }
 
-function isImageByExt(url: string): boolean {
-  const clean = url.split('?')[0].toLowerCase();
-  return ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif'].some((ext) => clean.endsWith(ext));
-}
+const isImageByExt = (url?: string) =>
+  !!url && /\.(png|jpe?g|webp|avif|gif|bmp|svg)$/i.test((url.split('?')[0] ?? '').toLowerCase());
 
-export const MessageItem: React.FC<MessageItemProps> = ({
+const MediaGrid: React.FC<{ items: NonNullable<Message['mediaFiles']> }> = ({ items }) => {
+  if (!items?.length) return null;
+  const count = Math.min(items.length, 10);
+  const subset = items.slice(0, count);
+  const extraCount = items.length - count;
+  const cols = count <= 3 ? count : count <= 6 ? 3 : 4;
+
+  return (
+    <div className={`message-media-grid message-media-grid--c${cols}`}>
+      {subset.map((m, idx) => {
+        const isImage = m.type === 'image' || m.type === 'gif' || isImageByExt(m.url);
+        const isVideo = m.type === 'video';
+        const isAudio = m.type === 'audio';
+        const isFile = m.type === 'file';
+
+        return (
+          <div key={m.id ?? `${m.url}-${idx}`} className="message-media-grid__cell">
+            {isImage && (
+              <>
+                <img className="message-media-grid__img" src={m.url} alt="attachment" loading="lazy" />
+                {idx === count - 1 && extraCount > 0 && (
+                  <div className="message-media-grid__more">+{extraCount}</div>
+                )}
+              </>
+            )}
+            {isVideo && <video className="message-media-grid__video" src={m.url} controls preload="metadata" />}
+            {isAudio && <audio className="message-media-grid__audio" src={m.url} controls preload="metadata" />}
+            {isFile && (
+              <a className="message-media-grid__file" href={m.url} target="_blank" rel="noreferrer">
+                <FileIcon nameOrUrl={m.url} />
+              </a>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const MessageItem: React.FC<MessageItemProps> = ({
   conversationId,
   messageId,
-  content,
+  clientMessageId,
+
   currentUserId,
   senderId,
   senderUsername,
-  isOwnMessage,
-  mediaType,
+  displayName,
+
+  content,
+  encryptedContent,
+
   mediaUrl,
-  stickerUrl,
+  mediaType,
   fileName,
+
+  mediaFiles,
+
+  gifUrl,
+  stickerUrl,
+
+  isOwnMessage,
+  isDelivered,
+  isRead,
+  localStatus,
+  createdAt,
+
   groupedReactions,
+
   onReply,
   onEdit,
   onDelete,
   onReactToggle,
+
   resolveName,
+
   repliedToId,
   repliedTo,
 }) => {
+  // раздельные состояния, как в старой версии
+  const [showActions, setShowActions] = useState(false);
   const [showReactionsPopup, setShowReactionsPopup] = useState(false);
+
+  const [imageFailed, setImageFailed] = useState(false);
+  const longPressTimer = useRef<number | null>(null);
+
   const [reactions, setReactions] = useState<GroupedReaction[]>(groupedReactions ?? []);
   const [reactionsLoaded, setReactionsLoaded] = useState(!!(groupedReactions && groupedReactions.length));
   const [loadingReactions, setLoadingReactions] = useState(false);
-
-  const [imageFailed, setImageFailed] = useState(false);
-  const [showActions, setShowActions] = useState(false);
-  const longPressTimer = useRef<number | null>(null);
 
   const getById = useMessageStore((s) => s.getById);
 
@@ -110,46 +180,64 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     setShowReactionsPopup((s) => !s);
   }, [ensureReactions]);
 
-  const normalizedMediaUrl = toAbsoluteUrl(mediaUrl);
+  const normalizedMediaUrl = toAbsoluteUrl(mediaUrl || undefined);
   const uploadsFallback = useMemo(
     () => (mediaUrl ? `/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}` : ''),
-    [mediaUrl]
+    [mediaUrl],
   );
 
-  const isImage =
-    mediaType === 'image' ||
-    mediaType === 'gif' ||
-    (!!normalizedMediaUrl && isImageByExt(normalizedMediaUrl));
+  const isSingleImage =
+    !!mediaUrl && (mediaType === 'image' || mediaType === 'gif' || isImageByExt(normalizedMediaUrl));
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    void openReactionsPopup();
-  };
+  const displayNameComputed = useMemo(() => {
+    if (displayName && displayName.trim()) return displayName.trim();
+    const viaResolver = resolveName?.(senderId);
+    if (viaResolver && viaResolver.trim()) return viaResolver.trim();
+    if (senderUsername && senderUsername !== String(senderId)) return senderUsername;
+    return `User#${senderId}`;
+  }, [displayName, resolveName, senderId, senderUsername]);
 
-  const handleTouchStart = () => {
-    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
-    longPressTimer.current = window.setTimeout(() => {
-      void openReactionsPopup();
-    }, 450);
-  };
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
-    longPressTimer.current = null;
-  };
+  const replyData: RepliedToLite | null = useMemo(() => {
+    if (repliedTo) return repliedTo;
+    if (conversationId && repliedToId) {
+      const original = getById(conversationId, repliedToId);
+      if (original) {
+        return {
+          id: original.id,
+          senderId: original.senderId,
+          encryptedContent: original.encryptedContent ?? null,
+          content: original.content,
+          mediaUrl: original.mediaUrl ?? null,
+          mediaType: (original.mediaType as any) ?? null,
+          fileName: original.fileName ?? null,
+          isDeleted: false,
+          sender: original.sender
+            ? {
+                id: original.sender.id,
+                username: original.sender.username,
+                profilePicture: original.sender.profilePicture ?? null,
+              }
+            : null,
+        };
+      }
+    }
+    return null;
+  }, [repliedTo, conversationId, repliedToId, getById]);
 
   const toggleReactionQuick = useCallback(
     (emoji: string) => {
-      const mine = reactions.some(r => r.emoji === emoji && r.users?.some(u => u.id === currentUserId));
-      setReactions(prev => {
+      if (!currentUserId) return;
+      const mine = reactions.some((r) => r.emoji === emoji && r.users?.some((u) => u.id === currentUserId));
+      setReactions((prev) => {
         const copy = [...prev];
-        const idx = copy.findIndex(r => r.emoji === emoji);
+        const idx = copy.findIndex((r) => r.emoji === emoji);
         if (idx >= 0) {
           const r = copy[idx];
           if (mine) {
             copy[idx] = {
               ...r,
               count: Math.max(0, r.count - 1),
-              users: r.users.filter(u => u.id !== currentUserId),
+              users: r.users.filter((u) => u.id !== currentUserId),
             };
           } else {
             copy[idx] = {
@@ -169,59 +257,38 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       });
       onReactToggle?.(emoji);
     },
-    [onReactToggle, reactions, currentUserId]
+    [onReactToggle, reactions, currentUserId],
   );
 
   const myReactions = useMemo(() => {
     const set = new Set<string>();
     reactions.forEach((r) => {
-      if (r.users?.some((u) => u.id === currentUserId)) set.add(r.emoji);
+      if (currentUserId && r.users?.some((u) => u.id === currentUserId)) set.add(r.emoji);
     });
     return set;
   }, [reactions, currentUserId]);
 
-  const displayName = useMemo(() => {
-    const fromResolver = resolveName?.(senderId);
-    if (fromResolver && fromResolver.trim()) return fromResolver.trim();
-    if (senderUsername && senderUsername !== String(senderId)) return senderUsername;
-    return `User#${senderId}`;
-  }, [resolveName, senderId, senderUsername]);
-
- const replyData: RepliedToLite | null = useMemo(() => {
-  if (repliedTo) return repliedTo;
-  if (conversationId && repliedToId) {
-    const original = getById(conversationId, repliedToId);
-    if (original) {
-      return {
-        id: original.id,
-        senderId: original.senderId,
-        encryptedContent: original.encryptedContent ?? null,
-        content: (original as any).content,
-        mediaUrl: original.mediaUrl ?? null,
-        mediaType: (original.mediaType as any) ?? null,
-        fileName: original.fileName ?? null,
-        isDeleted: false,
-        sender: original.sender
-          ? {
-              id: original.sender.id,
-              username: original.sender.username,
-              profilePicture: original.sender.profilePicture ?? null,
-            }
-          : null,
-      };
-    }
-  }
-  return null;
-}, [repliedTo, conversationId, repliedToId, getById]);
-
+  // контекстное меню = открыть попап реакций (как раньше)
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    void openReactionsPopup();
+  };
+  const handleTouchStart = () => {
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      void openReactionsPopup();
+    }, 450) as unknown as number;
+  };
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  };
 
   const handleJumpToOriginal = useCallback(() => {
     if (!repliedToId) return;
-
     const el =
       document.querySelector<HTMLElement>(`[data-message-id="${repliedToId}"]`) ||
       document.querySelector<HTMLElement>(`[data-id="${repliedToId}"]`);
-
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       const prevBoxShadow = el.style.boxShadow;
@@ -244,9 +311,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       aria-label="Сообщение"
     >
       <div className="message-header">
-        <span className="sender">{displayName}</span>
+        <span className="sender">{displayNameComputed}</span>
 
-        {/* Меню действий справа */}
+        {/* Меню действий (раздельно от попапа реакций) */}
         <button
           type="button"
           className="message-actions-btn"
@@ -259,9 +326,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         {showActions && (
           <div className="message-actions-menu" onMouseLeave={() => setShowActions(false)}>
             <button type="button" onClick={() => onReply?.()}>Ответить</button>
-            {isOwnMessage && (
-              <button type="button" onClick={() => onEdit?.()}>Редактировать</button>
-            )}
+            {isOwnMessage && <button type="button" onClick={() => onEdit?.()}>Редактировать</button>}
             {isOwnMessage && (
               <button type="button" className="danger" onClick={() => onDelete?.()}>
                 Удалить
@@ -278,16 +343,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         )}
       </div>
 
-      {/* Плашка цитаты */}
-      {(repliedTo || repliedToId) && (
-        <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />
-      )}
+      {/* Цитата */}
+      {(repliedTo || repliedToId) && <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />}
 
       {/* Текст */}
       {content && <div className="message-content">{content}</div>}
 
-      {/* Медиа */}
-      {isImage && mediaUrl && (
+      {/* Галерея мультивложений */}
+      {mediaFiles && mediaFiles.length > 0 && <MediaGrid items={mediaFiles} />}
+
+      {/* Legacy-одиночное изображение */}
+      {isSingleImage && !mediaFiles?.length && (
         <div className="message-media">
           {!imageFailed ? (
             <img
@@ -310,15 +376,18 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
 
-      {mediaType === 'sticker' && stickerUrl && (
-        <img src={toAbsoluteUrl(stickerUrl)} alt="sticker" className="message-image" />
+      {/* Legacy: одиночные видео/аудио/файл/стикер */}
+      {!mediaFiles?.length && mediaType === 'video' && mediaUrl && (
+        <video className="message-video" src={normalizedMediaUrl} controls preload="metadata" />
       )}
-
-      {mediaType === 'file' && mediaUrl && (
+      {!mediaFiles?.length && mediaType === 'audio' && mediaUrl && (
+        <audio className="message-audio" src={normalizedMediaUrl} controls preload="metadata" />
+      )}
+      {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (
         <a
+          className="message-file"
           href={`/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}`}
           download={fileName ?? undefined}
-          className="message-file"
         >
           <FileIcon nameOrUrl={fileName || mediaUrl} />
           <span className="message-file__name">
@@ -326,12 +395,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           </span>
         </a>
       )}
-
-      {mediaType === 'audio' && mediaUrl && (
-        <audio controls src={toAbsoluteUrl(mediaUrl)} className="message-audio" preload="metadata" />
+      {!mediaFiles?.length && mediaType === 'sticker' && stickerUrl && (
+        <img src={toAbsoluteUrl(stickerUrl)} alt="sticker" className="message-image" />
       )}
 
-      {/* Реакции */}
+      {/* Реакции (статичный ряд) */}
       {reactions.length > 0 && (
         <div className="message-reactions-static" aria-label="Реакции к сообщению">
           {reactions.map((r) => {
@@ -344,7 +412,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 aria-pressed={mine}
                 title={
                   r.users?.length
-                    ? `${r.emoji} · ${r.users.slice(0, 5).map(u => u.username).join(', ')}${r.users.length > 5 ? '…' : ''}`
+                    ? `${r.emoji} · ${r.users.slice(0, 5).map((u) => u.username).join(', ')}${
+                        r.users.length > 5 ? '…' : ''
+                      }`
                     : r.emoji
                 }
               >
@@ -364,6 +434,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
 
+      {/* Попап выбора реакций — отдельное состояние */}
       {showReactionsPopup && (
         <div
           className="reactions-popup"
@@ -373,7 +444,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         >
           <MessageReactions
             messageId={messageId}
-            currentUserId={currentUserId}
+            currentUserId={currentUserId ?? -1}
             reactions={reactions}
             onReactionsUpdate={setReactions}
             onToggleReaction={onReactToggle ? (emoji) => onReactToggle(emoji) : undefined}
@@ -381,6 +452,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           {loadingReactions && <div className="reactions-loading">Загружаю…</div>}
         </div>
       )}
+
+      {/* Статусы */}
+      <div className="message-status">
+        {localStatus === 'sending' && <span>Отправка…</span>}
+        {localStatus === 'failed' && <span className="danger">Не отправлено</span>}
+        {isDelivered && <span>Доставлено</span>}
+        {isRead && <span>Прочитано</span>}
+      </div>
     </div>
   );
 };
+
+export default MessageItem;
