@@ -47,6 +47,7 @@ interface MessageItemProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onReactToggle?: (emoji: string) => void;
+  onOpenAttachment?: (url: string) => void;
 
   resolveName?: (userId: number) => string | undefined;
 
@@ -71,12 +72,22 @@ function toAbsoluteUrl(url?: string | null): string {
 const isImageByExt = (url?: string) =>
   !!url && /\.(png|jpe?g|webp|avif|gif|bmp|svg)$/i.test((url.split('?')[0] ?? '').toLowerCase());
 
-const MediaGrid: React.FC<{ items: NonNullable<Message['mediaFiles']> }> = ({ items }) => {
+const MediaGrid: React.FC<{
+  items: NonNullable<Message['mediaFiles']>;
+  onOpen?: (url: string) => void;
+}> = ({ items, onOpen }) => {
   if (!items?.length) return null;
   const count = Math.min(items.length, 10);
   const subset = items.slice(0, count);
   const extraCount = items.length - count;
   const cols = count <= 3 ? count : count <= 6 ? 3 : 4;
+
+  const onKeyOpen = (e: React.KeyboardEvent, url: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen?.(url);
+    }
+  };
 
   return (
     <div className={`message-media-grid message-media-grid--c${cols}`}>
@@ -90,16 +101,50 @@ const MediaGrid: React.FC<{ items: NonNullable<Message['mediaFiles']> }> = ({ it
           <div key={m.id ?? `${m.url}-${idx}`} className="message-media-grid__cell">
             {isImage && (
               <>
-                <img className="message-media-grid__img" src={m.url} alt="attachment" loading="lazy" />
+                <img
+                  className="message-media-grid__img"
+                  src={m.url}
+                  alt="attachment"
+                  loading="lazy"
+                  onClick={() => onOpen?.(m.url)} 
+                  tabIndex={0}
+                  role="button"
+                  onKeyDown={(e) => onKeyOpen(e, m.url)}
+                />
                 {idx === count - 1 && extraCount > 0 && (
                   <div className="message-media-grid__more">+{extraCount}</div>
                 )}
               </>
             )}
-            {isVideo && <video className="message-media-grid__video" src={m.url} controls preload="metadata" />}
-            {isAudio && <audio className="message-media-grid__audio" src={m.url} controls preload="metadata" />}
+
+            {isVideo && (
+              <video
+                className="message-media-grid__video"
+                src={m.url}
+                controls
+                preload="metadata"
+                onDoubleClick={() => onOpen?.(m.url)} 
+              />
+            )}
+
+            {isAudio && (
+              <audio
+                className="message-media-grid__audio"
+                src={m.url}
+                controls
+                preload="metadata"
+              />
+            )}
+
             {isFile && (
-              <a className="message-media-grid__file" href={m.url} target="_blank" rel="noreferrer">
+              <a
+                className="message-media-grid__file"
+                href={m.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                }}
+              >
                 <FileIcon nameOrUrl={m.url} />
               </a>
             )}
@@ -144,13 +189,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
   onEdit,
   onDelete,
   onReactToggle,
+  onOpenAttachment,      
 
   resolveName,
 
   repliedToId,
   repliedTo,
 }) => {
-  // раздельные состояния, как в старой версии
   const [showActions, setShowActions] = useState(false);
   const [showReactionsPopup, setShowReactionsPopup] = useState(false);
 
@@ -268,7 +313,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
     return set;
   }, [reactions, currentUserId]);
 
-  // контекстное меню = открыть попап реакций (как раньше)
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     void openReactionsPopup();
@@ -313,7 +357,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <div className="message-header">
         <span className="sender">{displayNameComputed}</span>
 
-        {/* Меню действий (раздельно от попапа реакций) */}
+        {/* Меню действий */}
         <button
           type="button"
           className="message-actions-btn"
@@ -343,16 +387,16 @@ const MessageItem: React.FC<MessageItemProps> = ({
         )}
       </div>
 
-      {/* Цитата */}
       {(repliedTo || repliedToId) && <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />}
 
-      {/* Текст */}
       {content && <div className="message-content">{content}</div>}
 
       {/* Галерея мультивложений */}
-      {mediaFiles && mediaFiles.length > 0 && <MediaGrid items={mediaFiles} />}
+      {mediaFiles && mediaFiles.length > 0 && (
+        <MediaGrid items={mediaFiles} onOpen={onOpenAttachment} />
+      )}
 
-      {/* Legacy-одиночное изображение */}
+      {/* одиночное изображение */}
       {isSingleImage && !mediaFiles?.length && (
         <div className="message-media">
           {!imageFailed ? (
@@ -361,6 +405,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
               src={normalizedMediaUrl}
               alt={fileName ?? 'image'}
               loading="lazy"
+              onClick={() => onOpenAttachment?.(normalizedMediaUrl)} 
               onError={(e) => {
                 const el = e.currentTarget as HTMLImageElement;
                 if (uploadsFallback && el.src !== uploadsFallback) {
@@ -376,9 +421,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
 
-      {/* Legacy: одиночные видео/аудио/файл/стикер */}
+      {/* одиночные видео/аудио/файл/стикер */}
       {!mediaFiles?.length && mediaType === 'video' && mediaUrl && (
-        <video className="message-video" src={normalizedMediaUrl} controls preload="metadata" />
+        <video
+          className="message-video"
+          src={normalizedMediaUrl}
+          controls
+          preload="metadata"
+          onDoubleClick={() => onOpenAttachment?.(normalizedMediaUrl)} 
+        />
       )}
       {!mediaFiles?.length && mediaType === 'audio' && mediaUrl && (
         <audio className="message-audio" src={normalizedMediaUrl} controls preload="metadata" />
@@ -399,7 +450,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <img src={toAbsoluteUrl(stickerUrl)} alt="sticker" className="message-image" />
       )}
 
-      {/* Реакции (статичный ряд) */}
+      {/* Реакции */}
       {reactions.length > 0 && (
         <div className="message-reactions-static" aria-label="Реакции к сообщению">
           {reactions.map((r) => {
@@ -434,7 +485,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
 
-      {/* Попап выбора реакций — отдельное состояние */}
+      {/* Попап реакций */}
       {showReactionsPopup && (
         <div
           className="reactions-popup"
