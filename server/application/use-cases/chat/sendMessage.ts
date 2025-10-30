@@ -17,7 +17,13 @@ interface SendMessageInput {
   encryptedContent?: string | null;
   senderId: number;
 
-  attachments?: Array<{ url: string; mime: string; name?: string; size?: number; type?: MediaKind }>;
+  attachments?: Array<{
+    url: string;
+    mime: string;
+    name?: string;
+    size?: number;
+    type?: MediaKind;
+  }>;
 
   mediaUrl?: string | null;
   mediaType?: MediaKind | "text" | "sticker" | null;
@@ -70,9 +76,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       (attachmentsIn && attachmentsIn.length ? attachmentsIn : undefined) ?? [];
 
     if (attachments.length === 0 && legacyMediaUrl) {
-      const guessed = mapMimeToType(
-        (rawInput as any).mime ?? undefined
-      );
+      const guessed = mapMimeToType((rawInput as any).mime ?? undefined);
       attachments = [
         {
           url: legacyMediaUrl,
@@ -83,13 +87,19 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       ];
     }
 
-    if (legacyMediaType && legacyMediaType !== "text" && !legacyMediaUrl && attachments.length === 0) {
+    if (
+      legacyMediaType &&
+      legacyMediaType !== "text" &&
+      !legacyMediaUrl &&
+      attachments.length === 0
+    ) {
       throw new Error("Для mediaType требуется mediaUrl");
     }
 
     const first = attachments[0];
     const messageMediaUrl = first?.url ?? legacyMediaUrl ?? null;
-    const messageMediaType = (first?.type ?? (legacyMediaType as MediaKind | null)) ?? null;
+    const messageMediaType =
+      (first?.type ?? (legacyMediaType as MediaKind | null)) ?? null;
     const messageFileName = first?.name ?? legacyFileName ?? null;
 
     try {
@@ -110,7 +120,9 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             repliedToId: repliedToId ?? null,
           },
           include: {
-            sender: { select: { id: true, username: true, profilePicture: true } },
+            sender: {
+              select: { id: true, username: true, profilePicture: true },
+            },
             repliedTo: {
               select: {
                 id: true,
@@ -120,7 +132,13 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
                 mediaType: true,
                 fileName: true,
                 isDeleted: true,
-                sender: { select: { id: true, username: true, profilePicture: true } },
+                sender: {
+                  select: {
+                    id: true,
+                    username: true,
+                    profilePicture: true,
+                  },
+                },
               },
             },
           },
@@ -132,7 +150,12 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             type: (a.type ?? mapMimeToType(a.mime) ?? "file") as MediaKind,
             uploaderId: senderId,
             messageId: created.id,
+
+            originalName: a.name ?? null,
+            mime: a.mime ?? null,
+            size: a.size ?? null,
           }));
+
           await Promise.all(rows.map((r) => tx.mediaFile.create({ data: r })));
         } else if (messageMediaType && messageMediaUrl) {
           await tx.mediaFile.create({
@@ -141,6 +164,10 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
               type: messageMediaType as MediaKind,
               uploaderId: senderId,
               messageId: created.id,
+
+              originalName: messageFileName ?? null,
+              mime: (rawInput as any).mime ?? null,
+              size: (rawInput as any).size ?? null,
             },
           });
         }
@@ -153,7 +180,9 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         const withRelations = await tx.message.findUnique({
           where: { id: created.id },
           include: {
-            sender: { select: { id: true, username: true, profilePicture: true } },
+            sender: {
+              select: { id: true, username: true, profilePicture: true },
+            },
             repliedTo: {
               select: {
                 id: true,
@@ -163,15 +192,38 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
                 mediaType: true,
                 fileName: true,
                 isDeleted: true,
-                sender: { select: { id: true, username: true, profilePicture: true } },
+                sender: {
+                  select: {
+                    id: true,
+                    username: true,
+                    profilePicture: true,
+                  },
+                },
               },
             },
-            mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
+            mediaFiles: {
+              select: {
+                id: true,
+                url: true,
+                type: true,
+                uploadedAt: true,
+
+                originalName: true,
+                mime: true,
+                size: true,
+              },
+            },
           },
         });
 
-        if (!withRelations) throw new Error("Не удалось получить созданное сообщение");
-        return withRelations;
+        if (!withRelations) {
+          throw new Error("Не удалось получить созданное сообщение");
+        }
+
+        return {
+          ...withRelations,
+          content: withRelations.encryptedContent,
+        };
       });
 
       return message;
@@ -181,7 +233,9 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         const existing = await prisma.message.findUnique({
           where: { clientMessageId },
           include: {
-            sender: { select: { id: true, username: true, profilePicture: true } },
+            sender: {
+              select: { id: true, username: true, profilePicture: true },
+            },
             repliedTo: {
               select: {
                 id: true,
@@ -191,14 +245,38 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
                 mediaType: true,
                 fileName: true,
                 isDeleted: true,
-                sender: { select: { id: true, username: true, profilePicture: true } },
+                sender: {
+                  select: {
+                    id: true,
+                    username: true,
+                    profilePicture: true,
+                  },
+                },
               },
             },
-            mediaFiles: { select: { id: true, url: true, type: true, uploadedAt: true } },
+            mediaFiles: {
+              select: {
+                id: true,
+                url: true,
+                type: true,
+                uploadedAt: true,
+
+                originalName: true,
+                mime: true,
+                size: true,
+              },
+            },
           },
         });
-        if (existing) return existing;
+
+        if (existing) {
+          return {
+            ...existing,
+            content: existing.encryptedContent,
+          };
+        }
       }
+
       throw e;
     }
   } catch (error) {

@@ -65,18 +65,16 @@ export const initSocket = (server: http.Server) => {
       callback?: (res: { status: "ok"; message: any } | { status: "error"; error: string }) => void
     ) => {
       try {
-        const fullInput = {
-          ...messageInput,
-          senderId: userId,
-        };
+        const fullInput = { ...messageInput, senderId: userId };
 
         const message = await sendMessage(fullInput);
 
         const room = String(message.conversationId);
+        if (!socket.rooms.has(room)) socket.join(room);
 
         socket.emit("message:ack", message);
 
-        io.to(room).emit("receiveMessage", message);
+        io.to(room).except(userRoom).emit("receiveMessage", message);
 
         callback?.({ status: "ok", message });
       } catch (err) {
@@ -92,6 +90,7 @@ export const initSocket = (server: http.Server) => {
     socket.on("messageDelivered", (p: { conversationId: number; messageId: number }) => {
       io.to(String(p.conversationId)).emit("message:delivered", p);
     });
+
     socket.on("messageRead", (p: { conversationId: number; messageId: number }) => {
       io.to(String(p.conversationId)).emit("message:read", p);
     });
@@ -105,6 +104,7 @@ export const initSocket = (server: http.Server) => {
         timestamp: Date.now(),
       });
     });
+
     socket.on("typing:stop", (p: { conversationId: number }) => {
       io.to(String(p.conversationId)).emit("typing:stop", { conversationId: p.conversationId, userId });
     });

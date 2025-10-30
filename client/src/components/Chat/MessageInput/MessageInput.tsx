@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useTyping } from '@/hooks/useTyping';
@@ -6,6 +6,8 @@ import { useComposerStore } from '@/stores/composerStore';
 import { useMessageActions } from '@/hooks/useMessageActions';
 import { EmojiGifPopup } from './EmojiGifPopup';
 import './MessageInput.scss';
+
+const MAX_FILES_PER_MESSAGE = 10;
 
 const MessageInput: React.FC = () => {
   const { currentConversationId } = useChatStore();
@@ -36,25 +38,40 @@ const MessageInput: React.FC = () => {
     }
   }, [editing]);
 
-  const resetComposer = () => {
+  const resetComposer = useCallback(() => {
     setText('');
     setFiles([]);
     if (replyTarget) setReplyTarget(undefined);
     if (editing) endEdit();
-  };
+  }, [replyTarget, setReplyTarget, editing, endEdit]);
 
   const isEditMode = useMemo(() => Boolean(editing), [editing]);
   const isReplyMode = useMemo(() => Boolean(replyTarget), [replyTarget]);
 
   const onPickFiles: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const fl = e.currentTarget.files;
-    if (!fl?.length) return;
-    setFiles((prev) => [...prev, ...Array.from(fl)]);
+    if (!fl?.length || isEditMode) return;
+
+    setFiles((prev) => {
+      const incoming = Array.from(fl);
+      const roomLeft = MAX_FILES_PER_MESSAGE - prev.length;
+      const allowed = roomLeft > 0 ? incoming.slice(0, roomLeft) : [];
+      return [...prev, ...allowed];
+    });
+
     e.currentTarget.value = '';
   };
 
+  const removeFile = useCallback(
+    (idx: number) => {
+      setFiles((prev) => prev.filter((_, i) => i !== idx));
+    },
+    [setFiles],
+  );
+
   const handleSend = async () => {
     if (!currentConversationId || isSending) return;
+
     const trimmed = text.trim();
 
     if (isEditMode && editing) {
@@ -71,7 +88,9 @@ const MessageInput: React.FC = () => {
       return;
     }
 
-    if (!trimmed && files.length === 0) return;
+    if (!trimmed && files.length === 0) {
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -79,7 +98,7 @@ const MessageInput: React.FC = () => {
         conversationId: currentConversationId,
         text: trimmed || undefined,
         files,
-        replyToId: replyIdNum, // ← число
+        replyToId: replyIdNum,
       });
       resetComposer();
     } catch (err) {
@@ -95,6 +114,9 @@ const MessageInput: React.FC = () => {
       void handleSend();
     }
   };
+
+  const filesLeft = MAX_FILES_PER_MESSAGE - files.length;
+  const canAddMoreFiles = !isEditMode && filesLeft > 0;
 
   return (
     <div className="composer">
@@ -115,6 +137,7 @@ const MessageInput: React.FC = () => {
               </button>
             </div>
           )}
+
           {isEditMode && (
             <div className="composer__edit">
               <span className="composer__bar-title">Редактирование</span>
@@ -130,13 +153,23 @@ const MessageInput: React.FC = () => {
         </div>
       )}
 
-      <label className="composer__attach" title="Прикрепить файл">
+      <label
+        className={`composer__attach ${!canAddMoreFiles ? 'composer__attach--disabled' : ''}`}
+        title={
+          isEditMode
+            ? 'Нельзя менять вложения при редактировании'
+            : canAddMoreFiles
+            ? 'Прикрепить файл'
+            : 'Лимит 10 вложений'
+        }
+      >
         📎
         <input
           ref={fileInputRef}
           type="file"
           multiple
           hidden
+          disabled={!canAddMoreFiles}
           onChange={onPickFiles}
         />
       </label>
@@ -144,8 +177,14 @@ const MessageInput: React.FC = () => {
       <EmojiGifPopup
         textareaRef={textareaRef}
         replyToId={replyIdNum}
-        onAddFile={(file) => setFiles(prev => [...prev, file])}
-        onTextInsert={(s) => setText(prev => (prev ?? '') + s)}
+        onAddFile={(file) => {
+          if (!canAddMoreFiles) return;
+          setFiles((prev) => {
+            if (prev.length >= MAX_FILES_PER_MESSAGE) return prev;
+            return [...prev, file];
+          });
+        }}
+        onTextInsert={(s) => setText((prev) => (prev ?? '') + s)}
       />
 
       <textarea
@@ -176,10 +215,28 @@ const MessageInput: React.FC = () => {
       {!!files.length && (
         <div className="composer__previews">
           {files.map((f, i) => (
-            <div key={`${f.name}-${i}`} className="composer__preview" title={f.name}>
-              {f.name}
+            <div
+              key={`${f.name}-${i}`}
+              className="composer__preview"
+              title={f.name}
+            >
+              <span className="composer__preview-name">{f.name}</span>
+              <button
+                type="button"
+                className="composer__preview-remove"
+                onClick={() => removeFile(i)}
+                aria-label="Убрать файл"
+              >
+                ✕
+              </button>
             </div>
           ))}
+
+          <div className="composer__hint">
+            {filesLeft <= 0
+              ? 'Лимит вложений: 10'
+              : `Можно добавить ещё ${filesLeft} файл(ов)`}
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { fixLatin1ToUtf8 } from "../../utils/encoding.ts";
 
 function getBaseUrl(req: Request) {
   const proto =
@@ -8,6 +9,18 @@ function getBaseUrl(req: Request) {
     (req.headers["x-forwarded-host"] as string) ||
     req.get("host");
   return `${proto}://${host}`;
+}
+
+function detectMediaType(mime: string | undefined | null): "image" | "video" | "audio" | "gif" | "file" {
+  if (!mime) return "file";
+  const m = mime.toLowerCase();
+
+  if (m === "image/gif") return "gif";
+  if (m.startsWith("image/")) return "image";
+  if (m.startsWith("video/")) return "video";
+  if (m.startsWith("audio/")) return "audio";
+
+  return "file";
 }
 
 export const handleUpload = async (req: Request, res: Response): Promise<void> => {
@@ -26,12 +39,18 @@ export const handleUpload = async (req: Request, res: Response): Promise<void> =
   try {
     const base = getBaseUrl(req);
 
-    const results = list.map((f) => ({
-      url: `${base}/uploads/${f.filename}`, 
-      name: f.originalname,
-      mime: f.mimetype,
-      size: f.size,
-    }));
+    const results = list.map((f) => {
+      const safeName = fixLatin1ToUtf8(f.originalname);
+      const guessedType = detectMediaType(f.mimetype);
+
+      return {
+        url: `${base}/uploads/${f.filename}`, 
+        name: safeName,               
+        mime: f.mimetype,              
+        size: f.size,                    
+        type: guessedType,         
+      };
+    });
 
     res.json({ urls: results });
   } catch (e) {
@@ -48,12 +67,15 @@ export const handleFileUpload = async (req: Request, res: Response): Promise<voi
   }
 
   const base = getBaseUrl(req);
+  const safeName = fixLatin1ToUtf8(f.originalname);
+  const guessedType = detectMediaType(f.mimetype);
 
   res.json({
     message: "✅ Файл успешно загружен",
-    fileUrl: `${base}/uploads/${f.filename}`, 
-    fileName: f.originalname,
+    fileUrl: `${base}/uploads/${f.filename}`,
+    fileName: safeName,
     fileSize: f.size,
     fileType: f.mimetype,
+    type: guessedType,
   });
 };

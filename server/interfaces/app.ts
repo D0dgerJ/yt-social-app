@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { fixLatin1ToUtf8, encodeRFC5987, asciiFallback } from "../utils/encoding.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -22,26 +24,31 @@ try {
   await import("../cron/storyCleaner.ts");
 
   app = express();
-  
-  app.set('trust proxy', true);
+
+  app.set("trust proxy", true);
 
   app.use(
     "/uploads",
     express.static(path.resolve(__dirname, "../uploads"), {
       setHeaders: (res, filePath) => {
-        const fileName = path.basename(filePath);
-        const ext = path.extname(fileName).toLowerCase();
-        const type = mime.lookup(filePath) || "";
+        const storedName = path.basename(filePath); 
+        const fixedName = fixLatin1ToUtf8(storedName); 
+        const fallbackName = asciiFallback(fixedName);
+        const encodedName = encodeRFC5987(fixedName);
 
+        const extMime = (mime.default || mime).lookup(filePath) || ""; 
         const isMedia =
-          typeof type === "string" &&
-          (type.startsWith("image/") || type.startsWith("video/") || type.startsWith("audio/"));
+          typeof extMime === "string" &&
+          (extMime.startsWith("image/") ||
+            extMime.startsWith("video/") ||
+            extMime.startsWith("audio/"));
 
-        if (isMedia) {
-          res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(fileName)}"`);
-        } else {
-          res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileName)}"`);
-        }
+        const dispositionType = isMedia ? "inline" : "attachment";
+
+        res.setHeader(
+          "Content-Disposition",
+          `${dispositionType}; filename="${fallbackName}"; filename*=UTF-8''${encodedName}`
+        );
 
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
 
@@ -49,11 +56,13 @@ try {
       },
     })
   );
+
   app.use(
     helmet({
       crossOriginResourcePolicy: false,
     })
   );
+
   app.use(morgan("dev"));
   app.use(
     cors({
@@ -63,6 +72,7 @@ try {
     })
   );
   app.use(compression());
+
   app.use(express.json({ limit: "2mb" }));
 
   app.use("/api/v1", routes);

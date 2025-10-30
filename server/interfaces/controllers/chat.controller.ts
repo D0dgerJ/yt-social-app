@@ -40,6 +40,7 @@ export const send = async (req: Request, res: Response) => {
   try {
     const senderId = req.user!.id;
     const conversationId = Number(req.params.chatId);
+
     if (!Number.isFinite(conversationId)) {
       res.status(400).json({ message: "Некорректный chatId" });
       return;
@@ -54,7 +55,7 @@ export const send = async (req: Request, res: Response) => {
       stickerUrl,
       repliedToId,
       clientMessageId,
-      attachments,      
+      attachments,
     } = req.body;
 
     const message = await sendMessage({
@@ -68,9 +69,8 @@ export const send = async (req: Request, res: Response) => {
       stickerUrl,
       repliedToId,
       clientMessageId,
-      attachments, 
+      attachments,
     });
-
     res.status(201).json(message);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -83,7 +83,9 @@ export const update = async (req: Request, res: Response) => {
 
     const conversationId = Number(req.params.chatId);
     const messageIdParam = req.params.messageId;
-    const messageId = Number.isFinite(Number(messageIdParam)) ? Number(messageIdParam) : undefined;
+    const messageId = Number.isFinite(Number(messageIdParam))
+      ? Number(messageIdParam)
+      : undefined;
 
     const {
       content,
@@ -97,7 +99,12 @@ export const update = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!messageId && !clientMessageId) {
-      res.status(400).json({ message: "Нужно указать messageId (в URL) или clientMessageId (в body)" });
+      res
+        .status(400)
+        .json({
+          message:
+            "Нужно указать messageId (в URL) или clientMessageId (в body)",
+        });
       return;
     }
     if (!Number.isFinite(conversationId)) {
@@ -108,7 +115,7 @@ export const update = async (req: Request, res: Response) => {
     const message = await updateMessage({
       messageId,
       clientMessageId,
-      conversationId,      
+      conversationId,
       userId,
       encryptedContent: content,
       mediaUrl,
@@ -130,6 +137,7 @@ export const remove = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const conversationId = Number(req.params.chatId);
     const messageId = Number(req.params.messageId);
+
     if (!Number.isFinite(conversationId) || !Number.isFinite(messageId)) {
       res.status(400).json({ message: "Некорректные параметры" });
       return;
@@ -148,13 +156,25 @@ export const leave = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const conversationId = Number(req.params.chatId);
+
     if (!Number.isFinite(conversationId)) {
       res.status(400).json({ message: "Некорректный chatId" });
       return;
     }
 
-    const { conversationDeleted } = await leaveConversation({ conversationId, userId, requestedById: userId });
-    res.status(200).json({ message: conversationDeleted ? "Conversation deleted" : "Left the conversation" });
+    const { conversationDeleted } = await leaveConversation({
+      conversationId,
+      userId,
+      requestedById: userId,
+    });
+
+    res
+      .status(200)
+      .json({
+        message: conversationDeleted
+          ? "Conversation deleted"
+          : "Left the conversation",
+      });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -164,20 +184,31 @@ export const add = async (req: Request, res: Response) => {
   try {
     const addedById = req.user!.id;
     const conversationId = Number(req.params.chatId);
+
     if (!Number.isFinite(conversationId)) {
       res.status(400).json({ message: "Некорректный chatId" });
       return;
     }
+
     const { userId, role } = req.body;
 
-    const participant = await addParticipant({ conversationId, userId, addedById, role });
+    const participant = await addParticipant({
+      conversationId,
+      userId,
+      addedById,
+      role,
+    });
+
     res.status(201).json(participant);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-export const getConversationMessages = async (req: Request, res: Response) => {
+export const getConversationMessages = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const conversationId = Number(req.params.chatId);
     const userId = req.user!.id;
@@ -187,9 +218,13 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       return;
     }
 
-    const cursorId  = req.query.cursorId ? Number(req.query.cursorId) : null;
-    const direction = (req.query.direction === "forward" ? "forward" : "backward") as "forward" | "backward";
-    const limit     = req.query.limit ? Math.max(1, Math.min(100, Number(req.query.limit))) : 20;
+    const cursorId = req.query.cursorId ? Number(req.query.cursorId) : null;
+    const direction = (req.query.direction === "forward"
+      ? "forward"
+      : "backward") as "forward" | "backward";
+    const limit = req.query.limit
+      ? Math.max(1, Math.min(100, Number(req.query.limit)))
+      : 20;
 
     const result = await getMsgsUC({
       conversationId,
@@ -199,10 +234,11 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       limit,
       markDelivered: true,
     });
-
     res.status(200).json(result);
   } catch (error: any) {
-    res.status(500).json({ message: error.message || "Ошибка сервера" });
+    res
+      .status(500)
+      .json({ message: error.message || "Ошибка сервера" });
   }
 };
 
@@ -210,12 +246,17 @@ export const markAsDelivered = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const conversationId = Number(req.params.chatId);
+
     if (!Number.isFinite(conversationId)) {
       res.status(400).json({ message: "Некорректный chatId" });
       return;
     }
 
-    const { updated } = await markMessagesAsDelivered({ conversationId, userId });
+    const { updated } = await markMessagesAsDelivered({
+      conversationId,
+      userId,
+    });
+
     res.status(200).json({ updatedMessages: updated });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -226,12 +267,17 @@ export const markAsRead = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const conversationId = Number(req.params.chatId);
+
     if (!Number.isFinite(conversationId)) {
       res.status(400).json({ message: "Некорректный chatId" });
       return;
     }
 
-    const { updated } = await markMessagesAsRead({ conversationId, userId });
+    const { updated } = await markMessagesAsRead({
+      conversationId,
+      userId,
+    });
+
     res.status(200).json({ updatedMessages: updated });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -249,7 +295,11 @@ export const reactToMessage = async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await addOrUpdateReaction({ userId, messageId, emoji });
+    const result = await addOrUpdateReaction({
+      userId,
+      messageId,
+      emoji,
+    });
 
     res.status(200).json({ reaction: result });
   } catch (error: any) {
@@ -260,13 +310,17 @@ export const reactToMessage = async (req: Request, res: Response) => {
 export const getReactions = async (req: Request, res: Response) => {
   try {
     const messageId = Number(req.params.messageId);
+
     if (!Number.isFinite(messageId)) {
       res.status(400).json({ message: "Некорректный messageId" });
       return;
     }
 
     const userId = req.user!.id;
-    const reactions = await getMessageReactions({ messageId, userId });
+    const reactions = await getMessageReactions({
+      messageId,
+      userId,
+    });
 
     res.status(200).json({ reactions });
   } catch (error: any) {

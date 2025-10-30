@@ -77,15 +77,32 @@ const MediaGrid: React.FC<{
   onOpen?: (url: string) => void;
 }> = ({ items, onOpen }) => {
   if (!items?.length) return null;
+
   const count = Math.min(items.length, 10);
   const subset = items.slice(0, count);
   const extraCount = items.length - count;
   const cols = count <= 3 ? count : count <= 6 ? 3 : 4;
 
-  const onKeyOpen = (e: React.KeyboardEvent, url: string) => {
+  const handleDownload = (fileUrl: string, fileName?: string | null) => {
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    if (fileName && fileName.trim()) {
+      a.download = fileName;
+    }
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const onKeyOpen = (
+    e: React.KeyboardEvent,
+    url: string,
+    fileName?: string | null
+  ) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onOpen?.(url);
+      handleDownload(url, fileName);
     }
   };
 
@@ -95,21 +112,24 @@ const MediaGrid: React.FC<{
         const isImage = m.type === 'image' || m.type === 'gif' || isImageByExt(m.url);
         const isVideo = m.type === 'video';
         const isAudio = m.type === 'audio';
-        const isFile = m.type === 'file';
+        const isFile  = m.type === 'file';
 
         return (
-          <div key={m.id ?? `${m.url}-${idx}`} className="message-media-grid__cell">
+          <div
+            key={m.id ?? `${m.url}-${idx}`}
+            className="message-media-grid__cell"
+          >
             {isImage && (
               <>
                 <img
                   className="message-media-grid__img"
                   src={m.url}
-                  alt="attachment"
+                  alt={m.originalName || 'attachment'}
                   loading="lazy"
-                  onClick={() => onOpen?.(m.url)} 
+                  onClick={() => onOpen?.(m.url)}
                   tabIndex={0}
                   role="button"
-                  onKeyDown={(e) => onKeyOpen(e, m.url)}
+                  onKeyDown={(e) => onKeyOpen(e, m.url, m.originalName)}
                 />
                 {idx === count - 1 && extraCount > 0 && (
                   <div className="message-media-grid__more">+{extraCount}</div>
@@ -123,7 +143,7 @@ const MediaGrid: React.FC<{
                 src={m.url}
                 controls
                 preload="metadata"
-                onDoubleClick={() => onOpen?.(m.url)} 
+                onDoubleClick={() => onOpen?.(m.url)}
               />
             )}
 
@@ -137,16 +157,18 @@ const MediaGrid: React.FC<{
             )}
 
             {isFile && (
-              <a
+              <button
+                type="button"
                 className="message-media-grid__file"
-                href={m.url}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => {
-                }}
+                onClick={() => handleDownload(m.url, m.originalName || undefined)}
+                onKeyDown={(e) => onKeyOpen(e, m.url, m.originalName)}
+                title={m.originalName || 'Файл'}
               >
-                <FileIcon nameOrUrl={m.url} />
-              </a>
+                <FileIcon nameOrUrl={m.originalName || m.url} />
+                <span className="message-file__name">
+                  {m.originalName || 'Файл'}
+                </span>
+              </button>
             )}
           </div>
         );
@@ -437,7 +459,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (
         <a
           className="message-file"
-          href={`/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}`}
+          href={mediaUrl}
           download={fileName ?? undefined}
         >
           <FileIcon nameOrUrl={fileName || mediaUrl} />

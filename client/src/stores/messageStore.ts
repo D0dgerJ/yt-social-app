@@ -15,7 +15,11 @@ export interface Reaction {
   userId: number;
 }
 
-export type UserLite = { id: number; username?: string; profilePicture?: string | null };
+export type UserLite = {
+  id: number;
+  username?: string;
+  profilePicture?: string | null;
+};
 
 export interface GroupedReaction {
   emoji: string;
@@ -28,6 +32,10 @@ export interface MediaFileLite {
   url: string;
   type: Exclude<MediaType, 'text' | 'sticker' | null>;
   uploadedAt: string; // ISO
+
+  originalName?: string | null;
+  mime?: string | null;
+  size?: number | null;
 }
 
 export type RepliedToLite = {
@@ -71,9 +79,9 @@ export interface Message {
   localStatus?: 'sending' | 'sent' | 'failed';
 
   createdAt: string;
-  updatedAt?: string | null; 
-  editedAt?: string | null;   
-  deletedAt?: string | null;  
+  updatedAt?: string | null;
+  editedAt?: string | null;
+  deletedAt?: string | null;
 
   reactions?: Reaction[];
   groupedReactions?: GroupedReaction[];
@@ -100,14 +108,24 @@ const sortByCreatedAtAsc = (arr: Message[]) =>
 const upsertWithDedupe = (list: Message[], incoming: Message): Message[] => {
   const byId = incoming.id != null ? list.findIndex((m) => m.id === incoming.id) : -1;
   const byClient =
-    incoming.clientMessageId ? list.findIndex((m) => m.clientMessageId === incoming.clientMessageId) : -1;
+    incoming.clientMessageId != null
+      ? list.findIndex((m) => m.clientMessageId === incoming.clientMessageId)
+      : -1;
 
   const idx = byId !== -1 ? byId : byClient;
+
   if (idx >= 0) {
     const next = [...list];
-    next[idx] = { ...next[idx], ...incoming };
+
+    next[idx] = {
+      ...next[idx],
+      ...incoming,
+      localStatus: incoming.localStatus ?? next[idx].localStatus,
+    };
+
     return sortByCreatedAtAsc(next);
   }
+
   return sortByCreatedAtAsc([...list, incoming]);
 };
 
@@ -117,8 +135,15 @@ const mergeUnique = (a: Message[], b: Message[]): Message[] => {
     const i = out.findIndex(
       (x) => x.id === m.id || (!!m.clientMessageId && x.clientMessageId === m.clientMessageId),
     );
-    if (i >= 0) out[i] = { ...out[i], ...m };
-    else out.push(m);
+    if (i >= 0) {
+      out[i] = {
+        ...out[i],
+        ...m,
+        localStatus: m.localStatus ?? out[i].localStatus,
+      };
+    } else {
+      out.push(m);
+    }
   };
   a.forEach(push);
   b.forEach(push);
@@ -129,18 +154,24 @@ type MessageMap = Record<number, Message[]>;
 
 interface MessageState {
   byConv: MessageMap;
+
   activeConversationId: number | null;
-  messages: Message[]; 
+  messages: Message[];
 
   handled: Set<string>;
   isHandled: (clientMessageId?: string | null) => boolean;
   markHandled: (clientMessageId?: string | null) => void;
 
   setActiveConversation: (conversationId: number | null) => void;
+
   setMessages: (msgs: Message[]) => void;
+
   addMessage: (msg: Message) => void;
+
   loadHistory: (conversationId: number, older: Message[], prepend?: boolean) => void;
+
   replaceOptimistic: (clientId: string, serverMsg: Message) => void;
+
   markStatus: (
     conversationId: number,
     idOrClientId: number | string,
@@ -150,6 +181,7 @@ interface MessageState {
   updateMessage: (patch: Partial<Message> & { id?: number; clientMessageId?: string | null }) => void;
 
   removeMessage: (id: number) => void;
+
   clearMessages: () => void;
 
   updateMessageReactions: (
@@ -204,7 +236,9 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       if (convId == null) {
         return { activeConversationId: null, messages: [] };
       }
+
       const sorted = sortByCreatedAtAsc([...msgs]);
+
       return {
         activeConversationId: convId,
         byConv: { ...state.byConv, [convId]: sorted },
@@ -227,7 +261,9 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   loadHistory: (conversationId, older, prepend = true) =>
     set((state) => {
       const current = state.byConv[conversationId] ?? [];
+
       const merged = prepend ? mergeUnique(older, current) : mergeUnique(current, older);
+
       return {
         byConv: { ...state.byConv, [conversationId]: merged },
         messages: state.activeConversationId === conversationId ? [...merged] : state.messages,
@@ -238,14 +274,23 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     set((state) => {
       const list = state.byConv[serverMsg.conversationId] ?? [];
       const idx = list.findIndex((m) => m.clientMessageId === clientId);
+
       let nextList: Message[];
 
       if (idx >= 0) {
         const preservedClientId = list[idx].clientMessageId ?? clientId;
         nextList = [...list];
-        nextList[idx] = { ...serverMsg, clientMessageId: preservedClientId, localStatus: 'sent' };
+        nextList[idx] = {
+          ...serverMsg,
+          clientMessageId: preservedClientId,
+          localStatus: 'sent',
+        };
       } else {
-        nextList = upsertWithDedupe(list, { ...serverMsg, clientMessageId: clientId, localStatus: 'sent' });
+        nextList = upsertWithDedupe(list, {
+          ...serverMsg,
+          clientMessageId: clientId,
+          localStatus: 'sent',
+        });
       }
 
       return {
@@ -257,15 +302,16 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   markStatus: (conversationId, idOrClientId, patch) =>
     set((state) => {
       const list = state.byConv[conversationId] ?? [];
-      const idx = list.findIndex(
-        (m) =>
-          (typeof idOrClientId === 'string'
-            ? m.clientMessageId === idOrClientId
-            : m.id === idOrClientId),
+      const idx = list.findIndex((m) =>
+        typeof idOrClientId === 'string'
+          ? m.clientMessageId === idOrClientId
+          : m.id === idOrClientId,
       );
       if (idx < 0) return state;
+
       const next = [...list];
       next[idx] = { ...next[idx], ...patch };
+
       return {
         byConv: { ...state.byConv, [conversationId]: next },
         messages: state.activeConversationId === conversationId ? [...next] : state.messages,
@@ -282,8 +328,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             state.byConv[cid]?.some(
               (m) =>
                 (patch.id != null && m.id === patch.id) ||
-                (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
-            )
+                (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId),
+            ),
           ) ??
         state.activeConversationId;
 
@@ -293,12 +339,13 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const idx = list.findIndex(
         (m) =>
           (patch.id != null && m.id === patch.id) ||
-          (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId)
+          (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId),
       );
       if (idx < 0) return state;
 
       const next = [...list];
       next[idx] = { ...next[idx], ...patch };
+
       const sorted = sortByCreatedAtAsc(next);
 
       return {
@@ -335,6 +382,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       const next = [...list];
       const msg = { ...next[idx] };
+
       msg.groupedReactions = Array.isArray(grouped)
         ? grouped.map((g) => ({
             emoji: g.emoji,
@@ -368,6 +416,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       const old = Array.isArray(msg.reactions) ? [...msg.reactions] : [];
       const oldIdx = old.findIndex((r) => r.emoji === emoji && r.userId === userId);
+
       const shouldAddOld = typeof toggledOn === 'boolean' ? toggledOn : oldIdx < 0;
       if (shouldAddOld) {
         if (oldIdx < 0) old.push({ emoji, userId });
@@ -378,6 +427,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       const grouped = Array.isArray(msg.groupedReactions) ? [...msg.groupedReactions] : [];
       const gi = grouped.findIndex((g) => g.emoji === emoji);
+
       const ensureUser = (arr: UserLite[]) =>
         arr.some((u) => u.id === userId) ? arr : [...arr, { id: userId }];
 

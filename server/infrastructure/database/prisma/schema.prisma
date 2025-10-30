@@ -298,9 +298,14 @@ model Report {
 }
 
 model MediaFile {
-  id         Int      @id @default(autoincrement())
-  url        String
-  type       String // image, video, audio, file, sticker, gif
+  id   Int    @id @default(autoincrement())
+  url  String
+  type String // image, video, audio, file, sticker, gif
+
+  originalName String?
+  mime         String? // например "application/pdf" или "image/png"
+  size         Int?
+
   uploaderId Int
   uploadedAt DateTime @default(now())
 
