@@ -6,9 +6,18 @@ import { assertAllowed } from "@/utils/fileGuards";
 interface FilePickerProps {
   onSelect: (files: File[]) => void;
   title?: string;
+  disabled?: boolean;
+  maxFiles?: number; 
+  existingCount?: number;
 }
 
-const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикрепить файл" }) => {
+const FilePicker: React.FC<FilePickerProps> = ({
+  onSelect,
+  title = "Прикрепить файл",
+  disabled = false,
+  maxFiles = 10,
+  existingCount = 0,
+}) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const accept = useMemo(() => {
@@ -16,7 +25,9 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикре
     return Array.from(new Set(all.filter(Boolean))).join(",");
   }, []);
 
-  const handleClick = () => inputRef.current?.click();
+  const handleClick = () => {
+    if (!disabled) inputRef.current?.click();
+  };
 
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const fl = e.currentTarget.files;
@@ -25,7 +36,10 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикре
     const accepted: File[] = [];
     const issues: string[] = [];
 
-    Array.from(fl).forEach((f) => {
+    const remainingSlots = Math.max(0, maxFiles - existingCount);
+    const limitedFiles = Array.from(fl).slice(0, remainingSlots);
+
+    limitedFiles.forEach((f) => {
       const res = assertAllowed(f);
       if (!res.ok) {
         issues.push(`${f.name}: ${res.reason}`);
@@ -37,6 +51,7 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикре
     if (issues.length) {
       alert(issues.join("\n"));
     }
+
     if (accepted.length) {
       onSelect(accepted);
     }
@@ -44,14 +59,23 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикре
     e.currentTarget.value = "";
   };
 
+  const overLimit = existingCount >= maxFiles;
+
   return (
     <>
       <button
         type="button"
         onClick={handleClick}
-        className="file-picker-button"
-        title={title}
+        className={`file-picker-button ${disabled || overLimit ? "disabled" : ""}`}
+        title={
+          disabled
+            ? "Недоступно"
+            : overLimit
+            ? `Можно прикрепить не более ${maxFiles} файлов`
+            : title
+        }
         aria-label={title}
+        disabled={disabled || overLimit}
       >
         <Paperclip size={20} />
       </button>
@@ -62,6 +86,7 @@ const FilePicker: React.FC<FilePickerProps> = ({ onSelect, title = "Прикре
         multiple
         onChange={handleChange}
         accept={accept}
+        disabled={disabled || overLimit}
       />
     </>
   );

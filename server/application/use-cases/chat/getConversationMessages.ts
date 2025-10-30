@@ -57,16 +57,25 @@ export const getConversationMessages = async ({
             encryptedContent: true,
             mediaUrl: true,
             mediaType: true,
-            fileName: true,    
+            fileName: true,
             senderId: true,
             isDeleted: true,
-            sender: {            
+            sender: {
               select: { id: true, username: true, profilePicture: true },
             },
           },
         },
         mediaFiles: {
-          select: { id: true, url: true, type: true, uploadedAt: true },
+          select: {
+            id: true,
+            url: true,
+            type: true,
+            uploadedAt: true,
+
+            originalName: true,
+            mime: true,
+            size: true,
+          },
         },
       },
     });
@@ -95,7 +104,10 @@ export const getConversationMessages = async ({
 
     const groupedByMessage: Record<
       number,
-      { emoji: string; users: { id: number; username?: string; profilePicture?: string | null }[] }[]
+      {
+        emoji: string;
+        users: { id: number; username?: string; profilePicture?: string | null }[];
+      }[]
     > = {};
 
     for (const r of allReactions) {
@@ -115,7 +127,11 @@ export const getConversationMessages = async ({
         groupedReactions: grouped.map((g) => ({
           emoji: g.emoji,
           count: g.users.length,
-          users: g.users.map((u) => ({ id: u.id, username: u.username, profilePicture: u.profilePicture })),
+          users: g.users.map((u) => ({
+            id: u.id,
+            username: u.username,
+            profilePicture: u.profilePicture,
+          })),
         })),
         myReactions: grouped
           .filter((g) => g.users.some((u) => u.id === userId))
@@ -148,7 +164,9 @@ export const getConversationMessages = async ({
         where: { userId, messageId: { in: messageIds } },
         select: { messageId: true, status: true },
       });
-      const existingSet = new Map(existingDeliveries.map((d) => [d.messageId, d.status]));
+      const existingSet = new Map(
+        existingDeliveries.map((d) => [d.messageId, d.status]),
+      );
 
       const toInsert = messageIds.filter((mid) => !existingSet.has(mid));
       if (toInsert.length > 0) {
@@ -163,10 +181,16 @@ export const getConversationMessages = async ({
         });
       }
 
-      const toUpdate = messageIds.filter((mid) => existingSet.get(mid) === "sent");
+      const toUpdate = messageIds.filter(
+        (mid) => existingSet.get(mid) === "sent",
+      );
       if (toUpdate.length > 0) {
         await prisma.messageDelivery.updateMany({
-          where: { userId, messageId: { in: toUpdate }, status: "sent" },
+          where: {
+            userId,
+            messageId: { in: toUpdate },
+            status: "sent",
+          },
           data: { status: "delivered", timestamp: now },
         });
       }

@@ -44,7 +44,9 @@ export function useSendMessage() {
 
   const { socket } = useSocket();
 
-  const uploadedCacheRef = useRef<Map<string, { urls: Array<{ url: string; mime: string; name?: string }> }>>(new Map());
+  const uploadedCacheRef = useRef<
+    Map<string, { urls: Array<{ url: string; mime: string; name?: string; size?: number }> }>
+  >(new Map());
 
   const send = useCallback(
     async (opts: SendOptions) => {
@@ -76,6 +78,9 @@ export function useSendMessage() {
                 url: URL.createObjectURL(f),
                 type: mapMimeToType(f.type),
                 uploadedAt: createdAt,
+                originalName: f.name,
+                mime: f.type || null,
+                size: typeof f.size === 'number' ? f.size : null,
               }))
             : [];
 
@@ -108,7 +113,11 @@ export function useSendMessage() {
           editedAt: null as any,
           deletedAt: null as any,
           groupedReactions: [],
-          sender: { id: me.id, username: (me as any).username, profilePicture: (me as any).profilePicture ?? null },
+          sender: {
+            id: me.id,
+            username: (me as any).username,
+            profilePicture: (me as any).profilePicture ?? null,
+          },
         };
 
         addMessage(optimistic);
@@ -120,7 +129,10 @@ export function useSendMessage() {
           console.log('[DEBUG FINALIZE]', serverMsg);
           if (acked) return;
           acked = true;
-          replaceOptimistic(clientMessageId, { ...(serverMsg as any), localStatus: 'sent' });
+          replaceOptimistic(clientMessageId, {
+            ...(serverMsg as any),
+            localStatus: 'sent',
+          });
           if (failTimer) {
             clearTimeout(failTimer);
             failTimer = null;
@@ -134,11 +146,13 @@ export function useSendMessage() {
         }, ACK_TIMEOUT_MS);
 
         const uploadChunk = async () => {
-          if (chunk.length === 0) return { urls: [] as Array<{ url: string; mime: string; name?: string }> };
+          if (chunk.length === 0) {
+            return { urls: [] as Array<{ url: string; mime: string; name?: string; size?: number }> };
+          }
           const key = `${clientMessageId}-c${chunkIndex}`;
           const cached = uploadedCacheRef.current.get(key);
           if (cached) return cached;
-          const res = await uploadFiles(chunk);
+          const res = await uploadFiles(chunk); 
           uploadedCacheRef.current.set(key, res);
           return res;
         };
@@ -172,16 +186,13 @@ export function useSendMessage() {
                 url: u.url,
                 mime: u.mime || chunk[i]?.type || 'application/octet-stream',
                 name: u.name || chunk[i]?.name || `file-${i + 1}`,
+                size: u.size ?? chunk[i]?.size ?? undefined,
                 type: mapMimeToType(u.mime || chunk[i]?.type),
               }));
             }
 
             (['message:send', 'sendMessage'] as const).forEach((ev) => {
-              console.log(
-                '[DEBUG attachments]',
-                body.attachments?.length,
-                body.attachments
-              );
+              console.log('[DEBUG attachments]', body.attachments?.length, body.attachments);
               socket.emit(ev, body, (resp?: any) => {
                 if (resp?.status === 'ok' && resp.message?.clientMessageId === clientMessageId) {
                   socket.off('message:ack', complete);
@@ -211,6 +222,7 @@ export function useSendMessage() {
               url: u.url,
               mime: u.mime || chunk[i]?.type || 'application/octet-stream',
               name: u.name || chunk[i]?.name || `file-${i + 1}`,
+              size: u.size ?? chunk[i]?.size ?? undefined,
               type: mapMimeToType(u.mime || chunk[i]?.type),
             }));
 
@@ -225,6 +237,7 @@ export function useSendMessage() {
 
             const serverMessage = await sendMessageREST(conversationId, body);
             console.log('[DEBUG REST]', serverMessage);
+
             if (serverMessage?.id) {
               finalizeOk(serverMessage);
             } else {
