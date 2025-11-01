@@ -11,7 +11,9 @@ function getBaseUrl(req: Request) {
   return `${proto}://${host}`;
 }
 
-function detectMediaType(mime: string | undefined | null): "image" | "video" | "audio" | "gif" | "file" {
+function detectMediaType(
+  mime: string | undefined | null
+): "image" | "video" | "audio" | "gif" | "file" {
   if (!mime) return "file";
   const m = mime.toLowerCase();
 
@@ -23,7 +25,10 @@ function detectMediaType(mime: string | undefined | null): "image" | "video" | "
   return "file";
 }
 
-export const handleUpload = async (req: Request, res: Response): Promise<void> => {
+export const handleUpload = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const multi = (req.files as Record<string, Express.Multer.File[]>) || {};
   const list: Express.Multer.File[] = [
     ...(Array.isArray(multi.files) ? multi.files : []),
@@ -40,15 +45,15 @@ export const handleUpload = async (req: Request, res: Response): Promise<void> =
     const base = getBaseUrl(req);
 
     const results = list.map((f) => {
-      const safeName = fixLatin1ToUtf8(f.originalname);
+      const fixedName = fixLatin1ToUtf8(f.originalname);
       const guessedType = detectMediaType(f.mimetype);
 
       return {
         url: `${base}/uploads/${f.filename}`, 
-        name: safeName,               
-        mime: f.mimetype,              
-        size: f.size,                    
-        type: guessedType,         
+        originalName: fixedName,    
+        mime: f.mimetype,
+        size: f.size,
+        type: guessedType,      
       };
     });
 
@@ -59,7 +64,10 @@ export const handleUpload = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-export const handleFileUpload = async (req: Request, res: Response): Promise<void> => {
+export const handleFileUpload = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const f = req.file;
   if (!f) {
     res.status(400).json({ error: "Файл не загружен" });
@@ -67,15 +75,15 @@ export const handleFileUpload = async (req: Request, res: Response): Promise<voi
   }
 
   const base = getBaseUrl(req);
-  const safeName = fixLatin1ToUtf8(f.originalname);
+  const fixedName = fixLatin1ToUtf8(f.originalname);
   const guessedType = detectMediaType(f.mimetype);
 
   res.json({
     message: "✅ Файл успешно загружен",
-    fileUrl: `${base}/uploads/${f.filename}`,
-    fileName: safeName,
-    fileSize: f.size,
-    fileType: f.mimetype,
+    url: `${base}/uploads/${f.filename}`, 
+    originalName: fixedName,   
+    mime: f.mimetype,
+    size: f.size,
     type: guessedType,
   });
 };

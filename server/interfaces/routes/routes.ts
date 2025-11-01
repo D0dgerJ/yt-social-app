@@ -23,7 +23,9 @@ router.use("/notifications", notificationRoutes);
 router.use("/chat", chatRoutes);
 
 router.use("/upload", authMiddleware, uploadRoutes);
-router.use("/download", authMiddleware, downloadRoutes);
+
+router.use("/download", downloadRoutes);
+
 router.use(mediaRoutes);
 
 export default router;
