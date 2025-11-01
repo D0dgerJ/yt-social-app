@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { fixLatin1ToUtf8, encodeRFC5987, asciiFallback } from "../utils/encoding.js";
+import { fixLatin1ToUtf8, encodeRFC5987, asciiFallback } from "../utils/encoding.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

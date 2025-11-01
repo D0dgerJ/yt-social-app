@@ -55,7 +55,7 @@ interface MessageItemProps {
   repliedTo?: RepliedToLite | null;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ?? window.location.origin;
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function toAbsoluteUrl(url?: string | null): string {
   if (!url) return '';
@@ -67,6 +67,20 @@ function toAbsoluteUrl(url?: string | null): string {
     const rel = String(url).replace(/^\/+/, '');
     return `${base}/${rel}`;
   }
+}
+
+function buildDownloadUrl(fileUrlFromMessage: string): string {
+  let storedName = "";
+
+  try {
+    const u = new URL(fileUrlFromMessage);
+    storedName = u.pathname.split("/").pop() || "";
+  } catch {
+    storedName = fileUrlFromMessage.split("/").pop() || "";
+  }
+
+  const base = String(API_BASE).replace(/\/+$/, "");
+  return `${base}/api/v1/download/uploads/${storedName}`;
 }
 
 const isImageByExt = (url?: string) =>
@@ -83,13 +97,9 @@ const MediaGrid: React.FC<{
   const extraCount = items.length - count;
   const cols = count <= 3 ? count : count <= 6 ? 3 : 4;
 
-  const handleDownload = (fileUrl: string, fileName?: string | null) => {
+  const handleDownload = (fileUrl: string) => {
     const a = document.createElement('a');
-    a.href = fileUrl;
-    if (fileName && fileName.trim()) {
-      a.download = fileName;
-    }
-    a.target = '_blank';
+    a.href = buildDownloadUrl(fileUrl);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -98,11 +108,10 @@ const MediaGrid: React.FC<{
   const onKeyOpen = (
     e: React.KeyboardEvent,
     url: string,
-    fileName?: string | null
   ) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleDownload(url, fileName);
+      handleDownload(url);
     }
   };
 
@@ -129,7 +138,7 @@ const MediaGrid: React.FC<{
                   onClick={() => onOpen?.(m.url)}
                   tabIndex={0}
                   role="button"
-                  onKeyDown={(e) => onKeyOpen(e, m.url, m.originalName)}
+                  onKeyDown={(e) => onKeyOpen(e, m.url)}
                 />
                 {idx === count - 1 && extraCount > 0 && (
                   <div className="message-media-grid__more">+{extraCount}</div>
@@ -160,8 +169,9 @@ const MediaGrid: React.FC<{
               <button
                 type="button"
                 className="message-media-grid__file"
-                onClick={() => handleDownload(m.url, m.originalName || undefined)}
-                onKeyDown={(e) => onKeyOpen(e, m.url, m.originalName)}
+                // 👇 ИЗМЕНЕНО
+                onClick={() => handleDownload(m.url)}
+                onKeyDown={(e) => onKeyOpen(e, m.url)}
                 title={m.originalName || 'Файл'}
               >
                 <FileIcon nameOrUrl={m.originalName || m.url} />
@@ -211,7 +221,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   onEdit,
   onDelete,
   onReactToggle,
-  onOpenAttachment,      
+  onOpenAttachment,
 
   resolveName,
 
@@ -365,6 +375,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
     }
   }, [repliedToId]);
 
+  const singleFileDownloadHref = useMemo(() => {
+    if (!mediaUrl || mediaType !== 'file') return undefined;
+    return buildDownloadUrl(mediaUrl);
+  }, [mediaUrl, mediaType]);
+
   return (
     <div
       className={`message-item ${isOwnMessage ? 'own' : ''}`}
@@ -453,14 +468,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
           onDoubleClick={() => onOpenAttachment?.(normalizedMediaUrl)} 
         />
       )}
+
       {!mediaFiles?.length && mediaType === 'audio' && mediaUrl && (
         <audio className="message-audio" src={normalizedMediaUrl} controls preload="metadata" />
       )}
+
       {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (
         <a
           className="message-file"
-          href={mediaUrl}
-          download={fileName ?? undefined}
+          href={singleFileDownloadHref}
         >
           <FileIcon nameOrUrl={fileName || mediaUrl} />
           <span className="message-file__name">
@@ -468,6 +484,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
           </span>
         </a>
       )}
+
       {!mediaFiles?.length && mediaType === 'sticker' && stickerUrl && (
         <img src={toAbsoluteUrl(stickerUrl)} alt="sticker" className="message-image" />
       )}

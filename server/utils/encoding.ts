@@ -1,21 +1,30 @@
-export function fixLatin1ToUtf8(s: string) {
+export function fixLatin1ToUtf8(input: string): string {
+  if (!input) return "";
+
   try {
-    const buf = Buffer.from(s, 'binary');
-    const recon = Buffer.from(buf.toString('utf8'), 'utf8').toString();
-    const badSeq = /Ã.|Â.|Ð.|Ñ.|Ð|Ñ/g;
-    return badSeq.test(recon) ? recon : s;
+    const buf = Buffer.from(input, "latin1");
+    const decoded = buf.toString("utf8");
+
+    const nonAsciiOriginal = (input.match(/[^\x00-\x7F]/g) || []).length;
+    const nonAsciiDecoded = (decoded.match(/[^\x00-\x7F]/g) || []).length;
+
+    if (nonAsciiDecoded > nonAsciiOriginal) {
+      return decoded;
+    }
+
+    return input;
   } catch {
-    return s;
+    return input;
   }
 }
 
-export function encodeRFC5987(str: string) {
+export function encodeRFC5987(str: string): string {
   return encodeURIComponent(str)
     .replace(/'/g, "%27")
     .replace(/\*/g, "%2A")
     .replace(/%20/g, "%20");
 }
 
-export function asciiFallback(str: string) {
+export function asciiFallback(str: string): string {
   return str.replace(/[^\x20-\x7E]/g, "_");
 }
