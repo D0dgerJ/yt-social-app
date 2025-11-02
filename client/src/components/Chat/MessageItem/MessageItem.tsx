@@ -115,6 +115,20 @@ const MediaGrid: React.FC<{
     }
   };
 
+  function formatFileSize(bytes?: number | null): string {
+    if (!bytes || bytes <= 0) return '';
+    const kb = bytes / 1024;
+    if (kb < 1024) {
+      return `${kb.toFixed(1)} KB`;
+    }
+    const mb = kb / 1024;
+    if (mb < 1024) {
+      return `${mb.toFixed(1)} MB`;
+    }
+    const gb = mb / 1024;
+    return `${gb.toFixed(1)} GB`;
+  }
+
   return (
     <div className={`message-media-grid message-media-grid--c${cols}`}>
       {subset.map((m, idx) => {
@@ -168,16 +182,26 @@ const MediaGrid: React.FC<{
             {isFile && (
               <button
                 type="button"
-                className="message-media-grid__file"
-                // 👇 ИЗМЕНЕНО
+                className={`chat-file-bubble chat-file-bubble--grid`}
                 onClick={() => handleDownload(m.url)}
                 onKeyDown={(e) => onKeyOpen(e, m.url)}
                 title={m.originalName || 'Файл'}
               >
-                <FileIcon nameOrUrl={m.originalName || m.url} />
-                <span className="message-file__name">
-                  {m.originalName || 'Файл'}
-                </span>
+                <div className="chat-file-bubble__icon">
+                  <div className="chat-file-bubble__icon-ext">
+                    { (m.originalName || m.url).split('.').pop()?.toUpperCase() || 'FILE' }
+                  </div>
+                </div>
+
+                <div className="chat-file-bubble__body">
+                  <div className="chat-file-bubble__name">
+                    {m.originalName || 'Файл'}
+                  </div>
+
+                  <div className="chat-file-bubble__meta">
+                    {formatFileSize(m.size) || 'Документ'}
+                  </div>
+                </div>
               </button>
             )}
           </div>
@@ -475,13 +499,26 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
       {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (
         <a
-          className="message-file"
+          className={`chat-file-bubble ${isOwnMessage ? 'chat-file-bubble--own' : ''}`}
           href={singleFileDownloadHref}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          <FileIcon nameOrUrl={fileName || mediaUrl} />
-          <span className="message-file__name">
-            {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
-          </span>
+          <div className="chat-file-bubble__icon">
+            <div className="chat-file-bubble__icon-ext">
+              {(fileName || mediaUrl).split('.').pop()?.toUpperCase() || 'FILE'}
+            </div>
+          </div>
+
+          <div className="chat-file-bubble__body">
+            <div className="chat-file-bubble__name">
+              {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
+            </div>
+
+            <div className="chat-file-bubble__meta">
+              Файл
+            </div>
+          </div>
         </a>
       )}
 
