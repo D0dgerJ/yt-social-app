@@ -1,5 +1,14 @@
-.msg-virtuoso-wrap { height: 100%; }
-.msg-virtuoso { height: 100%; }
+.msg-virtuoso-wrap {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.msg-virtuoso {
+  height: 100%;
+  min-height: 0;
+}
 
 .msg-separator {
   text-align: center;
@@ -16,8 +25,16 @@
   font-size: 13px;
   padding: 6px 0;
 }
-.msg-system__text { background: #f3f3f3; padding: 4px 8px; border-radius: 8px; }
-.msg-system__time { font-size: 11px; color: #999; align-self: center; }
+.msg-system__text {
+  background: #f3f3f3;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.msg-system__time {
+  font-size: 11px;
+  color: #999;
+  align-self: center;
+}
 
 .msg-loader-top {
   text-align: center;

@@ -1,5 +1,11 @@
-import React, { useMemo, useState, useCallback, useRef } from 'react';
-import { Virtuoso } from 'react-virtuoso';
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { Message } from '@/stores/messageStore';
 import { DateSeparator } from './DateSeparator';
 import { SystemMessage } from './SystemMessage';
@@ -16,9 +22,18 @@ type ListItem =
 function formatDateLabel(iso: string) {
   const d = new Date(iso);
   const today = new Date();
-  const dY = d.getFullYear(), dM = d.getMonth(), dD = d.getDate();
-  const tY = today.getFullYear(), tM = today.getMonth(), tD = today.getDate();
-  if (dY === tY && dM === tM && dD === tD) return 'Сегодня';
+
+  const dY = d.getFullYear(),
+    dM = d.getMonth(),
+    dD = d.getDate();
+  const tY = today.getFullYear(),
+    tM = today.getMonth(),
+    tD = today.getDate();
+
+  if (dY === tY && dM === tM && dD === tD) {
+    return 'Сегодня';
+  }
+
   const y = d.toLocaleDateString(undefined, { year: 'numeric' });
   const m = d.toLocaleDateString(undefined, { month: 'long' });
   const day = d.toLocaleDateString(undefined, { day: '2-digit' });
@@ -39,17 +54,33 @@ function withDateSeparators(messages: Message[]): ListItem[] {
     const dayKey = new Date(m.createdAt).toDateString();
     if (dayKey !== prevDate) {
       prevDate = dayKey;
-      out.push({ type: 'date', key: `date-${dayKey}`, label: formatDateLabel(m.createdAt) });
+      out.push({
+        type: 'date',
+        key: `date-${dayKey}`,
+        label: formatDateLabel(m.createdAt),
+      });
     }
 
     const isSystem = (m as any).kind === 'system';
     if (isSystem) {
-      out.push({ type: 'system', key: `sys-${m.id}`, text: m.content || '[system]', time: m.createdAt });
+      out.push({
+        type: 'system',
+        key: `sys-${m.id}`,
+        text: m.content || '[system]',
+        time: m.createdAt,
+      });
     } else {
-      const msgKey = m.clientMessageId ? `c-${m.clientMessageId}` : `s-${m.id}`;
-      out.push({ type: 'message', key: msgKey, data: m });
+      const msgKey = m.clientMessageId
+        ? `c-${m.clientMessageId}`
+        : `s-${m.id}`;
+      out.push({
+        type: 'message',
+        key: msgKey,
+        data: m,
+      });
     }
   }
+
   return out;
 }
 
@@ -91,7 +122,9 @@ const MessageList: React.FC<Props> = ({
 
   const resolveName = useCallback(
     (userId: number) => {
-      const p = participants.find((p) => (p?.user?.id ?? p?.id) === userId);
+      const p = participants.find(
+        (p) => (p?.user?.id ?? p?.id) === userId
+      );
       return (
         p?.user?.displayName ??
         p?.displayName ??
@@ -103,16 +136,49 @@ const MessageList: React.FC<Props> = ({
     [participants]
   );
 
-  const [menu, setMenu] = useState<{ x: number; y: number; m: Message } | null>(null);
-  const openContextMenu = useCallback((e: React.MouseEvent, m: Message) => {
-    e.preventDefault();
-    setMenu({ x: e.clientX, y: e.clientY, m });
-  }, []);
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    m: Message;
+  } | null>(null);
+
+  const openContextMenu = useCallback(
+    (e: React.MouseEvent, m: Message) => {
+      e.preventDefault();
+      setMenu({ x: e.clientX, y: e.clientY, m });
+    },
+    []
+  );
+
   const closeMenu = useCallback(() => setMenu(null), []);
 
   const handleStartReached = useCallback(() => {
-    if (!isLoadingOlder && hasMoreOlder) loadOlder();
+    if (!isLoadingOlder && hasMoreOlder) {
+      loadOlder();
+    }
   }, [isLoadingOlder, hasMoreOlder, loadOlder]);
+
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
+
+  const didInitialScrollRef = useRef<Record<number, boolean>>({});
+
+  useEffect(() => {
+    const convId = currentConversationId;
+    if (!convId) return;
+    if (!items.length) return;
+
+    if (didInitialScrollRef.current[convId]) return;
+
+    didInitialScrollRef.current[convId] = true;
+
+    const lastIndex = items.length - 1;
+
+    virtuosoRef.current?.scrollToIndex({
+      index: lastIndex,
+      align: 'end',
+      behavior: 'auto',
+    });
+  }, [items, currentConversationId]);
 
   const renderItem = useCallback(
     (_index: number, item: ListItem) => {
@@ -121,7 +187,12 @@ const MessageList: React.FC<Props> = ({
           return <DateSeparator label={item.label} />;
 
         case 'system':
-          return <SystemMessage text={item.text} time={item.time} />;
+          return (
+            <SystemMessage
+              text={item.text}
+              time={item.time}
+            />
+          );
 
         case 'message': {
           const m = item.data;
@@ -134,7 +205,11 @@ const MessageList: React.FC<Props> = ({
                 content={m.content || ''}
                 currentUserId={meId}
                 senderId={m.senderId}
-                senderUsername={(m as any).senderUsername ?? resolveName(m.senderId) ?? String(m.senderId)}
+                senderUsername={
+                  (m as any).senderUsername ??
+                  resolveName(m.senderId) ??
+                  String(m.senderId)
+                }
                 isOwnMessage={m.senderId === meId}
                 mediaType={m.mediaType as any}
                 mediaUrl={m.mediaUrl ?? undefined}
@@ -146,7 +221,7 @@ const MessageList: React.FC<Props> = ({
                 onEdit={() => onEdit?.(m)}
                 onDelete={() => onDelete?.(m)}
                 onReactToggle={(emoji) => onReact?.(m, emoji)}
-                onOpenAttachment={onOpenAttachment}  // ⬅ ПРОБРОС
+                onOpenAttachment={onOpenAttachment}
                 resolveName={resolveName}
                 repliedToId={m.repliedToId ?? null}
                 repliedTo={(m as any).repliedTo ?? null}
@@ -156,10 +231,17 @@ const MessageList: React.FC<Props> = ({
         }
       }
     },
-    [openContextMenu, meId, onReply, onEdit, onDelete, onReact, onOpenAttachment, resolveName]
+    [
+      openContextMenu,
+      meId,
+      onReply,
+      onEdit,
+      onDelete,
+      onReact,
+      onOpenAttachment,
+      resolveName,
+    ]
   );
-
-  const initialIndexRef = useRef(Math.max(0, items.length - 1));
 
   const components = useMemo(() => {
     const Header: React.FC = () => (
@@ -177,9 +259,9 @@ const MessageList: React.FC<Props> = ({
   return (
     <div className="msg-virtuoso-wrap">
       <Virtuoso<ListItem>
+        ref={virtuosoRef}
         data={items}
         className="msg-virtuoso"
-        initialTopMostItemIndex={initialIndexRef.current}
         atTopThreshold={80}
         startReached={handleStartReached}
         itemContent={renderItem}
@@ -193,12 +275,37 @@ const MessageList: React.FC<Props> = ({
           y={menu.y}
           onClose={closeMenu}
           items={[
-            { key: 'reply', label: 'Ответить', onClick: () => onReply?.(menu.m) },
-            { key: 'edit', label: 'Редактировать', onClick: () => onEdit?.(menu.m) },
-            { key: 'del', label: 'Удалить', onClick: () => onDelete?.(menu.m), danger: true },
-            { key: 'r1', label: '❤️ Реакция', onClick: () => onReact?.(menu.m, '❤️') },
-            { key: 'r2', label: '👍 Реакция', onClick: () => onReact?.(menu.m, '👍') },
-            { key: 'r3', label: '😂 Реакция', onClick: () => onReact?.(menu.m, '😂') },
+            {
+              key: 'reply',
+              label: 'Ответить',
+              onClick: () => onReply?.(menu.m),
+            },
+            {
+              key: 'edit',
+              label: 'Редактировать',
+              onClick: () => onEdit?.(menu.m),
+            },
+            {
+              key: 'del',
+              label: 'Удалить',
+              onClick: () => onDelete?.(menu.m),
+              danger: true,
+            },
+            {
+              key: 'r1',
+              label: '❤️ Реакция',
+              onClick: () => onReact?.(menu.m, '❤️'),
+            },
+            {
+              key: 'r2',
+              label: '👍 Реакция',
+              onClick: () => onReact?.(menu.m, '👍'),
+            },
+            {
+              key: 'r3',
+              label: '😂 Реакция',
+              onClick: () => onReact?.(menu.m, '😂'),
+            },
           ]}
         />
       )}

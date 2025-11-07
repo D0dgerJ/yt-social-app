@@ -26,6 +26,17 @@ async function encryptText(plain?: string): Promise<string | undefined> {
   return `b64:${btoa(unescape(encodeURIComponent(plain)))}`;
 }
 
+function decryptBase64Payload(enc?: string): string | undefined {
+  if (!enc) return undefined;
+  if (!enc.startsWith('b64:')) return enc;
+  const raw = enc.slice(4);
+  try {
+    return decodeURIComponent(escape(atob(raw)));
+  } catch {
+    return enc;
+  }
+}
+
 function mapMimeToType(mime?: string | null): Attachment['type'] {
   if (!mime) return 'file';
   const m = mime.toLowerCase();
@@ -125,14 +136,24 @@ export function useSendMessage() {
         let acked = false;
         let failTimer: ReturnType<typeof setTimeout> | null = null;
 
-        const finalizeOk = (serverMsg: any) => {
+        const finalizeOk = (serverMsg: any, fallbackPlainText?: string) => {
           console.log('[DEBUG FINALIZE]', serverMsg);
           if (acked) return;
           acked = true;
-          replaceOptimistic(clientMessageId, {
-            ...(serverMsg as any),
+
+          const decryptedText =
+            fallbackPlainText && fallbackPlainText.trim()
+              ? fallbackPlainText.trim()
+              : decryptBase64Payload(serverMsg?.encryptedContent);
+
+          const hydratedMsg = {
+            ...serverMsg,
+            content: decryptedText ?? serverMsg?.content ?? '',
             localStatus: 'sent',
-          });
+          };
+
+          replaceOptimistic(clientMessageId, hydratedMsg);
+
           if (failTimer) {
             clearTimeout(failTimer);
             failTimer = null;
@@ -152,7 +173,7 @@ export function useSendMessage() {
           const key = `${clientMessageId}-c${chunkIndex}`;
           const cached = uploadedCacheRef.current.get(key);
           if (cached) return cached;
-          const res = await uploadFiles(chunk); 
+          const res = await uploadFiles(chunk);
           uploadedCacheRef.current.set(key, res);
           return res;
         };
@@ -163,9 +184,11 @@ export function useSendMessage() {
           const complete = (serverMsg: any) => {
             const m = serverMsg?.message ?? serverMsg;
             if (m?.clientMessageId !== clientMessageId) return;
+
             socket.off('message:ack', complete);
             socket.off('receiveMessage', complete);
-            finalizeOk(m);
+
+            finalizeOk(m, chunkIndex === 0 ? trimmed : undefined);
           };
 
           socket.on('message:ack', complete);
@@ -194,10 +217,17 @@ export function useSendMessage() {
             (['message:send', 'sendMessage'] as const).forEach((ev) => {
               console.log('[DEBUG attachments]', body.attachments?.length, body.attachments);
               socket.emit(ev, body, (resp?: any) => {
-                if (resp?.status === 'ok' && resp.message?.clientMessageId === clientMessageId) {
+                if (
+                  resp?.status === 'ok' &&
+                  resp.message?.clientMessageId === clientMessageId
+                ) {
                   socket.off('message:ack', complete);
                   socket.off('receiveMessage', complete);
-                  finalizeOk(resp.message);
+
+                  finalizeOk(
+                    resp.message,
+                    chunkIndex === 0 ? trimmed : undefined
+                  );
                 }
               });
             });
@@ -216,7 +246,9 @@ export function useSendMessage() {
 
           if (!okBySocket && !acked) {
             const uploaded = await uploadChunk();
-            const encryptedContent = await encryptText(chunkIndex === 0 ? trimmed : undefined);
+            const encryptedContent = await encryptText(
+              chunkIndex === 0 ? trimmed : undefined
+            );
 
             const attachments: Attachment[] = uploaded.urls.map((u, i) => ({
               url: u.url,
@@ -239,7 +271,10 @@ export function useSendMessage() {
             console.log('[DEBUG REST]', serverMessage);
 
             if (serverMessage?.id) {
-              finalizeOk(serverMessage);
+              finalizeOk(
+                serverMessage,
+                chunkIndex === 0 ? trimmed : undefined
+              );
             } else {
               throw new Error('sendMessageREST returned no id');
             }

@@ -90,6 +90,47 @@ export interface Message {
   sender?: UserLite | null;
 }
 
+function mergePreserveDecrypted(
+  prev: Message | undefined,
+  nextPartial: Partial<Message>
+): Message {
+  const merged: Message = {
+    ...(prev || ({} as Message)),
+    ...nextPartial,
+  };
+
+  if (nextPartial.content && typeof nextPartial.content === 'string') {
+    merged.content = nextPartial.content;
+  } else if (prev?.content && !nextPartial.content) {
+    merged.content = prev.content;
+  }
+
+  if (nextPartial.repliedTo || prev?.repliedTo) {
+    const prevReply = prev?.repliedTo;
+    const nextReply = nextPartial.repliedTo;
+
+    if (nextReply || prevReply) {
+      const mergedReply: RepliedToLite = {
+        ...(prevReply || {}),
+        ...(nextReply || {}),
+      };
+
+      if (
+        nextReply?.content &&
+        typeof nextReply.content === 'string'
+      ) {
+        mergedReply.content = nextReply.content;
+      } else if (prevReply?.content && !nextReply?.content) {
+        mergedReply.content = prevReply.content;
+      }
+
+      merged.repliedTo = mergedReply;
+    }
+  }
+
+  return merged;
+}
+
 const sortByCreatedAtAsc = (arr: Message[]) =>
   arr.sort((a, b) => {
     const ta = Date.parse(a.createdAt) || 0;
@@ -106,7 +147,8 @@ const sortByCreatedAtAsc = (arr: Message[]) =>
   });
 
 const upsertWithDedupe = (list: Message[], incoming: Message): Message[] => {
-  const byId = incoming.id != null ? list.findIndex((m) => m.id === incoming.id) : -1;
+  const byId =
+    incoming.id != null ? list.findIndex((m) => m.id === incoming.id) : -1;
   const byClient =
     incoming.clientMessageId != null
       ? list.findIndex((m) => m.clientMessageId === incoming.clientMessageId)
@@ -117,36 +159,45 @@ const upsertWithDedupe = (list: Message[], incoming: Message): Message[] => {
   if (idx >= 0) {
     const next = [...list];
 
-    next[idx] = {
-      ...next[idx],
+    const prevMsg = next[idx];
+    const merged = mergePreserveDecrypted(prevMsg, {
       ...incoming,
-      localStatus: incoming.localStatus ?? next[idx].localStatus,
-    };
+      localStatus: incoming.localStatus ?? prevMsg.localStatus,
+    });
 
+    next[idx] = merged;
     return sortByCreatedAtAsc(next);
   }
 
-  return sortByCreatedAtAsc([...list, incoming]);
+  const mergedNew = mergePreserveDecrypted(undefined, incoming);
+  return sortByCreatedAtAsc([...list, mergedNew]);
 };
 
 const mergeUnique = (a: Message[], b: Message[]): Message[] => {
   const out: Message[] = [];
-  const push = (m: Message) => {
+
+  const pushMerged = (incoming: Message) => {
     const i = out.findIndex(
-      (x) => x.id === m.id || (!!m.clientMessageId && x.clientMessageId === m.clientMessageId),
+      (x) =>
+        x.id === incoming.id ||
+        (!!incoming.clientMessageId &&
+          x.clientMessageId === incoming.clientMessageId)
     );
+
     if (i >= 0) {
-      out[i] = {
-        ...out[i],
-        ...m,
-        localStatus: m.localStatus ?? out[i].localStatus,
-      };
+      const prevMsg = out[i];
+      out[i] = mergePreserveDecrypted(prevMsg, {
+        ...incoming,
+        localStatus: incoming.localStatus ?? prevMsg.localStatus,
+      });
     } else {
-      out.push(m);
+      out.push(mergePreserveDecrypted(undefined, incoming));
     }
   };
-  a.forEach(push);
-  b.forEach(push);
+
+  a.forEach(pushMerged);
+  b.forEach(pushMerged);
+
   return sortByCreatedAtAsc(out);
 };
 
@@ -168,17 +219,28 @@ interface MessageState {
 
   addMessage: (msg: Message) => void;
 
-  loadHistory: (conversationId: number, older: Message[], prepend?: boolean) => void;
+  loadHistory: (
+    conversationId: number,
+    older: Message[],
+    prepend?: boolean
+  ) => void;
 
   replaceOptimistic: (clientId: string, serverMsg: Message) => void;
 
   markStatus: (
     conversationId: number,
     idOrClientId: number | string,
-    patch: Partial<Pick<Message, 'isDelivered' | 'isRead' | 'localStatus'>>
+    patch: Partial<
+      Pick<Message, 'isDelivered' | 'isRead' | 'localStatus'>
+    >
   ) => void;
 
-  updateMessage: (patch: Partial<Message> & { id?: number; clientMessageId?: string | null }) => void;
+  updateMessage: (
+    patch: Partial<Message> & {
+      id?: number;
+      clientMessageId?: string | null;
+    }
+  ) => void;
 
   removeMessage: (id: number) => void;
 
@@ -236,8 +298,10 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       if (convId == null) {
         return { activeConversationId: null, messages: [] };
       }
-
-      const sorted = sortByCreatedAtAsc([...msgs]);
+      const prepared = msgs.map((m) =>
+        mergePreserveDecrypted(undefined, m)
+      );
+      const sorted = sortByCreatedAtAsc(prepared);
 
       return {
         activeConversationId: convId,
@@ -251,10 +315,17 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const listForConv = state.byConv[msg.conversationId] ?? [];
       const updatedForConv = upsertWithDedupe(listForConv, msg);
 
-      const shouldUpdateFlat = state.activeConversationId === msg.conversationId;
+      const shouldUpdateFlat =
+        state.activeConversationId === msg.conversationId;
+
       return {
-        byConv: { ...state.byConv, [msg.conversationId]: updatedForConv },
-        messages: shouldUpdateFlat ? [...updatedForConv] : state.messages,
+        byConv: {
+          ...state.byConv,
+          [msg.conversationId]: updatedForConv,
+        },
+        messages: shouldUpdateFlat
+          ? [...updatedForConv]
+          : state.messages,
       };
     }),
 
@@ -262,40 +333,59 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     set((state) => {
       const current = state.byConv[conversationId] ?? [];
 
-      const merged = prepend ? mergeUnique(older, current) : mergeUnique(current, older);
+      const merged = prepend
+        ? mergeUnique(older, current)
+        : mergeUnique(current, older);
 
       return {
         byConv: { ...state.byConv, [conversationId]: merged },
-        messages: state.activeConversationId === conversationId ? [...merged] : state.messages,
+        messages:
+          state.activeConversationId === conversationId
+            ? [...merged]
+            : state.messages,
       };
     }),
 
   replaceOptimistic: (clientId, serverMsg) =>
     set((state) => {
       const list = state.byConv[serverMsg.conversationId] ?? [];
-      const idx = list.findIndex((m) => m.clientMessageId === clientId);
+      const idx = list.findIndex(
+        (m) => m.clientMessageId === clientId
+      );
 
       let nextList: Message[];
 
       if (idx >= 0) {
-        const preservedClientId = list[idx].clientMessageId ?? clientId;
-        nextList = [...list];
-        nextList[idx] = {
+        const prevMsg = list[idx];
+        const preservedClientId =
+          prevMsg.clientMessageId ?? clientId;
+
+        const merged = mergePreserveDecrypted(prevMsg, {
           ...serverMsg,
           clientMessageId: preservedClientId,
           localStatus: 'sent',
-        };
+        });
+
+        nextList = [...list];
+        nextList[idx] = merged;
+        nextList = sortByCreatedAtAsc(nextList);
       } else {
         nextList = upsertWithDedupe(list, {
           ...serverMsg,
           clientMessageId: clientId,
           localStatus: 'sent',
-        });
+        } as Message);
       }
 
       return {
-        byConv: { ...state.byConv, [serverMsg.conversationId]: nextList },
-        messages: state.activeConversationId === serverMsg.conversationId ? [...nextList] : state.messages,
+        byConv: {
+          ...state.byConv,
+          [serverMsg.conversationId]: nextList,
+        },
+        messages:
+          state.activeConversationId === serverMsg.conversationId
+            ? [...nextList]
+            : state.messages,
       };
     }),
 
@@ -305,16 +395,25 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const idx = list.findIndex((m) =>
         typeof idOrClientId === 'string'
           ? m.clientMessageId === idOrClientId
-          : m.id === idOrClientId,
+          : m.id === idOrClientId
       );
       if (idx < 0) return state;
 
+      const prevMsg = list[idx];
+      const merged = {
+        ...prevMsg,
+        ...patch,
+      };
+
       const next = [...list];
-      next[idx] = { ...next[idx], ...patch };
+      next[idx] = merged;
 
       return {
         byConv: { ...state.byConv, [conversationId]: next },
-        messages: state.activeConversationId === conversationId ? [...next] : state.messages,
+        messages:
+          state.activeConversationId === conversationId
+            ? [...next]
+            : state.messages,
       };
     }),
 
@@ -328,8 +427,9 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             state.byConv[cid]?.some(
               (m) =>
                 (patch.id != null && m.id === patch.id) ||
-                (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId),
-            ),
+                (!!patch.clientMessageId &&
+                  m.clientMessageId === patch.clientMessageId)
+            )
           ) ??
         state.activeConversationId;
 
@@ -339,18 +439,25 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const idx = list.findIndex(
         (m) =>
           (patch.id != null && m.id === patch.id) ||
-          (!!patch.clientMessageId && m.clientMessageId === patch.clientMessageId),
+          (!!patch.clientMessageId &&
+            m.clientMessageId === patch.clientMessageId)
       );
       if (idx < 0) return state;
 
+      const prevMsg = list[idx];
+      const merged = mergePreserveDecrypted(prevMsg, patch);
+
       const next = [...list];
-      next[idx] = { ...next[idx], ...patch };
+      next[idx] = merged;
 
       const sorted = sortByCreatedAtAsc(next);
 
       return {
         byConv: { ...state.byConv, [convId]: sorted },
-        messages: state.activeConversationId === convId ? [...sorted] : state.messages,
+        messages:
+          state.activeConversationId === convId
+            ? [...sorted]
+            : state.messages,
       };
     }),
 
@@ -365,59 +472,93 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       }
       if (foundConv == null) return state;
 
-      const nextList = (state.byConv[foundConv] ?? []).filter((m) => m.id !== id);
-      const nextByConv = { ...state.byConv, [foundConv]: nextList };
-      const nextFlat = state.activeConversationId === foundConv ? [...nextList] : state.messages;
+      const nextList = (state.byConv[foundConv] ?? []).filter(
+        (m) => m.id !== id
+      );
+      const nextByConv = {
+        ...state.byConv,
+        [foundConv]: nextList,
+      };
+      const nextFlat =
+        state.activeConversationId === foundConv
+          ? [...nextList]
+          : state.messages;
 
       return { byConv: nextByConv, messages: nextFlat };
     }),
 
   clearMessages: () => set(() => ({ messages: [] })),
 
-  updateMessageReactions: (conversationId, messageId, grouped, meId) =>
+  updateMessageReactions: (
+    conversationId,
+    messageId,
+    grouped,
+    meId
+  ) =>
     set((state) => {
       const list = state.byConv[conversationId] ?? [];
       const idx = list.findIndex((m) => m.id === messageId);
       if (idx < 0) return state;
 
-      const next = [...list];
-      const msg = { ...next[idx] };
-
-      msg.groupedReactions = Array.isArray(grouped)
-        ? grouped.map((g) => ({
-            emoji: g.emoji,
-            count: Math.max(0, Number(g.count) || 0),
-            users: Array.isArray(g.users) ? g.users : [],
-          }))
-        : [];
+      const oldMsg = list[idx];
+      const msg: Message = {
+        ...oldMsg,
+        groupedReactions: Array.isArray(grouped)
+          ? grouped.map((g) => ({
+              emoji: g.emoji,
+              count: Math.max(0, Number(g.count) || 0),
+              users: Array.isArray(g.users) ? g.users : [],
+            }))
+          : [],
+      };
 
       if (typeof meId === 'number') {
         msg.myReactions = msg.groupedReactions
-          .filter((gr) => gr.users?.some((u) => u.id === meId))
+          ?.filter((gr) =>
+            gr.users?.some((u) => u.id === meId)
+          )
           .map((gr) => gr.emoji);
       }
 
+      const next = [...list];
       next[idx] = msg;
 
       return {
         byConv: { ...state.byConv, [conversationId]: next },
-        messages: state.activeConversationId === conversationId ? [...next] : state.messages,
+        messages:
+          state.activeConversationId === conversationId
+            ? [...next]
+            : state.messages,
       };
     }),
 
-  toggleReaction: (conversationId, messageId, emoji, userId, toggledOn) =>
+  toggleReaction: (
+    conversationId,
+    messageId,
+    emoji,
+    userId,
+    toggledOn
+  ) =>
     set((state) => {
       const list = state.byConv[conversationId] ?? [];
       const idx = list.findIndex((m) => m.id === messageId);
       if (idx < 0) return state;
 
-      const next = [...list];
-      const msg = { ...next[idx] };
+      const prevMsg = list[idx];
+      const msg: Message = { ...prevMsg };
 
-      const old = Array.isArray(msg.reactions) ? [...msg.reactions] : [];
-      const oldIdx = old.findIndex((r) => r.emoji === emoji && r.userId === userId);
+      const old = Array.isArray(msg.reactions)
+        ? [...msg.reactions]
+        : [];
+      const oldIdx = old.findIndex(
+        (r) => r.emoji === emoji && r.userId === userId
+      );
 
-      const shouldAddOld = typeof toggledOn === 'boolean' ? toggledOn : oldIdx < 0;
+      const shouldAddOld =
+        typeof toggledOn === 'boolean'
+          ? toggledOn
+          : oldIdx < 0;
+
       if (shouldAddOld) {
         if (oldIdx < 0) old.push({ emoji, userId });
       } else if (oldIdx >= 0) {
@@ -425,27 +566,54 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       }
       msg.reactions = old;
 
-      const grouped = Array.isArray(msg.groupedReactions) ? [...msg.groupedReactions] : [];
-      const gi = grouped.findIndex((g) => g.emoji === emoji);
+      const grouped = Array.isArray(msg.groupedReactions)
+        ? [...msg.groupedReactions]
+        : [];
+      const gi = grouped.findIndex(
+        (g) => g.emoji === emoji
+      );
 
       const ensureUser = (arr: UserLite[]) =>
-        arr.some((u) => u.id === userId) ? arr : [...arr, { id: userId }];
+        arr.some((u) => u.id === userId)
+          ? arr
+          : [...arr, { id: userId }];
 
-      const existsUser = gi >= 0 && grouped[gi].users?.some((u) => u.id === userId);
-      const shouldAdd = typeof toggledOn === 'boolean' ? toggledOn : !existsUser;
+      const existsUser =
+        gi >= 0 &&
+        grouped[gi].users?.some((u) => u.id === userId);
+
+      const shouldAdd =
+        typeof toggledOn === 'boolean'
+          ? toggledOn
+          : !existsUser;
 
       if (gi === -1) {
-        if (shouldAdd) grouped.push({ emoji, count: 1, users: [{ id: userId }] });
+        if (shouldAdd)
+          grouped.push({
+            emoji,
+            count: 1,
+            users: [{ id: userId }],
+          });
       } else {
         const g = { ...grouped[gi] };
-        const users = Array.isArray(g.users) ? [...g.users] : [];
+        const users = Array.isArray(g.users)
+          ? [...g.users]
+          : [];
 
         if (shouldAdd) {
           g.users = ensureUser(users);
-          g.count = Math.max(1, (g.count || 0) + (existsUser ? 0 : 1));
+          g.count = Math.max(
+            1,
+            (g.count || 0) + (existsUser ? 0 : 1)
+          );
         } else {
-          g.users = users.filter((u) => u.id !== userId);
-          g.count = Math.max(0, (g.count || 0) - (existsUser ? 1 : 0));
+          g.users = users.filter(
+            (u) => u.id !== userId
+          );
+          g.count = Math.max(
+            0,
+            (g.count || 0) - (existsUser ? 1 : 0)
+          );
         }
 
         if (g.count === 0) {
@@ -456,11 +624,16 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       }
 
       msg.groupedReactions = grouped;
+
+      const next = [...list];
       next[idx] = msg;
 
       return {
         byConv: { ...state.byConv, [conversationId]: next },
-        messages: state.activeConversationId === conversationId ? [...next] : state.messages,
+        messages:
+          state.activeConversationId === conversationId
+            ? [...next]
+            : state.messages,
       };
     }),
 

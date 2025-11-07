@@ -7,6 +7,67 @@ import { useSocket } from '@/context/SocketContext';
 import type { Message as ServerMessage } from '@/utils/types/MessageTypes';
 import type { GroupedReaction } from '@/stores/messageStore';
 
+const looksEncrypted = (s?: string | null): s is string =>
+  typeof s === 'string' && s.startsWith('b64:');
+
+const safeDecrypt = (maybeEnc?: string | null): string => {
+  if (!maybeEnc) return '';
+  if (!looksEncrypted(maybeEnc)) return maybeEnc;
+  try {
+    const raw = maybeEnc.slice(4);
+    return decodeURIComponent(escape(atob(raw)));
+  } catch {
+    return '[Ошибка расшифровки]';
+  }
+};
+
+function hasProp<T extends object, K extends PropertyKey>(
+  obj: T | null | undefined,
+  key: K
+): obj is T & Record<K, unknown> {
+  return !!obj && typeof obj === 'object' && key in obj;
+}
+
+type IncomingMessage = ServerMessage & {
+  content?: string;
+  repliedTo?: {
+    id: number;
+    senderId: number;
+    encryptedContent?: string | null;
+    content?: string;
+    [k: string]: unknown;
+  } | null;
+};
+
+function hydrateDecrypted(msg: ServerMessage): IncomingMessage {
+  if (!msg) return msg as any;
+
+  let content: string | undefined =
+    hasProp(msg, 'content') && typeof (msg as any).content === 'string'
+      ? ((msg as any).content as string)
+      : undefined;
+
+  if (!content || looksEncrypted(content)) {
+    const enc = (hasProp(msg, 'encryptedContent')
+      ? (msg as any).encryptedContent
+      : undefined) as string | null | undefined;
+    content = enc ? safeDecrypt(enc) : safeDecrypt(content);
+  }
+
+  let repliedTo: IncomingMessage['repliedTo'] =
+    (hasProp(msg, 'repliedTo') ? (msg as any).repliedTo : undefined) as any;
+
+  if (repliedTo && !repliedTo.content) {
+    const enc = repliedTo.encryptedContent as string | null | undefined;
+    if (enc) {
+      repliedTo = { ...repliedTo, content: safeDecrypt(enc) };
+    }
+  }
+
+  return { ...(msg as any), content, repliedTo };
+}
+
+
 /**
  * Единый хук подписок на чатовые события по сокету.
  * - receiveMessage / message:ack → обновление optimistic
@@ -19,6 +80,7 @@ import type { GroupedReaction } from '@/stores/messageStore';
 export const useChatSocket = () => {
   const { currentUser } = useUserStore();
   const meId = currentUser?.id;
+
   const { currentConversationId } = useChatStore();
   const { socket, joinConversation, leaveConversation } = useSocket();
 
@@ -37,8 +99,6 @@ export const useChatSocket = () => {
 
   const prevConversationIdRef = useRef<number | null>(null);
   const purgeTimerRef = useRef<number | null>(null);
-
-  const toClientMessage = (msg: ServerMessage) => ({ ...(msg as any) });
 
   useEffect(() => {
     if (!socket) return;
@@ -59,42 +119,47 @@ export const useChatSocket = () => {
     if (!socket || !currentUser) return;
     const typingApi = useTypingStore.getState();
 
-    const onReceiveMessage = (msg: ServerMessage) => {
-      if (msg.conversationId !== currentConversationId) return;
-      const clientMsg = toClientMessage(msg);
+    const onReceiveMessage = (raw: ServerMessage) => {
+      if (raw.conversationId !== currentConversationId) return;
 
-      if (msg.clientMessageId && isHandled?.(msg.clientMessageId)) return;
-      if (msg.clientMessageId) markHandled?.(msg.clientMessageId);
+      const m = hydrateDecrypted(raw);
 
-      if (msg.clientMessageId) {
-        replaceOptimistic?.(msg.clientMessageId, { ...clientMsg, localStatus: 'sent' });
+      if (m.clientMessageId && isHandled?.(m.clientMessageId)) return;
+      if (m.clientMessageId) markHandled?.(m.clientMessageId);
+
+      if (m.clientMessageId) {
+        replaceOptimistic?.(m.clientMessageId, { ...(m as any), localStatus: 'sent' });
       } else {
-        addMessage?.({ ...clientMsg, localStatus: 'sent' });
+        addMessage?.({ ...(m as any), localStatus: 'sent' });
       }
 
-      const isIncoming = typeof meId === 'number' ? msg.senderId !== meId : true;
+      const isIncoming = typeof meId === 'number' ? m.senderId !== meId : true;
       if (isIncoming) {
-        markStatus?.(msg.conversationId, msg.id, { isDelivered: true });
+        markStatus?.(m.conversationId, m.id, { isDelivered: true });
         socket.emit?.('messageDelivered', {
-          conversationId: msg.conversationId,
-          messageId: msg.id,
+          conversationId: m.conversationId,
+          messageId: m.id,
         });
       }
     };
 
-    const onMessageAck = (msg: ServerMessage) => {
-      if (!msg.clientMessageId || isHandled?.(msg.clientMessageId)) return;
-      markHandled?.(msg.clientMessageId);
-      replaceOptimistic?.(msg.clientMessageId, {
-        ...toClientMessage(msg),
+    const onMessageAck = (raw: ServerMessage) => {
+      if (!raw.clientMessageId || isHandled?.(raw.clientMessageId)) return;
+      markHandled?.(raw.clientMessageId);
+
+      const m = hydrateDecrypted(raw);
+
+      replaceOptimistic?.(raw.clientMessageId, {
+        ...(m as any),
         localStatus: 'sent',
       });
     };
 
     const onMessageUpdated = (updated: ServerMessage | { message?: ServerMessage }) => {
-      const msg = (updated as any)?.message ?? updated;
-      if (!msg) return;
-      updateMessage?.({ ...(msg as any) });
+      const raw = (updated as any)?.message ?? updated;
+      if (!raw) return;
+      const m = hydrateDecrypted(raw);
+      updateMessage?.({ ...(m as any) });
     };
 
     const onMessageDelete = (payload: { messageId: number }) => {
