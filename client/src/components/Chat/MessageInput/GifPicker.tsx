@@ -10,6 +10,13 @@ interface GifPickerProps {
 const DEBOUNCE_MS = 400;
 const LIMIT = 24;
 
+function mergeUniqueById(list: GifItem[], add: GifItem[]) {
+  const map = new Map<string, GifItem>();
+  for (const it of list) map.set(it.id, it);
+  for (const it of add) if (!map.has(it.id)) map.set(it.id, it);
+  return Array.from(map.values());
+}
+
 const GifPicker: React.FC<GifPickerProps> = ({ onSelect, placeholder = "Поиск GIF…" }) => {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<GifItem[]>([]);
@@ -22,6 +29,15 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, placeholder = "Поис
   const abortRef = useRef<AbortController | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  const sourceKeyRef = useRef<string>("");
+
+  const resetList = (newQuery: string) => {
+    sourceKeyRef.current = newQuery.trim();
+    setItems([]);
+    setOffset(0);
+    setHasMore(true);
+  };
+
   const loadPage = async (opts: { reset?: boolean } = {}) => {
     if (loading) return;
     setLoading(true);
@@ -31,13 +47,17 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, placeholder = "Поис
     abortRef.current = new AbortController();
 
     try {
+      const effectiveQuery = opts.reset ? query.trim() : sourceKeyRef.current || query.trim();
+      if (opts.reset) resetList(effectiveQuery);
+
       const curOffset = opts.reset ? 0 : offset;
-      const page = query.trim()
-        ? await searchGifs(query.trim(), LIMIT, curOffset)
+
+      const page = effectiveQuery
+        ? await searchGifs(effectiveQuery, LIMIT, curOffset)
         : await getTrendingGifs(LIMIT, curOffset);
 
-      setItems((prev) => (opts.reset ? page : [...prev, ...page]));
-      setOffset(curOffset + LIMIT);
+      setItems(prev => (opts.reset ? mergeUniqueById([], page) : mergeUniqueById(prev, page)));
+      setOffset(curOffset + page.length);
       setHasMore(page.length === LIMIT);
     } catch (e: any) {
       if (e?.name !== "AbortError") {
@@ -49,31 +69,38 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, placeholder = "Поис
   };
 
   useEffect(() => {
+    sourceKeyRef.current = "";
     loadPage({ reset: true });
-    return () => abortRef.current?.abort();
+    return () => {
+      abortRef.current?.abort();
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
   }, []);
 
   const onInput = (val: string) => {
     setQuery(val);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
-      setOffset(0);
-      setHasMore(true);
+      resetList(val);
       loadPage({ reset: true });
     }, DEBOUNCE_MS);
   };
 
   useEffect(() => {
-    if (!sentinelRef.current) return;
     const el = sentinelRef.current;
+    if (!el) return;
+
     const io = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && hasMore && !loading) {
         loadPage();
       }
     });
+
     io.observe(el);
-    return () => io.disconnect();
-  }, [hasMore, loading, query, offset]);
+    return () => {
+      io.disconnect();
+    };
+  }, [hasMore, loading]);
 
   const pick = (gif: GifItem) => onSelect(gif.url);
 
@@ -84,9 +111,9 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, placeholder = "Поис
     return (
       <>
         <div className="gif-results">
-          {items.map((g) => (
+          {items.map((g, i) => (
             <button
-              key={g.id}
+              key={`gif-${g.id}-${i}`}
               className="gif-thumb"
               title="Отправить GIF"
               onClick={() => pick(g)}
@@ -111,12 +138,19 @@ const GifPicker: React.FC<GifPickerProps> = ({ onSelect, placeholder = "Поис
           onChange={(e) => onInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && loadPage({ reset: true })}
         />
-        <button onClick={() => loadPage({ reset: true })} aria-label="Искать" type="button">🔍</button>
+        <button onClick={() => loadPage({ reset: true })} aria-label="Искать" type="button">
+          🔍
+        </button>
       </div>
 
       {content}
 
-      <div className="gif-powered">GIFs by&nbsp;<a href="https://giphy.com/" target="_blank" rel="noreferrer">GIPHY</a></div>
+      <div className="gif-powered">
+        GIFs by&nbsp;
+        <a href="https://giphy.com/" target="_blank" rel="noreferrer">
+          GIPHY
+        </a>
+      </div>
     </div>
   );
 };
