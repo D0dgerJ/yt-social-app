@@ -173,7 +173,7 @@ const MediaGrid: React.FC<{
             {isAudio && (
               <audio
                 className="message-media-grid__audio"
-                src={m.url}
+                src={buildDownloadUrl(m.url)}
                 controls
                 preload="metadata"
               />
@@ -494,7 +494,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
       )}
 
       {!mediaFiles?.length && mediaType === 'audio' && mediaUrl && (
-        <audio className="message-audio" src={normalizedMediaUrl} controls preload="metadata" />
+        <audio
+          className="message-audio"
+          src={buildDownloadUrl(mediaUrl)}
+          controls
+          preload="metadata"
+        />
       )}
 
       {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (

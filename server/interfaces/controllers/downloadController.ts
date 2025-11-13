@@ -15,14 +15,16 @@ const withinBase = (absPath: string) => {
   return !!rel && !rel.startsWith("..") && !path.isAbsolute(rel);
 };
 
-function buildContentDisposition(originalNameFromDb: string | null | undefined, storedFileName: string) {
+function buildAttachment(originalNameFromDb: string | null | undefined, storedFileName: string) {
   const finalName = (originalNameFromDb && originalNameFromDb.trim())
     ? originalNameFromDb.trim()
     : storedFileName;
 
   const fallbackName = finalName.replace(/[^\x20-\x7E]+/g, "_");
-
-  const encodedName = encodeURIComponent(finalName).replace(/'/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29");
+  const encodedName = encodeURIComponent(finalName)
+    .replace(/'/g, "%27")
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29");
 
   return `attachment; filename="${fallbackName}"; filename*=UTF-8''${encodedName}`;
 }
@@ -32,18 +34,15 @@ const downloadFile = async (req: Request, res: Response): Promise<void> => {
   const storedFileName = path.basename(raw).trim();
   const abs = path.resolve(BASE_DIR, storedFileName);
 
-  if (
-    !withinBase(abs) ||
-    !fs.existsSync(abs) ||
-    !fs.statSync(abs).isFile()
-  ) {
+  if (!withinBase(abs) || !fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
     res.status(404).json({ error: "Файл не найден" });
     return;
   }
 
   const stat = fs.statSync(abs);
-  const mimeType = mime.lookup(abs) || "application/octet-stream";
 
+  let dbMime: string | null = null;
+  let dbType: string | null = null;
   let originalNameFromDb: string | null = null;
 
   try {
@@ -55,25 +54,35 @@ const downloadFile = async (req: Request, res: Response): Promise<void> => {
           { url: { endsWith: storedFileName } },
         ],
       },
-      select: {
-        originalName: true,
-      },
+      select: { originalName: true, mime: true, type: true },
     });
 
-    if (media?.originalName) {
-      originalNameFromDb = media.originalName;
+    if (media) {
+      originalNameFromDb = media.originalName ?? null;
+      dbMime = media.mime ? media.mime.toLowerCase() : null;
+      dbType = media.type ? media.type.toLowerCase() : null;
     }
   } catch (err) {
     console.error("[downloadFile] DB lookup failed:", err);
   }
 
+  let contentType = (mime.lookup(abs) || "application/octet-stream").toString();
+
+  if (dbMime) {
+    contentType = dbMime;
+  } else if (dbType === "audio" && contentType === "video/webm") {
+    contentType = "audio/webm";
+  }
+
   res.setHeader("Cache-Control", "private, max-age=86400");
-  res.setHeader("Content-Type", String(mimeType));
+  res.setHeader("Content-Type", contentType);
   res.setHeader("Accept-Ranges", "bytes");
-  res.setHeader(
-    "Content-Disposition",
-    buildContentDisposition(originalNameFromDb, storedFileName)
-  );
+
+  if (contentType.startsWith("audio/") || contentType.startsWith("video/")) {
+    res.setHeader("Content-Disposition", "inline");
+  } else {
+    res.setHeader("Content-Disposition", buildAttachment(originalNameFromDb, storedFileName));
+  }
 
   const range = req.headers.range;
   if (range) {
@@ -81,12 +90,7 @@ const downloadFile = async (req: Request, res: Response): Promise<void> => {
     const start = Number.parseInt(startStr, 10);
     const end = endStr ? Number.parseInt(endStr, 10) : stat.size - 1;
 
-    if (
-      !Number.isFinite(start) ||
-      !Number.isFinite(end) ||
-      start > end ||
-      end >= stat.size
-    ) {
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || end >= stat.size) {
       res.status(416).setHeader("Content-Range", `bytes */${stat.size}`).end();
       return;
     }

@@ -33,7 +33,10 @@
       cursor: pointer;
       padding: 2px 4px;
       border-radius: 6px;
-      &:hover { background: rgba(0,0,0,.06); }
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.06);
+      }
     }
   }
 
@@ -55,7 +58,10 @@
     display: inline-block;
     color: #0056b3;
     text-decoration: none;
-    &:hover { text-decoration: underline; }
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   .message-reactions-static {
@@ -79,7 +85,7 @@
 
       background: transparent !important;
       box-shadow: none !important;
-      border: 1px solid rgba(0, 0, 0, .15);
+      border: 1px solid rgba(0, 0, 0, 0.15);
 
       color: inherit;
       cursor: pointer;
@@ -90,23 +96,27 @@
         line-height: 1;
         transform: translateY(1px);
       }
+
       &__count {
         font-weight: 600;
         font-size: 12px;
         line-height: 1;
-        opacity: .9;
+        opacity: 0.9;
       }
 
       &.is-mine {
         border-color: #0a84ff !important;
-        background: rgba(10,132,255,.08) !important;
+        background: rgba(10, 132, 255, 0.08) !important;
       }
 
       &--add {
         border-style: dashed;
         min-width: 28px;
         padding: 0 8px;
-        &:hover { background: rgba(0,0,0,.06); }
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.06);
+        }
       }
     }
   }
@@ -128,12 +138,12 @@
 
       background: transparent !important;
       box-shadow: none !important;
-      border: 1px solid rgba(0,0,0,.15);
+      border: 1px solid rgba(0, 0, 0, 0.15);
       font-size: 14px;
 
       &.own-reaction {
         border-color: #0a84ff;
-        background: rgba(10,132,255,.08);
+        background: rgba(10, 132, 255, 0.08);
       }
     }
   }
@@ -151,8 +161,11 @@
   padding: 8px 10px;
   border-radius: 10px;
   background: #f7f7f7;
-  transition: background .15s ease;
-  &:hover { background: #efefef; }
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #efefef;
+  }
 
   &__name {
     font-size: 14px;
@@ -164,9 +177,19 @@
 }
 
 .message-audio {
-  display: block;
+  display: block;       
   margin-top: 8px;
+  width: 100%;
   max-width: 320px;
+  min-height: 40px;     
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.message-audio::-webkit-media-controls-panel {
+  background-color: inherit;
 }
 
 .message-item .message-reactions-static {
@@ -207,7 +230,9 @@
     line-height: 28px;
     cursor: pointer;
 
-    &:hover { background: rgba(0,0,0,.06); }
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
   }
 }
 
@@ -216,10 +241,21 @@
   gap: 6px;
   margin-top: 8px;
 
-  &--c1 { grid-template-columns: repeat(1, 1fr); }
-  &--c2 { grid-template-columns: repeat(2, 1fr); }
-  &--c3 { grid-template-columns: repeat(3, 1fr); }
-  &--c4 { grid-template-columns: repeat(4, 1fr); }
+  &--c1 {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  &--c2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  &--c3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  &--c4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
 
   &__cell {
     position: relative;
@@ -230,8 +266,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px; 
-    min-height: 48px; 
+    padding: 6px;
+    min-height: 48px;
   }
 
   &__cell::before {
@@ -248,13 +284,14 @@
   }
 
   &__audio {
+    display: block;
     width: 100%;
-    height: auto;
-    max-height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    object-fit: contain;
+    max-width: 320px;
+    min-height: 40px;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    outline: none;
   }
 
   &__file {
@@ -270,7 +307,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: rgba(0,0,0,.45);
+    background: rgba(0, 0, 0, 0.45);
     color: #fff;
     font-weight: 700;
     font-size: 18px;
@@ -292,7 +329,7 @@
   border-radius: 8px;
   padding: 8px 10px;
   gap: 10px;
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 
   font-family: inherit;
   color: inherit;
@@ -317,12 +354,12 @@
   height: 40px;
 
   border-radius: 8px;
-  background-color: #4f6dd8; 
+  background-color: #4f6dd8;
   display: flex;
   align-items: center;
   justify-content: center;
 
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 
   font-size: 10px;
   font-weight: 600;
