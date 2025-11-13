@@ -14,7 +14,7 @@ if (!fs.existsSync(uploadDir)) {
 
 const ALLOWED_EXTS = new Set<string>([
   // изображения
-  '.jpg', '.jpeg', '.png', /*'.webp',Проблемы совместимости и MIME*/ '.gif', /*'.svg',Проблема: потенциальный XSS (Cross-Site Scripting)*/
+  '.jpg', '.jpeg', '.png', /* '.webp', Проблемы совместимости и MIME */ '.gif', /* '.svg', Потенциальный XSS */
   // видео
   '.mp4', '.webm', '.mov', '.mkv', '.avi',
   // аудио
@@ -29,11 +29,11 @@ const ALLOWED_EXTS = new Set<string>([
 
 const ALLOWED_MIME = new Set<string>([
   // images
-  'image/jpeg', 'image/png', /*'image/webp',Проблемы совместимости и MIME*/ 'image/gif', /*'image/svg+xml',Проблема: потенциальный XSS (Cross-Site Scripting)*/
+  'image/jpeg', 'image/png', /* 'image/webp', Проблемы совместимости и MIME */ 'image/gif', /* 'image/svg+xml', Потенциальный XSS */
   // video
   'video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska', 'video/x-msvideo',
   // audio
-  'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/mp4',
+  'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/webm', 'audio/x-m4a',
   // docs/text
   'application/pdf', 'text/plain', 'text/csv',
   'application/msword',
@@ -58,20 +58,25 @@ const storage = multer.diskStorage({
   },
 });
 
+function normalizeMime(m?: string): string {
+  return (m || '').toLowerCase().split(';')[0].trim();
+}
+
 const fileFilter = (_req: any, file: Express.Multer.File, cb: FileFilterCallback): void => {
   const ext = path.extname(file.originalname).toLowerCase();
-  const mime = (file.mimetype || '').toLowerCase();
+  const rawMime = (file.mimetype || '').toLowerCase();
+  const mime = normalizeMime(rawMime);
 
   if (BLOCKED_EXTS.has(ext)) {
     cb(new Error('❌ Недопустимый тип файла (заблокированное расширение)'));
     return;
   }
   if (!ALLOWED_EXTS.has(ext)) {
-    cb(new Error('❌ Расширение файла не разрешено'));
+    cb(new Error(`❌ Расширение файла не разрешено: ${ext}`));
     return;
   }
   if (!ALLOWED_MIME.has(mime)) {
-    cb(new Error('❌ MIME-тип файла не разрешён'));
+    cb(new Error(`❌ MIME-тип файла не разрешён: ${rawMime}`));
     return;
   }
 
@@ -82,7 +87,7 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    files: 10, 
-    fileSize: 25 * 1024 * 1024 // 25 MB на файл
+    files: 10,
+    fileSize: 25 * 1024 * 1024, // 25 MB на файл
   },
 });

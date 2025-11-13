@@ -5,6 +5,7 @@ import { useTyping } from '@/hooks/useTyping';
 import { useComposerStore } from '@/stores/composerStore';
 import { useMessageActions } from '@/hooks/useMessageActions';
 import { EmojiGifPopup } from './EmojiGifPopup';
+import { VoiceRecorder } from './VoiceRecorder';
 import './MessageInput.scss';
 
 const MAX_FILES_PER_MESSAGE = 10;
@@ -173,6 +174,20 @@ const MessageInput: React.FC = () => {
           onChange={onPickFiles}
         />
       </label>
+
+      <VoiceRecorder
+        disabled={isSending || isEditMode}
+        canAddMoreFiles={canAddMoreFiles}
+        onSend={async (file) => {
+          if (!currentConversationId) return;
+          await send({
+            conversationId: currentConversationId,
+            files: [file],
+            replyToId: replyIdNum,
+          });
+          if (replyTarget) setReplyTarget(undefined);
+        }}
+      />
 
       <EmojiGifPopup
         textareaRef={textareaRef}
