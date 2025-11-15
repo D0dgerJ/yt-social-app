@@ -61,8 +61,8 @@ const Register: React.FC = () => {
     <div className="register-page">
       <div className="register-wrapper">
         <div className="register-left">
-          <h1>Solu Social</h1>
-          <span>Connect With Friends On Solu Social.</span>
+          <h1>DodgerJSocial</h1>
+          <span>Connect With Friends On SDodgerJocial.</span>
         </div>
         <div className="register-right">
           <form onSubmit={handleRegister} className="register-form">

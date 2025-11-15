@@ -38,8 +38,8 @@ const Login: React.FC = () => {
     <div className="login-page">
       <div className="login-container">
         <div className="login-left">
-          <h1>Solu Social</h1>
-          <span>Connect With Friends On Solu Social.</span>
+          <h1>DodgerJSocial</h1>
+          <span>Connect With Friends On DodgerJSocial.</span>
         </div>
         <div className="login-right">
           <form onSubmit={handleLogin} className="login-form">
