@@ -1,3 +1,7 @@
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import prisma from "../../infrastructure/database/prismaClient.ts";
 import { Request, Response } from "express";
 import { createChat } from "../../application/use-cases/chat/createChat.ts";
 import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
@@ -12,6 +16,10 @@ import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMe
 import { addOrUpdateReaction } from "../../application/use-cases/chat/addOrUpdateReaction.ts";
 import { getMessageReactions } from "../../application/use-cases/chat/getMessageReactions.ts";
 import { getConversationMessages as getMsgsUC } from "../../application/use-cases/chat/getConversationMessages.ts";
+import { transcribeWithWhisper } from "../../infrastructure/services/whisperService.ts";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const create = async (req: Request, res: Response) => {
   try {
@@ -325,5 +333,98 @@ export const getReactions = async (req: Request, res: Response) => {
     res.status(200).json({ reactions });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const transcribeMessage = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const messageId = Number(req.params.messageId);
+    const userId = req.user!.id;
+
+    if (!Number.isFinite(messageId)) {
+      res.status(400).json({ message: "Некорректный messageId" });
+      return;
+    }
+
+    // 1. Находим сообщение
+    const msg = await prisma.message.findUnique({
+      where: { id: messageId },
+      select: {
+        id: true,
+        conversationId: true,
+        mediaUrl: true,
+        mediaType: true,
+      },
+    });
+
+    if (!msg) {
+      res.status(404).json({ message: "Сообщение не найдено" });
+      return;
+    }
+
+    // 2. Проверяем, что пользователь участник чата
+    const participant = await prisma.participant.findFirst({
+      where: {
+        conversationId: msg.conversationId,
+        userId,
+      },
+      select: { id: true },
+    });
+
+    if (!participant) {
+      res.status(403).json({ message: "Нет доступа к этому сообщению" });
+      return;
+    }
+
+    // 3. Проверяем, что это аудио
+    if (msg.mediaType !== "audio") {
+      res.status(400).json({ message: "Сообщение не содержит аудио" });
+      return;
+    }
+
+    if (!msg.mediaUrl) {
+      res.status(400).json({ message: "У аудио-сообщения нет mediaUrl" });
+      return;
+    }
+
+    // 4. Достаём имя файла из mediaUrl
+    let storedName: string;
+    try {
+      const url = new URL(msg.mediaUrl);
+      storedName = url.pathname.split("/").pop() || "";
+    } catch {
+      storedName = msg.mediaUrl.split("/").pop() || "";
+    }
+
+    if (!storedName) {
+      res.status(400).json({ message: "Не удалось извлечь имя файла из mediaUrl" });
+      return;
+    }
+
+    // 5. Собираем абсолютный путь к файлу
+    // путь на уровне with downloadController: ../../uploads
+    const uploadsDir = path.resolve(__dirname, "../../uploads");
+    const absPath = path.resolve(uploadsDir, storedName);
+
+    if (!fs.existsSync(absPath)) {
+      console.error("[transcribeMessage] file not found:", absPath);
+      res.status(404).json({ message: "Файл для распознавания не найден" });
+      return;
+    }
+
+    // 6. Вызываем Whisper
+    const text = await transcribeWithWhisper(absPath);
+
+    // 7. Отдаём пользователю (ничего не сохраняем в БД)
+    res.status(200).json({ text });
+  } catch (error) {
+    console.error("[transcribeMessage] error:", error);
+    res.status(500).json({
+      message: "Не удалось распознать голосовое сообщение",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };

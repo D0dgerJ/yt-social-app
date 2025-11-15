@@ -12,6 +12,7 @@ import {
   markAsRead,
   reactToMessage,
   getReactions,
+  transcribeMessage,
 } from "../controllers/chat.controller.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
@@ -73,6 +74,14 @@ router.delete("/:chatId/messages/:messageId", authMiddleware,
 // Реакции
 router.post("/messages/:messageId/react", authMiddleware, reactToMessage); // POST /api/v1/chat/messages/:messageId/react
 router.get("/messages/:messageId/reactions", authMiddleware, getReactions); // GET /api/v1/chat/messages/:messageId/reactions
+
+// Транскрибация голосовых
+router.post(
+  "/messages/:messageId/transcribe",
+  authMiddleware,
+  transcribeMessage
+); // POST /api/v1/chat/messages/:messageId/transcribe
+
 
 // Статусы сообщений
 router.post("/:chatId/delivered", authMiddleware, markAsDelivered); // POST /api/v1/chat/:chatId/delivered

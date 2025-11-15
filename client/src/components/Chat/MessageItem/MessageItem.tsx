@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MessageReactions } from '../MessageReactions/MessageReactions';
 import { getReactionsREST } from '@/services/chatApi';
+import { transcribeMessageREST } from '@/services/chatApi';
 import FileIcon from '../FileIcon/FileIcon';
 import ReplyPreview from '@/components/Chat/ReplyPreview/ReplyPreview';
 import { useMessageStore, type RepliedToLite, type Message } from '@/stores/messageStore';
@@ -137,6 +138,12 @@ const MediaGrid: React.FC<{
         const isAudio = m.type === 'audio';
         const isFile  = m.type === 'file';
 
+        const isSingleAudioOnly = isAudio && items.length === 1;
+
+        if (isSingleAudioOnly) {
+          return null;
+        }
+
         return (
           <div
             key={m.id ?? `${m.url}-${idx}`}
@@ -261,6 +268,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const [reactions, setReactions] = useState<GroupedReaction[]>(groupedReactions ?? []);
   const [reactionsLoaded, setReactionsLoaded] = useState(!!(groupedReactions && groupedReactions.length));
   const [loadingReactions, setLoadingReactions] = useState(false);
+
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcribeError, setTranscribeError] = useState<string | null>(null);
+  const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
 
   const getById = useMessageStore((s) => s.getById);
 
@@ -404,6 +416,33 @@ const MessageItem: React.FC<MessageItemProps> = ({
     return buildDownloadUrl(mediaUrl);
   }, [mediaUrl, mediaType]);
 
+  const handleTranscribeClick = useCallback(async () => {
+    // если уже есть текст — просто показать/скрыть без повторного запроса
+    if (transcript) {
+      setIsTranscriptVisible((v) => !v);
+      return;
+    }
+
+    if (!messageId) return;
+
+    try {
+      setIsTranscribing(true);
+      setTranscribeError(null);
+
+      const text = await transcribeMessageREST(messageId);
+
+      setTranscript(text || "(пусто)");
+      setIsTranscriptVisible(true);
+    } catch (err: any) {
+      console.error("[transcribe] error:", err);
+      setTranscribeError(
+        err?.message || "Ошибка при расшифровке голосового сообщения",
+      );
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, [messageId, transcript]);
+
   return (
     <div
       className={`message-item ${isOwnMessage ? 'own' : ''}`}
@@ -493,13 +532,42 @@ const MessageItem: React.FC<MessageItemProps> = ({
         />
       )}
 
-      {!mediaFiles?.length && mediaType === 'audio' && mediaUrl && (
-        <audio
-          className="message-audio"
-          src={buildDownloadUrl(mediaUrl)}
-          controls
-          preload="metadata"
-        />
+      {mediaType === 'audio' && mediaUrl && (
+        <div className="message-audio-block">
+          <audio
+            className="message-audio"
+            src={buildDownloadUrl(mediaUrl)}
+            controls
+            preload="metadata"
+          />
+
+          <button
+            type="button"
+            className="message-audio-transcribe-btn"
+            onClick={handleTranscribeClick}
+            disabled={isTranscribing}
+          >
+            {isTranscribing
+              ? "Расшифровка…"
+              : transcript
+                ? isTranscriptVisible
+                  ? "Скрыть текст"
+                  : "Показать текст"
+                : "Транскрипция"}
+          </button>
+
+          {transcribeError && (
+            <div className="message-transcript-error">
+              {transcribeError}
+            </div>
+          )}
+
+          {transcript && isTranscriptVisible && (
+            <div className="message-transcript">
+              {transcript}
+            </div>
+          )}
+        </div>
       )}
 
       {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (

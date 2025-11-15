@@ -2,6 +2,8 @@
 import axios from '@/utils/api/axiosInstance';
 import * as legacy from '@/utils/api/chat.api';
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 // ---------- helpers ----------
 export type UploadResult = { url: string; name: string; mime: string };
 
@@ -149,4 +151,26 @@ export async function markDeliveredREST(conversationId: number) {
 export async function markReadREST(conversationId: number) {
   const { data } = await axios.post(`/chat/${conversationId}/read`, {});
   return data;
+}
+
+// ---------- transcribe ----------
+
+export async function transcribeMessageREST(messageId: number): Promise<string> {
+  const token = localStorage.getItem('token');
+
+  const res = await fetch(`${API_BASE}/api/v1/chat/messages/${messageId}/transcribe`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data?.text ?? '';
 }
