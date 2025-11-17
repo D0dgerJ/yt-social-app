@@ -54,6 +54,9 @@ model User {
   messageDeliveries MessageDelivery[]
   devices           Device[]
   messageMentions   Message[]         @relation("MessageMentions")
+
+  pinnedConversations PinnedConversation[]
+  pinnedMessages      PinnedMessage[]
 }
 
 model FriendRequest {
@@ -202,6 +205,8 @@ model Conversation {
 
   lastMessageId Int?     @unique
   lastMessage   Message? @relation("LastMessage", fields: [lastMessageId], references: [id])
+
+  pinnedBy PinnedConversation[]
 }
 
 model Participant {
@@ -265,6 +270,8 @@ model Message {
   deliveries MessageDelivery[]
 
   clientMessageId String? @unique
+
+  pinnedBy PinnedMessage[]
 
   @@index([conversationId, createdAt])
   @@index([conversationId, editedAt])
@@ -350,6 +357,35 @@ model Reaction {
   @@unique([userId, messageId]) // один пользователь — одна реакция на сообщение
   @@index([messageId, createdAt])
 }
+
+// 📌 Закреплённые чаты (персональные пины)
+model PinnedConversation {
+  id             Int @id @default(autoincrement())
+  userId         Int
+  conversationId Int
+  pinnedAt       DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@unique([userId, conversationId])
+}
+
+// 📌 Закреплённые сообщения (персональные пины)
+model PinnedMessage {
+  id             Int      @id @default(autoincrement())
+  conversationId Int
+  messageId      Int
+  pinnedById     Int      // кто закрепил
+  pinnedAt       DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  message      Message      @relation(fields: [messageId], references: [id])
+  pinnedBy     User         @relation(fields: [pinnedById], references: [id])
+
+  @@unique([conversationId, messageId]) // одно и то же сообщение нельзя закрепить в этом же чате дважды
+}
+
 
 enum ProcessingStatus {
   PENDING
