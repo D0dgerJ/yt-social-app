@@ -88,6 +88,9 @@ export interface Message {
   myReactions?: string[];
 
   sender?: UserLite | null;
+
+  isPinned?: boolean;
+  pinnedAt?: string | null;
 }
 
 function mergePreserveDecrypted(

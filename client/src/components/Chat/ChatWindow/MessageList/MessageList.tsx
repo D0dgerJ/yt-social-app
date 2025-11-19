@@ -12,6 +12,12 @@ import { SystemMessage } from './SystemMessage';
 import MessageItem from '@/components/Chat/MessageItem/MessageItem';
 import MessageContextMenu from '@/components/Chat/MessageItem/MessageContextMenu';
 import { useChatStore } from '@/stores/chatStore';
+import { useMessageStore } from '@/stores/messageStore';
+import {
+  pinMessage as pinMessageApi,
+  unpinMessage as unpinMessageApi,
+} from '@/utils/api/chat.api';
+import { toast } from 'react-toastify';
 import './MessageList.scss';
 
 type ListItem =
@@ -159,7 +165,6 @@ const MessageList: React.FC<Props> = ({
   }, [isLoadingOlder, hasMoreOlder, loadOlder]);
 
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
-
   const didInitialScrollRef = useRef<Record<number, boolean>>({});
 
   useEffect(() => {
@@ -180,6 +185,64 @@ const MessageList: React.FC<Props> = ({
     });
   }, [items, currentConversationId]);
 
+  const pinnedMessages = useMemo(
+    () => messages.filter((m) => m.isPinned),
+    [messages]
+  );
+
+  const scrollToMessage = useCallback(
+    (msgId: number) => {
+      const index = items.findIndex(
+        (it) => it.type === 'message' && (it as any).data.id === msgId
+      );
+      if (index >= 0) {
+        virtuosoRef.current?.scrollToIndex({
+          index,
+          align: 'center',
+          behavior: 'smooth',
+        });
+      }
+    },
+    [items]
+  );
+
+  const handleTogglePinMessage = useCallback(
+    async (m: Message) => {
+      try {
+        if (m.isPinned) {
+          await unpinMessageApi(m.conversationId, m.id);
+          useMessageStore
+            .getState()
+            .updateMessage({
+              id: m.id,
+              conversationId: m.conversationId,
+              isPinned: false,
+              pinnedAt: null,
+            });
+        } else {
+          await pinMessageApi(m.conversationId, m.id);
+          useMessageStore
+            .getState()
+            .updateMessage({
+              id: m.id,
+              conversationId: m.conversationId,
+              isPinned: true,
+              pinnedAt: new Date().toISOString(),
+            });
+        }
+      } catch (err: any) {
+        console.error('Ошибка при смене пина сообщения:', err);
+        const msg =
+          err?.response?.data?.message ||
+          'Не удалось изменить закреп сообщения';
+        toast.error(msg);
+      } finally {
+        closeMenu();
+      }
+    },
+    [closeMenu]
+  );
+
   const renderItem = useCallback(
     (_index: number, item: ListItem) => {
       switch (item.type) {
@@ -197,7 +260,12 @@ const MessageList: React.FC<Props> = ({
         case 'message': {
           const m = item.data;
           return (
-            <div onContextMenu={(e) => openContextMenu(e, m)}>
+            <div
+              className={
+                m.isPinned ? 'msg-item-wrapper msg-item-wrapper--pinned' : 'msg-item-wrapper'
+              }
+              onContextMenu={(e) => openContextMenu(e, m)}
+            >
               <MessageItem
                 conversationId={m.conversationId}
                 messageId={m.id}
@@ -258,6 +326,33 @@ const MessageList: React.FC<Props> = ({
 
   return (
     <div className="msg-virtuoso-wrap">
+      {/* 🔹 панель закреплённых сообщений */}
+      {pinnedMessages.length > 0 && (
+        <div className="msg-pinned-bar">
+          {pinnedMessages.map((m) => {
+            const label =
+              (m.content && m.content.slice(0, 40)) ||
+              (m.mediaType === 'image' && '📷 Изображение') ||
+              (m.mediaType === 'video' && '🎬 Видео') ||
+              (m.mediaType === 'audio' && '🎧 Аудио') ||
+              (m.mediaType === 'gif' && 'GIF') ||
+              (m.mediaType === 'sticker' && 'Стикер') ||
+              (m.mediaType === 'file' && (m.fileName || '📎 Файл')) ||
+              `Сообщение #${m.id}`;
+
+            return (
+              <button
+                key={m.id}
+                className="msg-pinned-chip"
+                onClick={() => scrollToMessage(m.id)}
+              >
+                📌 {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <Virtuoso<ListItem>
         ref={virtuosoRef}
         data={items}
@@ -305,6 +400,11 @@ const MessageList: React.FC<Props> = ({
               key: 'r3',
               label: '😂 Реакция',
               onClick: () => onReact?.(menu.m, '😂'),
+            },
+            {
+              key: menu.m.isPinned ? 'unpin' : 'pin',
+              label: menu.m.isPinned ? 'Открепить' : 'Закрепить',
+              onClick: () => handleTogglePinMessage(menu.m),
             },
           ]}
         />
