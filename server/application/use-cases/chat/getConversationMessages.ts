@@ -93,6 +93,22 @@ export const getConversationMessages = async ({
 
     const messageIds = messages.map((m) => m.id);
 
+    const pinnedMessages = await prisma.pinnedMessage.findMany({
+      where: {
+        conversationId,
+        messageId: { in: messageIds },
+      },
+      select: {
+        messageId: true,
+        pinnedAt: true,
+      },
+    });
+
+    const pinnedMap = new Map<number, Date>();
+    pinnedMessages.forEach((p) => {
+      pinnedMap.set(p.messageId, p.pinnedAt);
+    });
+
     const allReactions = await prisma.reaction.findMany({
       where: { messageId: { in: messageIds } },
       select: {
@@ -122,6 +138,8 @@ export const getConversationMessages = async ({
 
     const enriched = messages.map((m) => {
       const grouped = groupedByMessage[m.id] || [];
+      const pinInfo = pinnedMap.get(m.id) || null;
+
       return {
         ...m,
         groupedReactions: grouped.map((g) => ({
@@ -136,6 +154,9 @@ export const getConversationMessages = async ({
         myReactions: grouped
           .filter((g) => g.users.some((u) => u.id === userId))
           .map((g) => g.emoji),
+
+        isPinned: pinInfo !== null,
+        pinnedAt: pinInfo,
       };
     });
 

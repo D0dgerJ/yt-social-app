@@ -13,6 +13,10 @@ import {
   reactToMessage,
   getReactions,
   transcribeMessage,
+  pinConversation,
+  unpinConversation,
+  pinMessage,
+  unpinMessage,
 } from "../controllers/chat.controller.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
@@ -24,6 +28,10 @@ const router = express.Router();
 // Чаты
 router.post("/", authMiddleware, create); // POST /api/v1/chat
 router.get("/", authMiddleware, getConversations); // GET /api/v1/chat
+
+// 📌 Пины чатов
+router.post("/:chatId/pin", authMiddleware, pinConversation); // POST /api/v1/chat/:chatId/pin
+router.delete("/:chatId/pin", authMiddleware, unpinConversation); // DELETE /api/v1/chat/:chatId/pin
 
 // Участники чата
 router.post("/:chatId/participants", authMiddleware, add); // POST /api/v1/chat/:chatId/participants
@@ -55,10 +63,12 @@ router.patch(
     });
     return message?.senderId;
   }),
-  update
+  update,
 ); // PATCH /api/v1/chat/:chatId/messages/:messageId
 
-router.delete("/:chatId/messages/:messageId", authMiddleware,
+router.delete(
+  "/:chatId/messages/:messageId",
+  authMiddleware,
   checkOwnership(async (req) => {
     const messageId = Number(req.params.messageId);
     if (isNaN(messageId)) return undefined;
@@ -68,8 +78,21 @@ router.delete("/:chatId/messages/:messageId", authMiddleware,
     });
     return message?.senderId;
   }),
-  remove
+  remove,
 ); // DELETE /api/v1/chat/:chatId/messages/:messageId
+
+// 📌 Пины сообщений
+router.post(
+  "/:chatId/messages/:messageId/pin",
+  authMiddleware,
+  pinMessage,
+); // POST /api/v1/chat/:chatId/messages/:messageId/pin
+
+router.delete(
+  "/:chatId/messages/:messageId/pin",
+  authMiddleware,
+  unpinMessage,
+); // DELETE /api/v1/chat/:chatId/messages/:messageId/pin
 
 // Реакции
 router.post("/messages/:messageId/react", authMiddleware, reactToMessage); // POST /api/v1/chat/messages/:messageId/react
@@ -79,9 +102,8 @@ router.get("/messages/:messageId/reactions", authMiddleware, getReactions); // G
 router.post(
   "/messages/:messageId/transcribe",
   authMiddleware,
-  transcribeMessage
+  transcribeMessage,
 ); // POST /api/v1/chat/messages/:messageId/transcribe
-
 
 // Статусы сообщений
 router.post("/:chatId/delivered", authMiddleware, markAsDelivered); // POST /api/v1/chat/:chatId/delivered

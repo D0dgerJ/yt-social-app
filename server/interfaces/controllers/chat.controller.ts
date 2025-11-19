@@ -3,6 +3,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 import { Request, Response } from "express";
+
 import { createChat } from "../../application/use-cases/chat/createChat.ts";
 import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
 import { getUserConversations } from "../../application/use-cases/chat/getUserConversations.ts";
@@ -17,6 +18,14 @@ import { addOrUpdateReaction } from "../../application/use-cases/chat/addOrUpdat
 import { getMessageReactions } from "../../application/use-cases/chat/getMessageReactions.ts";
 import { getConversationMessages as getMsgsUC } from "../../application/use-cases/chat/getConversationMessages.ts";
 import { transcribeWithWhisper } from "../../infrastructure/services/whisperService.ts";
+import {
+  pinConversation as pinConversationUC,
+  unpinConversation as unpinConversationUC,
+} from "../../application/use-cases/chat/setConversationPinned.ts";
+import {
+  pinMessage as pinMessageUC,
+  unpinMessage as unpinMessageUC,
+} from "../../application/use-cases/chat/setMessagePinned.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -349,7 +358,6 @@ export const transcribeMessage = async (
       return;
     }
 
-    // 1. Находим сообщение
     const msg = await prisma.message.findUnique({
       where: { id: messageId },
       select: {
@@ -365,7 +373,6 @@ export const transcribeMessage = async (
       return;
     }
 
-    // 2. Проверяем, что пользователь участник чата
     const participant = await prisma.participant.findFirst({
       where: {
         conversationId: msg.conversationId,
@@ -379,7 +386,6 @@ export const transcribeMessage = async (
       return;
     }
 
-    // 3. Проверяем, что это аудио
     if (msg.mediaType !== "audio") {
       res.status(400).json({ message: "Сообщение не содержит аудио" });
       return;
@@ -390,7 +396,6 @@ export const transcribeMessage = async (
       return;
     }
 
-    // 4. Достаём имя файла из mediaUrl
     let storedName: string;
     try {
       const url = new URL(msg.mediaUrl);
@@ -404,8 +409,6 @@ export const transcribeMessage = async (
       return;
     }
 
-    // 5. Собираем абсолютный путь к файлу
-    // путь на уровне with downloadController: ../../uploads
     const uploadsDir = path.resolve(__dirname, "../../uploads");
     const absPath = path.resolve(uploadsDir, storedName);
 
@@ -415,10 +418,8 @@ export const transcribeMessage = async (
       return;
     }
 
-    // 6. Вызываем Whisper
     const text = await transcribeWithWhisper(absPath);
 
-    // 7. Отдаём пользователю (ничего не сохраняем в БД)
     res.status(200).json({ text });
   } catch (error) {
     console.error("[transcribeMessage] error:", error);
@@ -426,5 +427,97 @@ export const transcribeMessage = async (
       message: "Не удалось распознать голосовое сообщение",
       error: error instanceof Error ? error.message : String(error),
     });
+  }
+};
+
+export const pinConversation = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const conversationId = Number(req.params.chatId);
+
+    if (!Number.isFinite(conversationId)) {
+      res.status(400).json({ message: "Некорректный chatId" });
+      return;
+    }
+
+    const result = await pinConversationUC({ userId, conversationId });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const unpinConversation = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const conversationId = Number(req.params.chatId);
+
+    if (!Number.isFinite(conversationId)) {
+      res.status(400).json({ message: "Некорректный chatId" });
+      return;
+    }
+
+    const result = await unpinConversationUC({ userId, conversationId });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const pinMessage = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const conversationId = Number(req.params.chatId);
+    const messageId = Number(req.params.messageId);
+
+    if (!Number.isFinite(conversationId)) {
+      res.status(400).json({ message: "Некорректный chatId" });
+      return;
+    }
+
+    if (!Number.isFinite(messageId)) {
+      res.status(400).json({ message: "Некорректный messageId" });
+      return;
+    }
+
+    const result = await pinMessageUC({
+      userId,
+      conversationId,
+      messageId,
+    });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const unpinMessage = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const conversationId = Number(req.params.chatId);
+    const messageId = Number(req.params.messageId);
+
+    if (!Number.isFinite(conversationId)) {
+      res.status(400).json({ message: "Некорректный chatId" });
+      return;
+    }
+
+    if (!Number.isFinite(messageId)) {
+      res.status(400).json({ message: "Некорректный messageId" });
+      return;
+    }
+
+    const result = await unpinMessageUC({
+      userId,
+      conversationId,
+      messageId,
+    });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
