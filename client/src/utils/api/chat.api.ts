@@ -25,7 +25,7 @@ export type SendMessageBody = {
   content?: string;
 
   repliedToId?: number;
-  attachments?: Attachment[]; 
+  attachments?: Attachment[];
 
   clientMessageId?: string | null;
 };
@@ -61,6 +61,12 @@ export const createChat = async (userIds: number[], creatorId: number, name?: st
 
 export const getUserConversations = async () =>
   handleRequest(() => axios.get('/chat').then((res) => res.data));
+
+export const pinConversation = async (chatId: number) =>
+  handleRequest(() => axios.post(`/chat/${chatId}/pin`).then((res) => res.data));
+
+export const unpinConversation = async (chatId: number) =>
+  handleRequest(() => axios.delete(`/chat/${chatId}/pin`).then((res) => res.data));
 
 // ----------------- Сообщения -----------------
 export const sendMessage = async (chatId: number, message: SendMessageBody) =>
@@ -103,6 +109,16 @@ export const updateMessageByClientId = async (
 
 export const deleteMessage = async (chatId: number, messageId: number) =>
   handleRequest(() => axios.delete(`/chat/${chatId}/messages/${messageId}`).then((res) => res.data));
+
+export const pinMessage = async (chatId: number, messageId: number) =>
+  handleRequest(() =>
+    axios.post(`/chat/${chatId}/messages/${messageId}/pin`).then((res) => res.data),
+  );
+
+export const unpinMessage = async (chatId: number, messageId: number) =>
+  handleRequest(() =>
+    axios.delete(`/chat/${chatId}/messages/${messageId}/pin`).then((res) => res.data),
+  );
 
 // ----------------- Участники -----------------
 export const leaveConversation = async (chatId: number) =>

@@ -9,6 +9,20 @@
     flex-grow: 1;
     overflow-y: auto;
 
+    .chat-item--pinned {
+      background: rgba(255, 230, 120, 0.25);
+      position: relative;
+    }
+
+    .chat-item--pinned::before {
+      content: "📌";
+      position: absolute;
+      top: 4px;
+      right: 10px;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
     .chat-item {
       display: flex;
       align-items: center;
@@ -18,6 +32,10 @@
 
       &.selected {
         background-color: #e6f0ff;
+      }
+
+      &.selected.chat-item--pinned {
+        background-color: rgba(255, 235, 150, 0.55);
       }
 
       &:hover {
@@ -63,6 +81,30 @@
             margin-left: 8px;
             white-space: nowrap;
             flex-shrink: 0;
+          }
+
+          .chat-pin-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 6px;
+            padding: 0;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.6;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+          }
+
+          .chat-pin-btn:hover {
+            opacity: 1;
+            transform: translateY(-1px);
+          }
+
+          .chat-pin-btn--active {
+            opacity: 1;
           }
         }
 

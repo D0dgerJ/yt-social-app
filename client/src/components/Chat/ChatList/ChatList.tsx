@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useCallback } from "react";
-import { getUserConversations } from "@/utils/api/chat.api";
+import {
+  getUserConversations,
+  pinConversation,
+  unpinConversation,
+} from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
 import { decryptText } from "@/utils/crypto";
 import "./ChatList.scss";
@@ -23,13 +27,24 @@ type ConversationLike = {
   lastMessage?: {
     id: number;
     encryptedContent?: string | null;
-    mediaType?: "image" | "video" | "file" | "gif" | "audio" | "text" | "sticker" | null;
+    mediaType?:
+      | "image"
+      | "video"
+      | "file"
+      | "gif"
+      | "audio"
+      | "text"
+      | "sticker"
+      | null;
     fileName?: string | null;
     createdAt?: string;
     senderId?: number;
   } | null;
   messages?: any[];
   updatedAt?: string;
+
+  isPinned?: boolean;
+  pinnedAt?: string | null;
 };
 
 const mediaPreview = (m?: ConversationLike["lastMessage"]) => {
@@ -55,7 +70,9 @@ const mediaPreview = (m?: ConversationLike["lastMessage"]) => {
 };
 
 const getAvatarFromConv = (conv?: ConversationLike): string => {
-  const first = Array.isArray(conv?.participants) ? conv!.participants![0] : undefined;
+  const first = Array.isArray(conv?.participants)
+    ? conv!.participants![0]
+    : undefined;
   const avatar =
     first?.user?.profilePicture ??
     first?.profilePicture ??
@@ -90,7 +107,9 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
 
   const getTitle = useCallback((conv: ConversationLike) => {
     if (conv?.name) return conv.name;
-    const parts: ParticipantLike[] = Array.isArray(conv?.participants) ? conv.participants! : [];
+    const parts: ParticipantLike[] = Array.isArray(conv?.participants)
+      ? conv.participants!
+      : [];
     const names = parts
       .map((p) => p?.user?.username ?? p?.username)
       .filter(Boolean) as string[];
@@ -113,6 +132,24 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
     [currentConversationId, setCurrentConversationId]
   );
 
+  const handleTogglePin = useCallback(
+    async (chat: ConversationLike, e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        if (chat.isPinned) {
+          await unpinConversation(chat.id);
+        } else {
+          await pinConversation(chat.id);
+        }
+        const data = await getUserConversations();
+        setChatsInStore(data as any);
+      } catch (err) {
+        console.error("Ошибка при смене пина чата:", err);
+      }
+    },
+    [setChatsInStore]
+  );
+
   return (
     <div className="chat-list">
       <ul className="chat-list-items">
@@ -122,7 +159,9 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
 
           const lastMsg =
             chat?.lastMessage ??
-            (Array.isArray(chat?.messages) && chat.messages.length > 0 ? chat.messages[0] : null);
+            (Array.isArray(chat?.messages) && chat.messages.length > 0
+              ? chat.messages[0]
+              : null);
 
           const mediaShort = mediaPreview(lastMsg as any);
 
@@ -131,7 +170,8 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
               ? decryptText(lastMsg.encryptedContent)
               : "";
 
-          const lastMessage = (mediaShort || decrypted || "").trim() || "Нет сообщений";
+          const lastMessage =
+            (mediaShort || decrypted || "").trim() || "Нет сообщений";
 
           const time = lastMsg?.createdAt
             ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
@@ -143,7 +183,9 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
           return (
             <li
               key={chat.id}
-              className={`chat-item ${currentConversationId === chat.id ? "selected" : ""}`}
+              className={`chat-item ${
+                chat.isPinned ? "chat-item--pinned" : ""
+              } ${currentConversationId === chat.id ? "selected" : ""}`}
               onClick={() => handleSelect(chat.id)}
             >
               <div className="chat-avatar">
@@ -152,7 +194,8 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
                   alt="avatar"
                   className="chat-avatar-img"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
+                    (e.currentTarget as HTMLImageElement).src =
+                      "/default-avatar.png";
                   }}
                 />
               </div>
@@ -160,6 +203,20 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
               <div className="chat-info">
                 <div className="chat-title-row">
                   <span className="chat-title">{chatTitle}</span>
+
+                  {/* 🔹 кнопка пина чата */}
+                  <button
+                    className={`chat-pin-btn ${
+                      chat.isPinned ? "chat-pin-btn--active" : ""
+                    }`}
+                    title={
+                      chat.isPinned ? "Открепить чат" : "Закрепить чат наверху"
+                    }
+                    onClick={(e) => handleTogglePin(chat, e)}
+                  >
+                    {chat.isPinned ? "📌" : "📍"}
+                  </button>
+
                   <span className="chat-time">{time}</span>
                 </div>
                 <div className="chat-preview">{lastMessage}</div>
