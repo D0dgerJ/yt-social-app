@@ -10,8 +10,14 @@ const AttachmentSchema = z.object({
 
 export const sendMessageSchema = z
   .object({
-    conversationId: z.number({ invalid_type_error: "conversationId must be a number" }).int().positive(),
-    senderId: z.number({ invalid_type_error: "senderId must be a number" }).int().positive(),
+    conversationId: z
+      .number({ invalid_type_error: "conversationId must be a number" })
+      .int()
+      .positive(),
+    senderId: z
+      .number({ invalid_type_error: "senderId must be a number" })
+      .int()
+      .positive(),
 
     encryptedContent: z.string().optional().nullable(),
 
@@ -37,15 +43,17 @@ export const sendMessageSchema = z
       !!(data.attachments && data.attachments.length > 0) ||
       !!data.gifUrl ||
       !!data.stickerUrl ||
-      !!data.mediaUrl, 
-    { message: "Нельзя отправить пустое сообщение" }
+      !!data.mediaUrl,
+    { message: "Нельзя отправить пустое сообщение" },
   );
-
 
 export const createChatSchema = z.object({
   userIds: z.array(z.number()).min(1, "At least one participant is required"),
   name: z.string().optional().nullable(),
-  creatorId: z.number({ invalid_type_error: "creatorId must be a number" }).int().positive(),
+  creatorId: z
+    .number({ invalid_type_error: "creatorId must be a number" })
+    .int()
+    .positive(),
 });
 
 export const updateMessageSchema = z
@@ -69,8 +77,56 @@ export const updateMessageSchema = z
     repliedToId: z.number().int().positive().optional().nullable(),
   })
   .refine(
-    (data) =>
-      !!data.messageId ||
-      (!!data.clientMessageId && !!data.conversationId),
-    { message: "Нужно указать messageId или пару clientMessageId + conversationId" }
+    (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
+    { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
+  );
+
+export const pinConversationSchema = z.object({
+  conversationId: z
+    .number({ invalid_type_error: "conversationId must be a number" })
+    .int()
+    .positive(),
+  userId: z
+    .number({ invalid_type_error: "userId must be a number" })
+    .int()
+    .positive(),
+});
+
+export const unpinConversationSchema = z.object({
+  conversationId: z
+    .number({ invalid_type_error: "conversationId must be a number" })
+    .int()
+    .positive(),
+  userId: z
+    .number({ invalid_type_error: "userId must be a number" })
+    .int()
+    .positive(),
+});
+
+export const pinMessageSchema = z
+  .object({
+    messageId: z.number().int().positive().optional(),
+
+    clientMessageId: z.string().optional().nullable(),
+    conversationId: z.number().int().positive().optional(),
+
+    userId: z.number().int().positive(),
+  })
+  .refine(
+    (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
+    { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
+  );
+
+export const unpinMessageSchema = z
+  .object({
+    messageId: z.number().int().positive().optional(),
+
+    clientMessageId: z.string().optional().nullable(),
+    conversationId: z.number().int().positive().optional(),
+
+    userId: z.number().int().positive(),
+  })
+  .refine(
+    (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
+    { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
   );

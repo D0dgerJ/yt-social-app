@@ -206,7 +206,8 @@ model Conversation {
   lastMessageId Int?     @unique
   lastMessage   Message? @relation("LastMessage", fields: [lastMessageId], references: [id])
 
-  pinnedBy PinnedConversation[]
+  pinnedBy      PinnedConversation[]
+  PinnedMessage PinnedMessage[]
 }
 
 model Participant {
@@ -360,7 +361,7 @@ model Reaction {
 
 // 📌 Закреплённые чаты (персональные пины)
 model PinnedConversation {
-  id             Int @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   userId         Int
   conversationId Int
   pinnedAt       DateTime @default(now())
@@ -376,7 +377,7 @@ model PinnedMessage {
   id             Int      @id @default(autoincrement())
   conversationId Int
   messageId      Int
-  pinnedById     Int      // кто закрепил
+  pinnedById     Int // кто закрепил
   pinnedAt       DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
@@ -385,7 +386,6 @@ model PinnedMessage {
 
   @@unique([conversationId, messageId]) // одно и то же сообщение нельзя закрепить в этом же чате дважды
 }
-
 
 enum ProcessingStatus {
   PENDING
