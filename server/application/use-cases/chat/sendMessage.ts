@@ -33,6 +33,9 @@ interface SendMessageInput {
 
   repliedToId?: number | null;
   clientMessageId?: string | null;
+
+  ttlSeconds?: number | null;
+  maxViewsPerUser?: number | null;
 }
 
 export const sendMessage = async (rawInput: SendMessageInput) => {
@@ -50,6 +53,9 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       gifUrl,
       stickerUrl,
       repliedToId,
+
+      ttlSeconds,
+      maxViewsPerUser,
     } = data;
 
     const clientMessageId = rawInput.clientMessageId ?? null;
@@ -102,6 +108,20 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       (first?.type ?? (legacyMediaType as MediaKind | null)) ?? null;
     const messageFileName = first?.name ?? legacyFileName ?? null;
 
+    const now = new Date();
+
+    let expiresAt: Date | null = null;
+    if (ttlSeconds && ttlSeconds > 0) {
+      expiresAt = new Date(now.getTime() + ttlSeconds * 1000);
+    }
+
+    const normalizedMaxViewsPerUser =
+      maxViewsPerUser && maxViewsPerUser > 0 ? maxViewsPerUser : null;
+
+    const isEphemeral =
+      (ttlSeconds != null && ttlSeconds > 0) ||
+      (normalizedMaxViewsPerUser != null && normalizedMaxViewsPerUser > 0);
+
     try {
       const message = await prisma.$transaction(async (tx) => {
         const created = await tx.message.create({
@@ -118,6 +138,10 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             gifUrl: gifUrl ?? null,
             stickerUrl: stickerUrl ?? null,
             repliedToId: repliedToId ?? null,
+
+            isEphemeral,
+            expiresAt,
+            maxViewsPerUser: normalizedMaxViewsPerUser,
           },
           include: {
             sender: {
@@ -174,7 +198,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
 
         await tx.conversation.update({
           where: { id: conversationId },
-          data: { lastMessageId: created.id, updatedAt: new Date() },
+          data: { lastMessageId: created.id, updatedAt: now },
         });
 
         const withRelations = await tx.message.findUnique({
