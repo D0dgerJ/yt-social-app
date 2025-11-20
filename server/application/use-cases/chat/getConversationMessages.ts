@@ -26,6 +26,7 @@ export const getConversationMessages = async ({
       where: { conversationId, userId },
       select: { id: true },
     });
+
     if (!isParticipant) {
       throw new Error("Вы не имеете доступа к этому чату");
     }
@@ -43,7 +44,7 @@ export const getConversationMessages = async ({
       ...whereCursor,
     };
 
-    const messages = await prisma.message.findMany({
+    const rawMessages = await prisma.message.findMany({
       where: baseWhere,
       orderBy: { id: direction === "backward" ? "desc" : "asc" },
       take: limit,
@@ -80,7 +81,7 @@ export const getConversationMessages = async ({
       },
     });
 
-    if (messages.length === 0) {
+    if (rawMessages.length === 0) {
       return {
         messages: [],
         pageInfo: {
@@ -91,12 +92,122 @@ export const getConversationMessages = async ({
       };
     }
 
-    const messageIds = messages.map((m) => m.id);
+    const now = new Date();
+
+    const notExpired = rawMessages.filter((m) => {
+      if (!m.isEphemeral) return true;
+      if (!m.expiresAt) return true;
+      return m.expiresAt > now;
+    });
+
+    const withViewLimit = notExpired.filter(
+      (m) => m.isEphemeral && m.maxViewsPerUser != null,
+    );
+    const messagesWithViewLimitIds = withViewLimit.map((m) => m.id);
+
+    let viewMap = new Map<number, number>();
+
+    if (messagesWithViewLimitIds.length > 0) {
+      const views = await prisma.messageView.findMany({
+        where: {
+          userId,
+          messageId: { in: messagesWithViewLimitIds },
+        },
+        select: {
+          messageId: true,
+          viewCount: true,
+        },
+      });
+
+      viewMap = new Map<number, number>(
+        views.map((v) => [v.messageId, v.viewCount]),
+      );
+    }
+
+    const visibleMessages = notExpired.filter((m) => {
+      if (!m.isEphemeral || m.maxViewsPerUser == null) return true;
+
+      const currentViews = viewMap.get(m.id) ?? 0;
+      return currentViews < m.maxViewsPerUser;
+    });
+
+    if (visibleMessages.length === 0) {
+      const rawIds = rawMessages.map((m) => m.id);
+      const nextCursor =
+        direction === "backward"
+          ? Math.min(...rawIds)
+          : Math.max(...rawIds);
+
+      const hasMore = !!(await prisma.message.findFirst({
+        where: {
+          conversationId,
+          isDeleted: false,
+          ...(direction === "backward"
+            ? { id: { lt: nextCursor } }
+            : { id: { gt: nextCursor } }),
+        },
+        select: { id: true },
+      }));
+
+      return {
+        messages: [],
+        pageInfo: {
+          hasMore,
+          nextCursor,
+          direction,
+        },
+      };
+    }
+
+    const visibleMessageIds = visibleMessages.map((m) => m.id);
+
+    const visibleWithLimit = visibleMessages.filter(
+      (m) => m.isEphemeral && m.maxViewsPerUser != null,
+    );
+
+    if (visibleWithLimit.length > 0) {
+      const toCreateIds: number[] = [];
+      const toUpdateIds: number[] = [];
+
+      for (const m of visibleWithLimit) {
+        const currentViews = viewMap.get(m.id) ?? 0;
+        if (currentViews === 0) {
+          toCreateIds.push(m.id);
+        } else {
+          toUpdateIds.push(m.id);
+        }
+      }
+
+      if (toCreateIds.length > 0) {
+        await prisma.messageView.createMany({
+          data: toCreateIds.map((mid) => ({
+            messageId: mid,
+            userId,
+            viewCount: 1,
+            lastViewedAt: now,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      if (toUpdateIds.length > 0) {
+        await prisma.messageView.updateMany({
+          where: {
+            userId,
+            messageId: { in: toUpdateIds },
+          },
+          data: {
+            viewCount: { increment: 1 },
+            lastViewedAt: now,
+          },
+        });
+      }
+    }
 
     const pinnedMessages = await prisma.pinnedMessage.findMany({
       where: {
         conversationId,
-        messageId: { in: messageIds },
+        messageId: { in: visibleMessageIds },
       },
       select: {
         messageId: true,
@@ -110,7 +221,7 @@ export const getConversationMessages = async ({
     });
 
     const allReactions = await prisma.reaction.findMany({
-      where: { messageId: { in: messageIds } },
+      where: { messageId: { in: visibleMessageIds } },
       select: {
         messageId: true,
         emoji: true,
@@ -122,7 +233,11 @@ export const getConversationMessages = async ({
       number,
       {
         emoji: string;
-        users: { id: number; username?: string; profilePicture?: string | null }[];
+        users: {
+          id: number;
+          username?: string;
+          profilePicture?: string | null;
+        }[];
       }[]
     > = {};
 
@@ -136,7 +251,7 @@ export const getConversationMessages = async ({
       }
     }
 
-    const enriched = messages.map((m) => {
+    const enriched = visibleMessages.map((m) => {
       const grouped = groupedByMessage[m.id] || [];
       const pinInfo = pinnedMap.get(m.id) || null;
 
@@ -154,7 +269,6 @@ export const getConversationMessages = async ({
         myReactions: grouped
           .filter((g) => g.users.some((u) => u.id === userId))
           .map((g) => g.emoji),
-
         isPinned: pinInfo !== null,
         pinnedAt: pinInfo,
       };
@@ -163,9 +277,11 @@ export const getConversationMessages = async ({
     const resultMessages =
       direction === "backward" ? [...enriched].reverse() : enriched;
 
-    const ids = messages.map((m) => m.id);
+    const rawIds = rawMessages.map((m) => m.id);
     const nextCursor =
-      direction === "backward" ? Math.min(...ids) : Math.max(...ids);
+      direction === "backward"
+        ? Math.min(...rawIds)
+        : Math.max(...rawIds);
 
     const hasMore = !!(await prisma.message.findFirst({
       where: {
@@ -178,33 +294,35 @@ export const getConversationMessages = async ({
       select: { id: true },
     }));
 
-    if (markDelivered && messageIds.length > 0) {
-      const now = new Date();
-
+    if (markDelivered && visibleMessageIds.length > 0) {
       const existingDeliveries = await prisma.messageDelivery.findMany({
-        where: { userId, messageId: { in: messageIds } },
+        where: { userId, messageId: { in: visibleMessageIds } },
         select: { messageId: true, status: true },
       });
+
       const existingSet = new Map(
         existingDeliveries.map((d) => [d.messageId, d.status]),
       );
 
-      const toInsert = messageIds.filter((mid) => !existingSet.has(mid));
+      const toInsert = visibleMessageIds.filter((mid) => !existingSet.has(mid));
+      const toUpdate = visibleMessageIds.filter(
+        (mid) => existingSet.get(mid) === "sent",
+      );
+
+      const nowDelivery = new Date();
+
       if (toInsert.length > 0) {
         await prisma.messageDelivery.createMany({
           data: toInsert.map((mid) => ({
             messageId: mid,
             userId,
             status: "delivered",
-            timestamp: now,
+            timestamp: nowDelivery,
           })),
           skipDuplicates: true,
         });
       }
 
-      const toUpdate = messageIds.filter(
-        (mid) => existingSet.get(mid) === "sent",
-      );
       if (toUpdate.length > 0) {
         await prisma.messageDelivery.updateMany({
           where: {
@@ -212,7 +330,10 @@ export const getConversationMessages = async ({
             messageId: { in: toUpdate },
             status: "sent",
           },
-          data: { status: "delivered", timestamp: now },
+          data: {
+            status: "delivered",
+            timestamp: nowDelivery,
+          },
         });
       }
     }

@@ -36,6 +36,26 @@ export const sendMessageSchema = z
     repliedToId: z.number().int().positive().optional().nullable(),
 
     clientMessageId: z.string().optional().nullable(),
+
+    ttlSeconds: z
+      .number({
+        invalid_type_error: "ttlSeconds must be a number",
+      })
+      .int()
+      .positive()
+      .max(60 * 60 * 24 * 7) 
+      .optional()
+      .nullable(),
+
+    maxViewsPerUser: z
+      .number({
+        invalid_type_error: "maxViewsPerUser must be a number",
+      })
+      .int()
+      .positive()
+      .max(100) 
+      .optional()
+      .nullable(),
   })
   .refine(
     (data) =>

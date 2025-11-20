@@ -57,6 +57,8 @@ model User {
 
   pinnedConversations PinnedConversation[]
   pinnedMessages      PinnedMessage[]
+
+  messageViews MessageView[]
 }
 
 model FriendRequest {
@@ -206,8 +208,8 @@ model Conversation {
   lastMessageId Int?     @unique
   lastMessage   Message? @relation("LastMessage", fields: [lastMessageId], references: [id])
 
-  pinnedBy      PinnedConversation[]
-  PinnedMessage PinnedMessage[]
+  pinnedBy       PinnedConversation[]
+  pinnedMessages PinnedMessage[]
 }
 
 model Participant {
@@ -274,10 +276,32 @@ model Message {
 
   pinnedBy PinnedMessage[]
 
+  // ⏱/👁 Эфемерные сообщения
+  isEphemeral     Boolean   @default(false) // является ли сообщение самоуничтожающимся
+  expiresAt       DateTime? // удалить после этой даты/времени (режим по времени)
+  maxViewsPerUser Int? // максимум просмотров для КАЖДОГО пользователя (режим по просмотрам)
+
+  // учёт просмотров по пользователям
+  views MessageView[]
+
   @@index([conversationId, createdAt])
   @@index([conversationId, editedAt])
   @@index([conversationId, deletedAt])
   @@index([processingStatus, createdAt])
+}
+
+// 👁 Учёт просмотров эфемерных сообщений по пользователям
+model MessageView {
+  id           Int       @id @default(autoincrement())
+  messageId    Int
+  userId       Int
+  viewCount    Int       @default(0)
+  lastViewedAt DateTime? // опционально, можно использовать для логики
+
+  message Message @relation(fields: [messageId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
 }
 
 model EncryptionKey {

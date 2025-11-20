@@ -73,6 +73,8 @@ export const send = async (req: Request, res: Response) => {
       repliedToId,
       clientMessageId,
       attachments,
+      ttlSeconds,
+      maxViewsPerUser,
     } = req.body;
 
     const message = await sendMessage({
@@ -87,6 +89,8 @@ export const send = async (req: Request, res: Response) => {
       repliedToId,
       clientMessageId,
       attachments,
+      ttlSeconds,
+      maxViewsPerUser,
     });
     res.status(201).json(message);
   } catch (error: any) {
@@ -116,12 +120,10 @@ export const update = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!messageId && !clientMessageId) {
-      res
-        .status(400)
-        .json({
-          message:
-            "Нужно указать messageId (в URL) или clientMessageId (в body)",
-        });
+      res.status(400).json({
+        message:
+          "Нужно указать messageId (в URL) или clientMessageId (в body)",
+      });
       return;
     }
     if (!Number.isFinite(conversationId)) {
@@ -185,13 +187,11 @@ export const leave = async (req: Request, res: Response) => {
       requestedById: userId,
     });
 
-    res
-      .status(200)
-      .json({
-        message: conversationDeleted
-          ? "Conversation deleted"
-          : "Left the conversation",
-      });
+    res.status(200).json({
+      message: conversationDeleted
+        ? "Conversation deleted"
+        : "Left the conversation",
+    });
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
@@ -224,7 +224,7 @@ export const add = async (req: Request, res: Response) => {
 
 export const getConversationMessages = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const conversationId = Number(req.params.chatId);
@@ -253,9 +253,7 @@ export const getConversationMessages = async (
     });
     res.status(200).json(result);
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: error.message || "Ошибка сервера" });
+    res.status(500).json({ message: error.message || "Ошибка сервера" });
   }
 };
 
@@ -405,7 +403,9 @@ export const transcribeMessage = async (
     }
 
     if (!storedName) {
-      res.status(400).json({ message: "Не удалось извлечь имя файла из mediaUrl" });
+      res
+        .status(400)
+        .json({ message: "Не удалось извлечь имя файла из mediaUrl" });
       return;
     }
 
