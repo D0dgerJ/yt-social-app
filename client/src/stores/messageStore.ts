@@ -91,6 +91,11 @@ export interface Message {
 
   isPinned?: boolean;
   pinnedAt?: string | null;
+
+  isEphemeral?: boolean;
+  expiresAt?: string | null;
+  maxViewsPerUser?: number | null;
+  remainingViewsForMe?: number | null;
 }
 
 function mergePreserveDecrypted(
@@ -118,10 +123,7 @@ function mergePreserveDecrypted(
         ...(nextReply || {}),
       };
 
-      if (
-        nextReply?.content &&
-        typeof nextReply.content === 'string'
-      ) {
+      if (nextReply?.content && typeof nextReply.content === 'string') {
         mergedReply.content = nextReply.content;
       } else if (prevReply?.content && !nextReply?.content) {
         mergedReply.content = prevReply.content;
@@ -233,9 +235,7 @@ interface MessageState {
   markStatus: (
     conversationId: number,
     idOrClientId: number | string,
-    patch: Partial<
-      Pick<Message, 'isDelivered' | 'isRead' | 'localStatus'>
-    >
+    patch: Partial<Pick<Message, 'isDelivered' | 'isRead' | 'localStatus'>>
   ) => void;
 
   updateMessage: (

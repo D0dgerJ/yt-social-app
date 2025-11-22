@@ -16,6 +16,8 @@ type SendOptions = {
   files?: File[];
   replyToId?: number;
   repliedToId?: number;
+  ttlSeconds?: number;
+  maxViewsPerUser?: number;
 };
 
 const ACK_WAIT_SOCKET_MS = 4_000;
@@ -61,7 +63,14 @@ export function useSendMessage() {
 
   const send = useCallback(
     async (opts: SendOptions) => {
-      const { conversationId, text, files = [] } = opts;
+      const {
+        conversationId,
+        text,
+        files = [],
+        ttlSeconds,
+        maxViewsPerUser,
+      } = opts;
+
       if (!me?.id) throw new Error('Not authenticated');
 
       const repliedToId = opts.repliedToId ?? opts.replyToId;
@@ -168,7 +177,9 @@ export function useSendMessage() {
 
         const uploadChunk = async () => {
           if (chunk.length === 0) {
-            return { urls: [] as Array<{ url: string; mime: string; name?: string; size?: number }> };
+            return {
+              urls: [] as Array<{ url: string; mime: string; name?: string; size?: number }>,
+            };
           }
           const key = `${clientMessageId}-c${chunkIndex}`;
           const cached = uploadedCacheRef.current.get(key);
@@ -198,9 +209,13 @@ export function useSendMessage() {
             const body: SendMessageBody & { conversationId: number } = {
               conversationId,
               clientMessageId,
-              encryptedContent: await encryptText(chunkIndex === 0 ? trimmed : undefined),
+              encryptedContent: await encryptText(
+                chunkIndex === 0 ? trimmed : undefined,
+              ),
               content: undefined,
               repliedToId,
+              ttlSeconds,
+              maxViewsPerUser,
             };
 
             const uploaded = await uploadChunk();
@@ -226,7 +241,7 @@ export function useSendMessage() {
 
                   finalizeOk(
                     resp.message,
-                    chunkIndex === 0 ? trimmed : undefined
+                    chunkIndex === 0 ? trimmed : undefined,
                   );
                 }
               });
@@ -247,7 +262,7 @@ export function useSendMessage() {
           if (!okBySocket && !acked) {
             const uploaded = await uploadChunk();
             const encryptedContent = await encryptText(
-              chunkIndex === 0 ? trimmed : undefined
+              chunkIndex === 0 ? trimmed : undefined,
             );
 
             const attachments: Attachment[] = uploaded.urls.map((u, i) => ({
@@ -265,6 +280,8 @@ export function useSendMessage() {
               content: undefined,
               repliedToId,
               attachments: attachments.length ? attachments : undefined,
+              ttlSeconds,
+              maxViewsPerUser,
             };
 
             const serverMessage = await sendMessageREST(conversationId, body);
@@ -273,7 +290,7 @@ export function useSendMessage() {
             if (serverMessage?.id) {
               finalizeOk(
                 serverMessage,
-                chunkIndex === 0 ? trimmed : undefined
+                chunkIndex === 0 ? trimmed : undefined,
               );
             } else {
               throw new Error('sendMessageREST returned no id');

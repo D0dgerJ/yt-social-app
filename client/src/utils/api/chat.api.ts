@@ -21,13 +21,13 @@ export type Attachment = {
 };
 
 export type SendMessageBody = {
-  encryptedContent?: string;
   content?: string;
-
+  encryptedContent?: string;
   repliedToId?: number;
   attachments?: Attachment[];
-
   clientMessageId?: string | null;
+  ttlSeconds?: number | null;
+  maxViewsPerUser?: number | null;
 };
 
 // ----------------- Загрузка файлов -----------------
@@ -46,7 +46,7 @@ export const uploadFiles = async (files: File[]) =>
       ? data.urls
       : [];
 
-    const urls = raw.map((x: any, i: number) => ({
+    const urls: Attachment[] = raw.map((x: any, i: number) => ({
       url: x.url ?? x.path ?? x.location,
       mime: x.mime ?? files[i]?.type ?? 'application/octet-stream',
       name: x.name ?? files[i]?.name ?? `file-${i + 1}`,
@@ -57,7 +57,9 @@ export const uploadFiles = async (files: File[]) =>
 
 // ----------------- Чаты -----------------
 export const createChat = async (userIds: number[], creatorId: number, name?: string) =>
-  handleRequest(() => axios.post('/chat', { userIds, creatorId, name }).then((res) => res.data));
+  handleRequest(() =>
+    axios.post('/chat', { userIds, creatorId, name }).then((res) => res.data),
+  );
 
 export const getUserConversations = async () =>
   handleRequest(() => axios.get('/chat').then((res) => res.data));
@@ -70,14 +72,16 @@ export const unpinConversation = async (chatId: number) =>
 
 // ----------------- Сообщения -----------------
 export const sendMessage = async (chatId: number, message: SendMessageBody) =>
-  handleRequest(() => axios.post(`/chat/${chatId}/messages`, message).then((res) => res.data));
+  handleRequest(() =>
+    axios.post(`/chat/${chatId}/messages`, message).then((res) => res.data),
+  );
 
 export const getChatMessages = async (
   chatId: number,
   opts: { cursorId?: number | null; direction?: 'forward' | 'backward'; limit?: number } = {},
 ) =>
   handleRequest(async () => {
-    const params: any = {};
+    const params: Record<string, any> = {};
     if (opts.cursorId != null) params.cursorId = opts.cursorId;
     if (opts.direction) params.direction = opts.direction;
     if (opts.limit != null) params.limit = opts.limit;
@@ -93,7 +97,9 @@ export const getChatMessages = async (
 
 export const updateMessage = async (chatId: number, messageId: number, content: string) =>
   handleRequest(() =>
-    axios.patch(`/chat/${chatId}/messages/${messageId}`, { content }).then((res) => res.data),
+    axios
+      .patch(`/chat/${chatId}/messages/${messageId}`, { content })
+      .then((res) => res.data),
   );
 
 export const updateMessageByClientId = async (
@@ -108,7 +114,9 @@ export const updateMessageByClientId = async (
   );
 
 export const deleteMessage = async (chatId: number, messageId: number) =>
-  handleRequest(() => axios.delete(`/chat/${chatId}/messages/${messageId}`).then((res) => res.data));
+  handleRequest(() =>
+    axios.delete(`/chat/${chatId}/messages/${messageId}`).then((res) => res.data),
+  );
 
 export const pinMessage = async (chatId: number, messageId: number) =>
   handleRequest(() =>
@@ -119,6 +127,27 @@ export const unpinMessage = async (chatId: number, messageId: number) =>
   handleRequest(() =>
     axios.delete(`/chat/${chatId}/messages/${messageId}/pin`).then((res) => res.data),
   );
+
+export const transcribeMessage = async (messageId: number): Promise<string> =>
+  handleRequest(async () => {
+    const { data } = await axios.post(`/chat/messages/${messageId}/transcribe`);
+
+    if (typeof data === 'string') return data;
+    if (data?.text && typeof data.text === 'string') return data.text;
+
+    return '';
+  });
+
+  export const registerMessageView = async (
+  messageId: number,
+): Promise<{ removed: boolean; remainingViews: number | null }> =>
+  handleRequest(async () => {
+    const { data } = await axios.post(`/chat/messages/${messageId}/view`);
+    return {
+      removed: data?.removed ?? false,
+      remainingViews: data?.remainingViews ?? null,
+    };
+  });
 
 // ----------------- Участники -----------------
 export const leaveConversation = async (chatId: number) =>

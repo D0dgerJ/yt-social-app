@@ -293,6 +293,9 @@ const MessageList: React.FC<Props> = ({
                 resolveName={resolveName}
                 repliedToId={m.repliedToId ?? null}
                 repliedTo={(m as any).repliedTo ?? null}
+                isEphemeral={m.isEphemeral}
+                maxViewsPerUser={m.maxViewsPerUser}
+                remainingViewsForMe={m.remainingViewsForMe}
               />
             </div>
           );
