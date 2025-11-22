@@ -26,6 +26,7 @@ import {
   pinMessage as pinMessageUC,
   unpinMessage as unpinMessageUC,
 } from "../../application/use-cases/chat/setMessagePinned.ts";
+import { registerMessageView } from "../../application/use-cases/chat/registerMessageView.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -514,6 +515,27 @@ export const unpinMessage = async (req: Request, res: Response) => {
       userId,
       conversationId,
       messageId,
+    });
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const registerView = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const messageId = Number(req.params.messageId);
+
+    if (!Number.isFinite(messageId)) {
+      res.status(400).json({ message: "Некорректный messageId" });
+      return;
+    }
+
+    const result = await registerMessageView({
+      messageId,
+      userId,
     });
 
     res.status(200).json(result);

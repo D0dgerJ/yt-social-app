@@ -452,3 +452,92 @@
   font-size: 12px;
   color: #b91c1c;
 }
+
+
+
+.message-item--ephemeral {
+  position: relative;
+
+  .message-ephemeral-badge {
+    margin-left: 8px;
+    font-size: 11px;
+    color: #166534; 
+    background: rgba(134, 239, 172, 0.35); 
+    border-radius: 999px;
+    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    &__counter {
+      font-weight: 600;
+    }
+  }
+}
+
+.message-ephemeral-placeholder {
+  width: 100%;
+  border: 1px dashed rgba(22, 101, 52, 0.7);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 6px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(187, 247, 208, 0.9),
+    rgba(187, 247, 208, 0.4)
+  );
+
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  appearance: none;
+  -webkit-appearance: none;
+  border-width: 1px;
+
+  &__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #14532d;
+  }
+
+  &__counter {
+    font-size: 12px;
+    color: #166534;
+  }
+
+  &__hint {
+    font-size: 11px;
+    color: #4b5563;
+  }
+
+  &:hover {
+    border-color: #15803d;
+    background: linear-gradient(
+      135deg,
+      rgba(134, 239, 172, 1),
+      rgba(187, 247, 208, 0.7)
+    );
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.message-content--ephemeral-visible {
+  position: relative;
+  cursor: pointer;
+
+  &:after {
+    content: 'Нажмите, чтобы учесть просмотр';
+    position: absolute;
+    bottom: -14px;
+    right: 0;
+    font-size: 10px;
+    color: #6b7280;
+  }
+}

@@ -17,8 +17,8 @@ const ChatWindow: React.FC = () => {
   const { currentConversationId } = useChatStore();
 
   const { conversationId, messages } = useMessagesDecrypted();
-
-  const { loadHistory, setActiveConversation } = useMessageStore.getState();
+  const { loadHistory, setActiveConversation, removeMessage } =
+    useMessageStore.getState();
 
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [hasMoreOlder, setHasMoreOlder] = useState(true);
@@ -27,7 +27,33 @@ const ChatWindow: React.FC = () => {
   const loadedOnceRef = useRef<Record<number, boolean>>({});
 
   useReadReceipts();
-  const { reactToMessage, setReplyTarget, beginEditMessage, deleteMessage } = useMessageActions();
+  const {
+    reactToMessage,
+    setReplyTarget,
+    beginEditMessage,
+    deleteMessage,
+  } = useMessageActions();
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+
+      messages.forEach((m) => {
+        if (!m.isEphemeral) return;
+        if (!m.expiresAt) return;
+
+        const expires = Date.parse(m.expiresAt);
+        if (isFinite(expires) && expires <= now) {
+          removeMessage(m.id);
+        }
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [conversationId, messages, removeMessage]);
+
 
   const initialLoad = useCallback(
     async (convId: number) => {
@@ -48,11 +74,14 @@ const ChatWindow: React.FC = () => {
 
   useEffect(() => {
     if (!currentConversationId) return;
+
     setActiveConversation(currentConversationId);
+
     if (!loadedOnceRef.current[currentConversationId]) {
       void initialLoad(currentConversationId);
     }
   }, [currentConversationId, setActiveConversation, initialLoad]);
+
 
   const loadOlder = useCallback(async () => {
     if (!conversationId || isLoadingOlder || !hasMoreOlder) return;
@@ -94,6 +123,7 @@ const ChatWindow: React.FC = () => {
         onEdit={(m) => beginEditMessage(m)}
         onDelete={(m) => deleteMessage(m)}
       />
+
       <TypingIndicator conversationId={currentConversationId} />
     </div>
   );

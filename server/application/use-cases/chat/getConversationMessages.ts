@@ -5,11 +5,8 @@ interface GetConversationMessagesInput {
   userId: number;
 
   cursorId?: number | null;
-
   limit?: number;
-
   direction?: "backward" | "forward";
-
   markDelivered?: boolean;
 }
 
@@ -161,49 +158,6 @@ export const getConversationMessages = async ({
 
     const visibleMessageIds = visibleMessages.map((m) => m.id);
 
-    const visibleWithLimit = visibleMessages.filter(
-      (m) => m.isEphemeral && m.maxViewsPerUser != null,
-    );
-
-    if (visibleWithLimit.length > 0) {
-      const toCreateIds: number[] = [];
-      const toUpdateIds: number[] = [];
-
-      for (const m of visibleWithLimit) {
-        const currentViews = viewMap.get(m.id) ?? 0;
-        if (currentViews === 0) {
-          toCreateIds.push(m.id);
-        } else {
-          toUpdateIds.push(m.id);
-        }
-      }
-
-      if (toCreateIds.length > 0) {
-        await prisma.messageView.createMany({
-          data: toCreateIds.map((mid) => ({
-            messageId: mid,
-            userId,
-            viewCount: 1,
-            lastViewedAt: now,
-          })),
-          skipDuplicates: true,
-        });
-      }
-
-      if (toUpdateIds.length > 0) {
-        await prisma.messageView.updateMany({
-          where: {
-            userId,
-            messageId: { in: toUpdateIds },
-          },
-          data: {
-            viewCount: { increment: 1 },
-            lastViewedAt: now,
-          },
-        });
-      }
-    }
-
     const pinnedMessages = await prisma.pinnedMessage.findMany({
       where: {
         conversationId,
@@ -255,6 +209,12 @@ export const getConversationMessages = async ({
       const grouped = groupedByMessage[m.id] || [];
       const pinInfo = pinnedMap.get(m.id) || null;
 
+      const currentViews = viewMap.get(m.id) ?? 0;
+      const remainingViewsForMe =
+        m.isEphemeral && m.maxViewsPerUser != null
+          ? Math.max(0, m.maxViewsPerUser - currentViews)
+          : null;
+
       return {
         ...m,
         groupedReactions: grouped.map((g) => ({
@@ -271,6 +231,7 @@ export const getConversationMessages = async ({
           .map((g) => g.emoji),
         isPinned: pinInfo !== null,
         pinnedAt: pinInfo,
+        remainingViewsForMe,
       };
     });
 

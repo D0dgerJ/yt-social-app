@@ -17,6 +17,7 @@ import {
   unpinConversation,
   pinMessage,
   unpinMessage,
+  registerView,  
 } from "../controllers/chat.controller.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
@@ -104,6 +105,12 @@ router.post(
   authMiddleware,
   transcribeMessage,
 ); // POST /api/v1/chat/messages/:messageId/transcribe
+
+router.post(
+  "/messages/:messageId/view",
+  authMiddleware,
+  registerView,
+); // POST /api/v1/chat/messages/:messageId/view
 
 // Статусы сообщений
 router.post("/:chatId/delivered", authMiddleware, markAsDelivered); // POST /api/v1/chat/:chatId/delivered

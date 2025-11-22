@@ -1,10 +1,16 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MessageReactions } from '../MessageReactions/MessageReactions';
-import { getReactionsREST } from '@/services/chatApi';
-import { transcribeMessageREST } from '@/services/chatApi';
-import FileIcon from '../FileIcon/FileIcon';
+import {
+  getMessageReactions as getReactionsREST,
+  transcribeMessage as transcribeMessageREST,
+  registerMessageView as registerMessageViewREST,
+} from '@/utils/api/chat.api';
 import ReplyPreview from '@/components/Chat/ReplyPreview/ReplyPreview';
-import { useMessageStore, type RepliedToLite, type Message } from '@/stores/messageStore';
+import {
+  useMessageStore,
+  type RepliedToLite,
+  type Message,
+} from '@/stores/messageStore';
 import './MessageItem.scss';
 
 interface GroupedReaction {
@@ -29,7 +35,15 @@ interface MessageItemProps {
   encryptedContent?: string | null;
 
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | 'file' | 'gif' | 'audio' | 'text' | 'sticker' | null;
+  mediaType?:
+    | 'image'
+    | 'video'
+    | 'file'
+    | 'gif'
+    | 'audio'
+    | 'text'
+    | 'sticker'
+    | null;
   fileName?: string | null;
 
   mediaFiles?: Message['mediaFiles'];
@@ -54,9 +68,12 @@ interface MessageItemProps {
 
   repliedToId?: number | null;
   repliedTo?: RepliedToLite | null;
+  isEphemeral?: boolean;
+  maxViewsPerUser?: number | null;
+  remainingViewsForMe?: number | null;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function toAbsoluteUrl(url?: string | null): string {
   if (!url) return '';
@@ -71,21 +88,24 @@ function toAbsoluteUrl(url?: string | null): string {
 }
 
 function buildDownloadUrl(fileUrlFromMessage: string): string {
-  let storedName = "";
+  let storedName = '';
 
   try {
     const u = new URL(fileUrlFromMessage);
-    storedName = u.pathname.split("/").pop() || "";
+    storedName = u.pathname.split('/').pop() || '';
   } catch {
-    storedName = fileUrlFromMessage.split("/").pop() || "";
+    storedName = fileUrlFromMessage.split('/').pop() || '';
   }
 
-  const base = String(API_BASE).replace(/\/+$/, "");
+  const base = String(API_BASE).replace(/\/+$/, '');
   return `${base}/api/v1/download/uploads/${storedName}`;
 }
 
 const isImageByExt = (url?: string) =>
-  !!url && /\.(png|jpe?g|webp|avif|gif|bmp|svg)$/i.test((url.split('?')[0] ?? '').toLowerCase());
+  !!url &&
+  /\.(png|jpe?g|webp|avif|gif|bmp|svg)$/i.test(
+    (url.split('?')[0] ?? '').toLowerCase(),
+  );
 
 const MediaGrid: React.FC<{
   items: NonNullable<Message['mediaFiles']>;
@@ -106,10 +126,7 @@ const MediaGrid: React.FC<{
     document.body.removeChild(a);
   };
 
-  const onKeyOpen = (
-    e: React.KeyboardEvent,
-    url: string,
-  ) => {
+  const onKeyOpen = (e: React.KeyboardEvent, url: string) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleDownload(url);
@@ -136,7 +153,7 @@ const MediaGrid: React.FC<{
         const isImage = m.type === 'image' || m.type === 'gif' || isImageByExt(m.url);
         const isVideo = m.type === 'video';
         const isAudio = m.type === 'audio';
-        const isFile  = m.type === 'file';
+        const isFile = m.type === 'file';
 
         const isSingleAudioOnly = isAudio && items.length === 1;
 
@@ -189,14 +206,15 @@ const MediaGrid: React.FC<{
             {isFile && (
               <button
                 type="button"
-                className={`chat-file-bubble chat-file-bubble--grid`}
+                className="chat-file-bubble chat-file-bubble--grid"
                 onClick={() => handleDownload(m.url)}
                 onKeyDown={(e) => onKeyOpen(e, m.url)}
                 title={m.originalName || 'Файл'}
               >
                 <div className="chat-file-bubble__icon">
                   <div className="chat-file-bubble__icon-ext">
-                    { (m.originalName || m.url).split('.').pop()?.toUpperCase() || 'FILE' }
+                    {(m.originalName || m.url).split('.').pop()?.toUpperCase() ||
+                      'FILE'}
                   </div>
                 </div>
 
@@ -258,6 +276,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
   repliedToId,
   repliedTo,
+  isEphemeral,
+  maxViewsPerUser,
+  remainingViewsForMe,
 }) => {
   const [showActions, setShowActions] = useState(false);
   const [showReactionsPopup, setShowReactionsPopup] = useState(false);
@@ -265,8 +286,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const [imageFailed, setImageFailed] = useState(false);
   const longPressTimer = useRef<number | null>(null);
 
-  const [reactions, setReactions] = useState<GroupedReaction[]>(groupedReactions ?? []);
-  const [reactionsLoaded, setReactionsLoaded] = useState(!!(groupedReactions && groupedReactions.length));
+  const [reactions, setReactions] = useState<GroupedReaction[]>(
+    groupedReactions ?? [],
+  );
+  const [reactionsLoaded, setReactionsLoaded] = useState(
+    !!(groupedReactions && groupedReactions.length),
+  );
   const [loadingReactions, setLoadingReactions] = useState(false);
 
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -275,6 +300,19 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
 
   const getById = useMessageStore((s) => s.getById);
+  const removeMessage = useMessageStore((s) => s.removeMessage);
+  const updateMessageGlobal = useMessageStore((s) => s.updateMessage);
+
+  const isEphemeralActive =
+    !!isEphemeral && typeof maxViewsPerUser === 'number' && maxViewsPerUser > 0;
+
+  const [revealed, setRevealed] = useState(!isEphemeralActive);
+  const [remainingViews, setRemainingViews] = useState<number | null>(() => {
+    if (!isEphemeralActive) return null;
+    if (typeof remainingViewsForMe === 'number') return remainingViewsForMe;
+    if (typeof maxViewsPerUser === 'number') return maxViewsPerUser;
+    return null;
+  });
 
   const ensureReactions = useCallback(async () => {
     if (reactionsLoaded || loadingReactions) return;
@@ -295,12 +333,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
   const normalizedMediaUrl = toAbsoluteUrl(mediaUrl || undefined);
   const uploadsFallback = useMemo(
-    () => (mediaUrl ? `/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}` : ''),
+    () =>
+      mediaUrl ? `/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}` : '',
     [mediaUrl],
   );
 
   const isSingleImage =
-    !!mediaUrl && (mediaType === 'image' || mediaType === 'gif' || isImageByExt(normalizedMediaUrl));
+    !!mediaUrl &&
+    (mediaType === 'image' || mediaType === 'gif' || isImageByExt(normalizedMediaUrl));
 
   const displayNameComputed = useMemo(() => {
     if (displayName && displayName.trim()) return displayName.trim();
@@ -340,7 +380,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const toggleReactionQuick = useCallback(
     (emoji: string) => {
       if (!currentUserId) return;
-      const mine = reactions.some((r) => r.emoji === emoji && r.users?.some((u) => u.id === currentUserId));
+      const mine = reactions.some(
+        (r) => r.emoji === emoji && r.users?.some((u) => u.id === currentUserId),
+      );
       setReactions((prev) => {
         const copy = [...prev];
         const idx = copy.findIndex((r) => r.emoji === emoji);
@@ -417,7 +459,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
   }, [mediaUrl, mediaType]);
 
   const handleTranscribeClick = useCallback(async () => {
-    // если уже есть текст — просто показать/скрыть без повторного запроса
     if (transcript) {
       setIsTranscriptVisible((v) => !v);
       return;
@@ -431,21 +472,69 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
       const text = await transcribeMessageREST(messageId);
 
-      setTranscript(text || "(пусто)");
+      setTranscript(text || '(пусто)');
       setIsTranscriptVisible(true);
     } catch (err: any) {
-      console.error("[transcribe] error:", err);
+      console.error('[transcribe] error:', err);
       setTranscribeError(
-        err?.message || "Ошибка при расшифровке голосового сообщения",
+        err?.message || 'Ошибка при расшифровке голосового сообщения',
       );
     } finally {
       setIsTranscribing(false);
     }
   }, [messageId, transcript]);
 
+  const handleOpenEphemeral = useCallback(
+    async (urlToOpen?: string) => {
+      if (!isEphemeralActive) {
+        if (urlToOpen && onOpenAttachment) onOpenAttachment(urlToOpen);
+        return;
+      }
+
+      try {
+        const { removed, remainingViews } = await registerMessageViewREST(messageId);
+
+        if (removed) {
+          removeMessage(messageId);
+          return;
+        }
+
+        setRevealed(true);
+        setRemainingViews(
+          typeof remainingViews === 'number' ? remainingViews : remainingViews ?? null,
+        );
+
+        if (conversationId) {
+          updateMessageGlobal({
+            id: messageId,
+            conversationId,
+            remainingViewsForMe:
+              typeof remainingViews === 'number' ? remainingViews : remainingViews ?? null,
+          });
+        }
+
+        if (urlToOpen && onOpenAttachment) {
+          onOpenAttachment(urlToOpen);
+        }
+      } catch (e) {
+        console.error('[ephemeral] register view failed', e);
+      }
+    },
+    [
+      isEphemeralActive,
+      messageId,
+      conversationId,
+      onOpenAttachment,
+      removeMessage,
+      updateMessageGlobal,
+    ],
+  );
+
   return (
     <div
-      className={`message-item ${isOwnMessage ? 'own' : ''}`}
+      className={`message-item ${isOwnMessage ? 'own' : ''} ${
+        isEphemeralActive ? 'message-item--ephemeral' : ''
+      }`}
       onContextMenu={handleContextMenu}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -457,7 +546,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <div className="message-header">
         <span className="sender">{displayNameComputed}</span>
 
-        {/* Меню действий */}
+        {isEphemeralActive && (
+          <span className="message-ephemeral-badge">
+            Эфемерное
+            {typeof remainingViews === 'number' && (
+              <span className="message-ephemeral-badge__counter">
+                · осталось {remainingViews}
+              </span>
+            )}
+          </span>
+        )}
+
         <button
           type="button"
           className="message-actions-btn"
@@ -468,138 +567,219 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </button>
 
         {showActions && (
-          <div className="message-actions-menu" onMouseLeave={() => setShowActions(false)}>
-            <button type="button" onClick={() => onReply?.()}>Ответить</button>
-            {isOwnMessage && <button type="button" onClick={() => onEdit?.()}>Редактировать</button>}
+          <div
+            className="message-actions-menu"
+            onMouseLeave={() => setShowActions(false)}
+          >
+            <button type="button" onClick={() => onReply?.()}>
+              Ответить
+            </button>
             {isOwnMessage && (
-              <button type="button" className="danger" onClick={() => onDelete?.()}>
+              <button type="button" onClick={() => onEdit?.()}>
+                Редактировать
+              </button>
+            )}
+            {isOwnMessage && (
+              <button
+                type="button"
+                className="danger"
+                onClick={() => onDelete?.()}
+              >
                 Удалить
               </button>
             )}
             <div className="message-actions-reactions">
-              <button type="button" onClick={() => toggleReactionQuick('❤️')}>❤️</button>
-              <button type="button" onClick={() => toggleReactionQuick('👍')}>👍</button>
-              <button type="button" onClick={() => toggleReactionQuick('😂')}>😂</button>
-              <button type="button" onClick={() => toggleReactionQuick('🔥')}>🔥</button>
-              <button type="button" onClick={() => toggleReactionQuick('👏')}>👏</button>
+              <button type="button" onClick={() => toggleReactionQuick('❤️')}>
+                ❤️
+              </button>
+              <button type="button" onClick={() => toggleReactionQuick('👍')}>
+                👍
+              </button>
+              <button type="button" onClick={() => toggleReactionQuick('😂')}>
+                😂
+              </button>
+              <button type="button" onClick={() => toggleReactionQuick('🔥')}>
+                🔥
+              </button>
+              <button type="button" onClick={() => toggleReactionQuick('👏')}>
+                👏
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {(repliedTo || repliedToId) && <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />}
-
-      {content && <div className="message-content">{content}</div>}
-
-      {/* Галерея мультивложений */}
-      {mediaFiles && mediaFiles.length > 0 && (
-        <MediaGrid items={mediaFiles} onOpen={onOpenAttachment} />
+      {(repliedTo || repliedToId) && (
+        <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />
       )}
 
-      {/* одиночное изображение */}
-      {isSingleImage && !mediaFiles?.length && (
-        <div className="message-media">
-          {!imageFailed ? (
-            <img
-              className="message-image"
-              src={normalizedMediaUrl}
-              alt={fileName ?? 'image'}
-              loading="lazy"
-              onClick={() => onOpenAttachment?.(normalizedMediaUrl)} 
-              onError={(e) => {
-                const el = e.currentTarget as HTMLImageElement;
-                if (uploadsFallback && el.src !== uploadsFallback) {
-                  el.src = uploadsFallback;
-                } else {
-                  setImageFailed(true);
-                }
-              }}
-            />
-          ) : (
-            <div className="message-image-fallback">Изображение недоступно</div>
+      {/* 🔹 заглушка для эфемерных, пока не раскрыты */}
+      {isEphemeralActive && !revealed && (
+        <button
+          type="button"
+          className="message-ephemeral-placeholder"
+          onClick={() => handleOpenEphemeral()}
+        >
+          <span className="message-ephemeral-placeholder__title">
+            🔒 Эфемерное сообщение
+          </span>
+          {typeof remainingViews === 'number' && (
+            <span className="message-ephemeral-placeholder__counter">
+              Осталось просмотров: {remainingViews}
+            </span>
           )}
+          <span className="message-ephemeral-placeholder__hint">
+            Нажмите, чтобы открыть
+          </span>
+        </button>
+      )}
+
+      {/* текст показываем только если не эфемерное или уже раскрыто */}
+      {!isEphemeralActive && content && (
+        <div className="message-content">{content}</div>
+      )}
+
+      {isEphemeralActive && revealed && content && (
+        <div
+          className="message-content message-content--ephemeral-visible"
+          onClick={() => handleOpenEphemeral()}
+        >
+          {content}
         </div>
       )}
 
-      {/* одиночные видео/аудио/файл/стикер */}
-      {!mediaFiles?.length && mediaType === 'video' && mediaUrl && (
-        <video
-          className="message-video"
-          src={normalizedMediaUrl}
-          controls
-          preload="metadata"
-          onDoubleClick={() => onOpenAttachment?.(normalizedMediaUrl)} 
+      {/* мультивложения */}
+      {(!isEphemeralActive || revealed) && mediaFiles && mediaFiles.length > 0 && (
+        <MediaGrid
+          items={mediaFiles}
+          onOpen={(url) => handleOpenEphemeral(url)}
         />
       )}
 
-      {mediaType === 'audio' && mediaUrl && (
-        <div className="message-audio-block">
-          <audio
-            className="message-audio"
-            src={buildDownloadUrl(mediaUrl)}
+      {/* одиночное изображение */}
+      {(!isEphemeralActive || revealed) &&
+        isSingleImage &&
+        !mediaFiles?.length && (
+          <div className="message-media">
+            {!imageFailed ? (
+              <img
+                className="message-image"
+                src={normalizedMediaUrl}
+                alt={fileName ?? 'image'}
+                loading="lazy"
+                onClick={() => handleOpenEphemeral(normalizedMediaUrl)}
+                onError={(e) => {
+                  const el = e.currentTarget as HTMLImageElement;
+                  if (uploadsFallback && el.src !== uploadsFallback) {
+                    el.src = uploadsFallback;
+                  } else {
+                    setImageFailed(true);
+                  }
+                }}
+              />
+            ) : (
+              <div className="message-image-fallback">Изображение недоступно</div>
+            )}
+          </div>
+        )}
+
+      {/* видео / аудио / файл / стикер — тоже прячем, пока эфемерное не раскрыто */}
+      {(!isEphemeralActive || revealed) &&
+        !mediaFiles?.length &&
+        mediaType === 'video' &&
+        mediaUrl && (
+          <video
+            className="message-video"
+            src={normalizedMediaUrl}
             controls
             preload="metadata"
+            onDoubleClick={() => handleOpenEphemeral(normalizedMediaUrl)}
           />
+        )}
 
-          <button
-            type="button"
-            className="message-audio-transcribe-btn"
-            onClick={handleTranscribeClick}
-            disabled={isTranscribing}
-          >
-            {isTranscribing
-              ? "Расшифровка…"
-              : transcript
+      {(!isEphemeralActive || revealed) &&
+        mediaType === 'audio' &&
+        mediaUrl && (
+          <div className="message-audio-block">
+            <audio
+              className="message-audio"
+              src={buildDownloadUrl(mediaUrl)}
+              controls
+              preload="metadata"
+            />
+
+            <button
+              type="button"
+              className="message-audio-transcribe-btn"
+              onClick={handleTranscribeClick}
+              disabled={isTranscribing}
+            >
+              {isTranscribing
+                ? 'Расшифровка…'
+                : transcript
                 ? isTranscriptVisible
-                  ? "Скрыть текст"
-                  : "Показать текст"
-                : "Транскрипция"}
-          </button>
+                  ? 'Скрыть текст'
+                  : 'Показать текст'
+                : 'Транскрипция'}
+            </button>
 
-          {transcribeError && (
-            <div className="message-transcript-error">
-              {transcribeError}
-            </div>
-          )}
+            {transcribeError && (
+              <div className="message-transcript-error">{transcribeError}</div>
+            )}
 
-          {transcript && isTranscriptVisible && (
-            <div className="message-transcript">
-              {transcript}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!mediaFiles?.length && mediaType === 'file' && mediaUrl && (
-        <a
-          className={`chat-file-bubble ${isOwnMessage ? 'chat-file-bubble--own' : ''}`}
-          href={singleFileDownloadHref}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <div className="chat-file-bubble__icon">
-            <div className="chat-file-bubble__icon-ext">
-              {(fileName || mediaUrl).split('.').pop()?.toUpperCase() || 'FILE'}
-            </div>
+            {transcript && isTranscriptVisible && (
+              <div className="message-transcript">{transcript}</div>
+            )}
           </div>
+        )}
 
-          <div className="chat-file-bubble__body">
-            <div className="chat-file-bubble__name">
-              {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
+      {(!isEphemeralActive || revealed) &&
+        !mediaFiles?.length &&
+        mediaType === 'file' &&
+        mediaUrl && (
+          <a
+            className={`chat-file-bubble ${
+              isOwnMessage ? 'chat-file-bubble--own' : ''
+            }`}
+            href={singleFileDownloadHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              if (isEphemeralActive) {
+                e.preventDefault();
+                void handleOpenEphemeral(singleFileDownloadHref);
+              }
+            }}
+          >
+            <div className="chat-file-bubble__icon">
+              <div className="chat-file-bubble__icon-ext">
+                {(fileName || mediaUrl).split('.').pop()?.toUpperCase() || 'FILE'}
+              </div>
             </div>
 
-            <div className="chat-file-bubble__meta">
-              Файл
+            <div className="chat-file-bubble__body">
+              <div className="chat-file-bubble__name">
+                {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
+              </div>
+
+              <div className="chat-file-bubble__meta">Файл</div>
             </div>
-          </div>
-        </a>
-      )}
+          </a>
+        )}
 
-      {!mediaFiles?.length && mediaType === 'sticker' && stickerUrl && (
-        <img src={toAbsoluteUrl(stickerUrl)} alt="sticker" className="message-image" />
-      )}
+      {(!isEphemeralActive || revealed) &&
+        !mediaFiles?.length &&
+        mediaType === 'sticker' &&
+        stickerUrl && (
+          <img
+            src={toAbsoluteUrl(stickerUrl)}
+            alt="sticker"
+            className="message-image"
+            onClick={() => handleOpenEphemeral(toAbsoluteUrl(stickerUrl))}
+          />
+        )}
 
-      {/* Реакции */}
+      {/* реакции */}
       {reactions.length > 0 && (
         <div className="message-reactions-static" aria-label="Реакции к сообщению">
           {reactions.map((r) => {
@@ -612,9 +792,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 aria-pressed={mine}
                 title={
                   r.users?.length
-                    ? `${r.emoji} · ${r.users.slice(0, 5).map((u) => u.username).join(', ')}${
-                        r.users.length > 5 ? '…' : ''
-                      }`
+                    ? `${r.emoji} · ${r.users
+                        .slice(0, 5)
+                        .map((u) => u.username)
+                        .join(', ')}${r.users.length > 5 ? '…' : ''}`
                     : r.emoji
                 }
               >
@@ -634,7 +815,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
 
-      {/* Попап реакций */}
       {showReactionsPopup && (
         <div
           className="reactions-popup"
@@ -647,16 +827,21 @@ const MessageItem: React.FC<MessageItemProps> = ({
             currentUserId={currentUserId ?? -1}
             reactions={reactions}
             onReactionsUpdate={setReactions}
-            onToggleReaction={onReactToggle ? (emoji) => onReactToggle(emoji) : undefined}
+            onToggleReaction={
+              onReactToggle ? (emoji) => onReactToggle(emoji) : undefined
+            }
           />
-          {loadingReactions && <div className="reactions-loading">Загружаю…</div>}
+          {loadingReactions && (
+            <div className="reactions-loading">Загружаю…</div>
+          )}
         </div>
       )}
 
-      {/* Статусы */}
       <div className="message-status">
         {localStatus === 'sending' && <span>Отправка…</span>}
-        {localStatus === 'failed' && <span className="danger">Не отправлено</span>}
+        {localStatus === 'failed' && (
+          <span className="danger">Не отправлено</span>
+        )}
         {isDelivered && <span>Доставлено</span>}
         {isRead && <span>Прочитано</span>}
       </div>

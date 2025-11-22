@@ -10,6 +10,18 @@ import './MessageInput.scss';
 
 const MAX_FILES_PER_MESSAGE = 10;
 
+const TTL_PRESETS = [
+  { label: '10 сек', seconds: 10 },
+  { label: '30 сек', seconds: 30 },
+  { label: '1 мин', seconds: 60 },
+  { label: '5 мин', seconds: 5 * 60 },
+  { label: '1 час', seconds: 60 * 60 },
+  { label: '1 день', seconds: 24 * 60 * 60 },
+  { label: '7 дней', seconds: 7 * 24 * 60 * 60 },
+] as const;
+
+type EphemeralMode = 'none' | 'time' | 'views';
+
 const MessageInput: React.FC = () => {
   const { currentConversationId } = useChatStore();
   const { send } = useSendMessage();
@@ -26,6 +38,10 @@ const MessageInput: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
 
+  const [ephemeralMode, setEphemeralMode] = useState<EphemeralMode>('none');
+  const [ttlSeconds, setTtlSeconds] = useState<number>(TTL_PRESETS[2].seconds); // по умолчанию 1 минута
+  const [viewsLimit, setViewsLimit] = useState<number>(1);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,6 +52,7 @@ const MessageInput: React.FC = () => {
     if (editing) {
       setText(editing.content || '');
       textareaRef.current?.focus();
+      setEphemeralMode('none');
     }
   }, [editing]);
 
@@ -44,6 +61,10 @@ const MessageInput: React.FC = () => {
     setFiles([]);
     if (replyTarget) setReplyTarget(undefined);
     if (editing) endEdit();
+
+    setEphemeralMode('none');
+    setTtlSeconds(TTL_PRESETS[2].seconds);
+    setViewsLimit(1);
   }, [replyTarget, setReplyTarget, editing, endEdit]);
 
   const isEditMode = useMemo(() => Boolean(editing), [editing]);
@@ -93,6 +114,17 @@ const MessageInput: React.FC = () => {
       return;
     }
 
+    let ttlToSend: number | undefined;
+    let maxViewsToSend: number | undefined;
+
+    if (!isEditMode) {
+      if (ephemeralMode === 'time') {
+        ttlToSend = ttlSeconds > 0 ? ttlSeconds : undefined;
+      } else if (ephemeralMode === 'views') {
+        maxViewsToSend = viewsLimit > 0 ? viewsLimit : undefined;
+      }
+    }
+
     setIsSending(true);
     try {
       await send({
@@ -100,6 +132,8 @@ const MessageInput: React.FC = () => {
         text: trimmed || undefined,
         files,
         replyToId: replyIdNum,
+        ttlSeconds: ttlToSend,
+        maxViewsPerUser: maxViewsToSend,
       });
       resetComposer();
     } catch (err) {
@@ -118,6 +152,8 @@ const MessageInput: React.FC = () => {
 
   const filesLeft = MAX_FILES_PER_MESSAGE - files.length;
   const canAddMoreFiles = !isEditMode && filesLeft > 0;
+
+  const ephemeralDisabled = isEditMode; 
 
   return (
     <div className="composer">
@@ -154,6 +190,63 @@ const MessageInput: React.FC = () => {
         </div>
       )}
 
+      <div className="composer__ephemeral">
+        <label className="composer__ephemeral-label">
+          Режим:
+          <select
+            className="composer__ephemeral-select"
+            value={ephemeralMode}
+            disabled={ephemeralDisabled}
+            onChange={(e) => {
+              const mode = e.target.value as EphemeralMode;
+              setEphemeralMode(mode);
+            }}
+          >
+            <option value="none">Обычное</option>
+            <option value="time">Удалить по времени</option>
+            <option value="views">Удалить по просмотрам</option>
+          </select>
+        </label>
+
+        {ephemeralMode === 'time' && (
+          <label className="composer__ephemeral-extra">
+            Срок жизни:
+            <select
+              className="composer__ephemeral-select"
+              disabled={ephemeralDisabled}
+              value={ttlSeconds}
+              onChange={(e) => setTtlSeconds(Number(e.target.value) || TTL_PRESETS[2].seconds)}
+            >
+              {TTL_PRESETS.map((p) => (
+                <option key={p.seconds} value={p.seconds}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {ephemeralMode === 'views' && (
+          <label className="composer__ephemeral-extra">
+            Просмотров на пользователя:
+            <input
+              type="number"
+              min={1}
+              max={100}
+              className="composer__ephemeral-input"
+              disabled={ephemeralDisabled}
+              value={viewsLimit}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                if (Number.isNaN(val)) return;
+                const clamped = Math.max(1, Math.min(100, val));
+                setViewsLimit(clamped);
+              }}
+            />
+          </label>
+        )}
+      </div>
+
       <label
         className={`composer__attach ${!canAddMoreFiles ? 'composer__attach--disabled' : ''}`}
         title={
@@ -180,10 +273,24 @@ const MessageInput: React.FC = () => {
         canAddMoreFiles={canAddMoreFiles}
         onSend={async (file) => {
           if (!currentConversationId) return;
+
+          let ttlToSend: number | undefined;
+          let maxViewsToSend: number | undefined;
+
+          if (!isEditMode) {
+            if (ephemeralMode === 'time') {
+              ttlToSend = ttlSeconds > 0 ? ttlSeconds : undefined;
+            } else if (ephemeralMode === 'views') {
+              maxViewsToSend = viewsLimit > 0 ? viewsLimit : undefined;
+            }
+          }
+
           await send({
             conversationId: currentConversationId,
             files: [file],
             replyToId: replyIdNum,
+            ttlSeconds: ttlToSend,
+            maxViewsPerUser: maxViewsToSend,
           });
           if (replyTarget) setReplyTarget(undefined);
         }}
