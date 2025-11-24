@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useVoiceRecorder } from './useVoiceRecorder';
+import React, { useState } from 'react';
+import AudioRecorder from '../AudioRecorder/AudioRecorder';
 
 type Props = {
   disabled?: boolean;
@@ -7,69 +7,64 @@ type Props = {
   onSend: (file: File) => Promise<void> | void;
 };
 
-export const VoiceRecorder: React.FC<Props> = ({ disabled, canAddMoreFiles = true, onSend }) => {
-  const { isSupported, isRecording, durationMs, start, cancel, stopAndGetFile } = useVoiceRecorder();
+export const VoiceRecorder: React.FC<Props> = ({
+  disabled,
+  canAddMoreFiles = true,
+  onSend,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
-  const mm = useMemo(() => String(Math.floor(durationMs / 1000 / 60)).padStart(2, '0'), [durationMs]);
-  const ss = useMemo(() => String(Math.floor((durationMs / 1000) % 60)).padStart(2, '0'), [durationMs]);
-
-  if (!isSupported) return null;
-
-  const onStart = async () => {
-    if (disabled || !canAddMoreFiles) return;
-    try {
-      await start();
-    } catch (e) {
-      console.error(e);
-      alert('Не удалось получить доступ к микрофону.');
-    }
+  const handleOpen = () => {
+    if (disabled || !canAddMoreFiles || isSending) return;
+    setIsOpen(true);
   };
 
-  const onStopAndSend = async () => {
-    const f = await stopAndGetFile();
-    if (!f) return;
-    if (!canAddMoreFiles) {
-      alert('Лимит вложений в сообщении достигнут.');
-      return;
+  const handleCancel = () => {
+    if (isSending) return;
+    setIsOpen(false);
+  };
+
+  const handleSend = async (file: File) => {
+    try {
+      setIsSending(true);
+      await onSend(file);
+      setIsOpen(false);
+    } catch (e) {
+      console.error('send voice failed', e);
+    } finally {
+      setIsSending(false);
     }
-    await onSend(f);
   };
 
   return (
     <div className="composer__voice">
-      {!isRecording ? (
+      {!isOpen && (
         <button
           type="button"
           className="composer__voice-btn"
-          onClick={onStart}
-          disabled={disabled}
+          onClick={handleOpen}
+          disabled={disabled || !canAddMoreFiles}
           aria-label="Записать голосовое сообщение"
-          title="Записать голосовое сообщение"
+          title={
+            !canAddMoreFiles
+              ? 'Нельзя добавить больше вложений'
+              : disabled
+              ? 'Сейчас запись недоступна'
+              : 'Записать голосовое сообщение'
+          }
         >
           🎤
         </button>
-      ) : (
+      )}
+
+      {isOpen && (
         <div className="composer__voice-controls">
-          <span className="composer__voice-dot" aria-hidden>●</span>
-          <span className="composer__voice-timer">{mm}:{ss}</span>
-          <button
-            type="button"
-            className="composer__voice-stop"
-            onClick={onStopAndSend}
-            aria-label="Остановить и отправить"
-            title="Остановить и отправить"
-          >
-            ⏹
-          </button>
-          <button
-            type="button"
-            className="composer__voice-cancel"
-            onClick={cancel}
-            aria-label="Отменить запись"
-            title="Отменить запись"
-          >
-            ✕
-          </button>
+          <AudioRecorder
+            maxDurationSec={300}
+            onCancel={handleCancel}
+            onSend={handleSend}
+          />
         </div>
       )}
     </div>
