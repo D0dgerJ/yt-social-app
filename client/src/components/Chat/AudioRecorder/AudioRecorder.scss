@@ -18,13 +18,47 @@
     cursor: pointer;
     font-size: 14px;
 
-    &--start { border-color: #f2b3b3; background: #ffeaea; }
-    &--stop { border-color: #f2b3b3; }
-    &--send { border-color: #b3d6f2; background: #eaf4ff; }
-    &--ghost { background: transparent; }
+    &--start {
+      border-color: #f2b3b3;
+      background: #ffeaea;
+    }
+    &--stop {
+      border-color: #f2b3b3;
+    }
+    &--send {
+      border-color: #b3d6f2;
+      background: #eaf4ff;
+    }
+    &--ghost {
+      background: transparent;
+    }
   }
 
-  &__player { display: inline-block; min-width: 260px; }
-  &__timer { font-variant-numeric: tabular-nums; opacity: .7; }
-  &__error { color: #c50000; }
+  &__player {
+    display: inline-block;
+    min-width: 260px;
+  }
+
+  &__timer {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  &__error {
+    color: #c50000;
+  }
+
+  &__wave {
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.audio-waveform--live {
+  height: 40px;
+}
+
+.audio-waveform__bar--live {
+  background: #16a34a;
 }
