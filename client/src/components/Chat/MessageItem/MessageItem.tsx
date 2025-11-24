@@ -11,6 +11,7 @@ import {
   type RepliedToLite,
   type Message,
 } from '@/stores/messageStore';
+import AudioWaveform from './AudioWaveform';
 import './MessageItem.scss';
 
 interface GroupedReaction {
@@ -298,6 +299,51 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcribeError, setTranscribeError] = useState<string | null>(null);
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  const audioProgress =
+    audioDuration > 0 ? audioCurrentTime / audioDuration : 0;
+
+  const handleAudioLoadedMetadata = () => {
+    if (audioRef.current) {
+      setAudioDuration(audioRef.current.duration || 0);
+    }
+  };
+
+  const handleAudioTimeUpdate = () => {
+    if (audioRef.current) {
+      setAudioCurrentTime(audioRef.current.currentTime || 0);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsAudioPlaying(false);
+    setAudioCurrentTime(0);
+  };
+
+  const toggleAudioPlay = () => {
+    const node = audioRef.current;
+    if (!node) return;
+
+    if (node.paused) {
+      void node.play().catch(() => {});
+    } else {
+      node.pause();
+    }
+  };
+
+  const formatTime = (sec: number) => {
+    const total = Math.floor(sec || 0);
+    const mm = Math.floor(total / 60)
+      .toString()
+      .padStart(2, '0');
+    const ss = (total % 60).toString().padStart(2, '0');
+    return `${mm}:${ss}`;
+  };
 
   const getById = useMessageStore((s) => s.getById);
   const removeMessage = useMessageStore((s) => s.removeMessage);
@@ -701,12 +747,36 @@ const MessageItem: React.FC<MessageItemProps> = ({
         mediaType === 'audio' &&
         mediaUrl && (
           <div className="message-audio-block">
-            <audio
-              className="message-audio"
-              src={buildDownloadUrl(mediaUrl)}
-              controls
-              preload="metadata"
-            />
+            <div className="message-audio-player">
+              <button
+                type="button"
+                className="message-audio-play"
+                onClick={toggleAudioPlay}
+              >
+                {isAudioPlaying ? '⏸' : '▶️'}
+              </button>
+
+              <AudioWaveform
+                audioUrl={buildDownloadUrl(mediaUrl)}
+                progress={audioProgress}
+              />
+
+              <div className="message-audio-time">
+                {formatTime(audioCurrentTime)} / {formatTime(audioDuration)}
+              </div>
+
+              <audio
+                ref={audioRef}
+                className="message-audio-hidden"
+                src={buildDownloadUrl(mediaUrl)}
+                preload="metadata"
+                onLoadedMetadata={handleAudioLoadedMetadata}
+                onTimeUpdate={handleAudioTimeUpdate}
+                onPlay={() => setIsAudioPlaying(true)}
+                onPause={() => setIsAudioPlaying(false)}
+                onEnded={handleAudioEnded}
+              />
+            </div>
 
             <button
               type="button"
