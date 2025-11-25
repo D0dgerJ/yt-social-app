@@ -1,0 +1,27 @@
+.events-wrapper {
+  width: 720px;
+  padding: 24px 24px 32px;
+  min-height: calc(100vh - 50px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.events-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.events-subtitle {
+  font-size: 14px;
+  color: #6b6f7f;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 900px) {
+  .events-wrapper {
+    width: 100%;
+    padding: 16px 12px 24px;
+  }
+}

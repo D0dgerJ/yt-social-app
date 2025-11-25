@@ -14,6 +14,7 @@ import FriendsList from "../FriendsList/FriendsList";
 import { AuthContext } from "../../context/AuthContext";
 import useFriends from "../../hooks/useFriends";
 import "./Sidebar.scss";
+import { BiCalendar } from "react-icons/bi";
 
 const Sidebar: React.FC = () => {
   const { user } = useContext(AuthContext);
@@ -57,8 +58,10 @@ const Sidebar: React.FC = () => {
             <span>Questions</span>
           </li>
           <li className="sidebar-list-item">
-            <FaCalendarDay className="sidebar-icon" />
-            <span>Events</span>
+            <NavLink to="/events" className="sidebar-link">
+              <BiCalendar className="sidebar-icon" />
+              <span>Events</span>
+            </NavLink>
           </li>
         </ul>
 
