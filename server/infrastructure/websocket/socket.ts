@@ -6,6 +6,25 @@ import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
 
 let io: Server;
 
+const onlineUsers = new Map<number, Set<string>>();
+
+const addOnlineUser = (userId: number, socketId: string) => {
+  if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
+  onlineUsers.get(userId)!.add(socketId);
+};
+
+const removeOnlineUser = (userId: number, socketId: string) => {
+  const set = onlineUsers.get(userId);
+  if (!set) return;
+  set.delete(socketId);
+  if (set.size === 0) onlineUsers.delete(userId);
+};
+
+const broadcastOnlineUsers = () => {
+  const ids = [...onlineUsers.keys()];
+  io.emit("onlineUsers", ids);
+};
+
 export const initSocket = (server: http.Server) => {
   io = new Server(server, {
     cors: {
@@ -29,8 +48,13 @@ export const initSocket = (server: http.Server) => {
   io.on("connection", async (socket) => {
     const userId: number = socket.data.userId;
     const userRoom = `user:${userId}`;
+
+    console.log(`🟢 Пользователь ${userId} подключён (socket=${socket.id})`);
+
     socket.join(userRoom);
-    console.log(`🟢 Пользователь подключён: ${userId}`);
+
+    addOnlineUser(userId, socket.id);
+    broadcastOnlineUsers();
 
     try {
       const conversations = await prisma.participant.findMany({
@@ -41,8 +65,13 @@ export const initSocket = (server: http.Server) => {
         socket.join(String(conversationId));
       }
     } catch (err) {
-      console.error("❌ Автоподключение к чатам:", err);
+      console.error("❌ Ошибка автоподключения к чатам:", err);
     }
+
+    socket.on("getOnlineUsers", () => {
+      const ids = [...onlineUsers.keys()];
+      socket.emit("onlineUsers", ids);
+    });
 
     socket.on("joinConversation", async (conversationId: number) => {
       const isParticipant = await prisma.participant.findFirst({
@@ -66,14 +95,12 @@ export const initSocket = (server: http.Server) => {
     ) => {
       try {
         const fullInput = { ...messageInput, senderId: userId };
-
         const message = await sendMessage(fullInput);
-
         const room = String(message.conversationId);
+
         if (!socket.rooms.has(room)) socket.join(room);
 
         socket.emit("message:ack", message);
-
         io.to(room).except(userRoom).emit("receiveMessage", message);
 
         callback?.({ status: "ok", message });
@@ -106,11 +133,16 @@ export const initSocket = (server: http.Server) => {
     });
 
     socket.on("typing:stop", (p: { conversationId: number }) => {
-      io.to(String(p.conversationId)).emit("typing:stop", { conversationId: p.conversationId, userId });
+      io.to(String(p.conversationId)).emit("typing:stop", {
+        conversationId: p.conversationId,
+        userId,
+      });
     });
 
     socket.on("disconnect", () => {
       console.log(`🔴 Пользователь отключился: ${userId}`);
+      removeOnlineUser(userId, socket.id);
+      broadcastOnlineUsers();
     });
   });
 };
