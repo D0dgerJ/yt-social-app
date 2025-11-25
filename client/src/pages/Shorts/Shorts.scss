@@ -1,0 +1,11 @@
+.shorts-wrapper {
+  width: 600px;
+  padding: 20px 20px 0 20px;
+  min-height: calc(100vh - 50px);
+}
+
+@media (max-width: 900px) {
+  .shorts-wrapper {
+    width: 100%;
+  }
+}

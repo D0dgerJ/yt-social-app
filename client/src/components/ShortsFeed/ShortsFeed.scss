@@ -1,0 +1,25 @@
+.shorts-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+.shorts-feed__item {
+  scroll-snap-align: start;
+}
+
+.shorts-feed__item .post-video {
+  width: 100%;
+  max-height: 80vh;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.shorts-feed--loading,
+.shorts-feed--error,
+.shorts-feed--empty {
+  padding: 40px 0;
+  text-align: center;
+  color: #555;
+}

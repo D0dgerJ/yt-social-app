@@ -4,6 +4,7 @@ import Profile from "./pages/Profile/Profile";
 import Register from "./pages/Register/Register";
 import Login from "./pages/Login/Login";
 import Chat from "./pages/Chat/Chat";
+import Shorts from "./pages/Shorts/Shorts";
 
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -51,6 +52,7 @@ function App(): JSX.Element {
         <Routes>
           <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
           <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/shorts" element={user ? <Shorts /> : <Navigate to="/login" />} />
           <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
           <Route
             path="/register"

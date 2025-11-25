@@ -33,8 +33,10 @@ const Sidebar: React.FC = () => {
             </NavLink>
           </li>
           <li className="sidebar-list-item">
-            <BiSolidVideos className="sidebar-icon" />
-            <span>Videos</span>
+            <NavLink to="/shorts" className="sidebar-link">
+              <BiSolidVideos className="sidebar-icon" />
+              <span>Videos</span>
+            </NavLink>
           </li>
           <li className="sidebar-list-item">
             <MdGroups className="sidebar-icon" />
@@ -53,10 +55,6 @@ const Sidebar: React.FC = () => {
           <li className="sidebar-list-item">
             <BsFillQuestionSquareFill className="sidebar-icon" />
             <span>Questions</span>
-          </li>
-          <li className="sidebar-list-item">
-            <FaUserGraduate className="sidebar-icon" />
-            <span>Courses</span>
           </li>
           <li className="sidebar-list-item">
             <FaCalendarDay className="sidebar-icon" />
