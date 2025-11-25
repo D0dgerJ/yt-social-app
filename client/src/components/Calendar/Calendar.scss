@@ -1,0 +1,135 @@
+.calendar {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 24px 32px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-title {
+  font-size: 22px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.calendar-nav-button {
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  cursor: pointer;
+  background: #f2f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.calendar-nav-button:hover {
+  background: #e4e7ee;
+  transform: translateY(-1px);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7a7f8f;
+  text-align: center;
+}
+
+.calendar-weekday {
+  padding: 4px 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-day {
+  position: relative;
+  min-height: 90px;
+  border-radius: 12px;
+  background: #f7f8fc;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  cursor: default;
+  transition: background 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease;
+}
+
+.calendar-day--empty {
+  background: transparent;
+  box-shadow: none;
+}
+
+.calendar-day-number {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.calendar-day--past {
+  background: #e5e7f1;
+  color: #6c7080;
+}
+
+.calendar-day--today {
+  background: #2f54eb;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(47, 84, 235, 0.35);
+}
+
+.calendar-day--today .calendar-day-number {
+  font-weight: 700;
+}
+
+.calendar-day--future {
+  background: #fdfefe;
+  border: 1px solid #eef1f7;
+  color: #333;
+}
+
+.calendar-day--past:hover,
+.calendar-day--today:hover,
+.calendar-day--future:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 900px) {
+  .calendar {
+    padding: 16px 12px 24px;
+    max-width: 100%;
+  }
+
+  .calendar-day {
+    min-height: 70px;
+    border-radius: 10px;
+  }
+
+  .calendar-title {
+    font-size: 18px;
+  }
+
+  .calendar-day-number {
+    font-size: 14px;
+  }
+}
