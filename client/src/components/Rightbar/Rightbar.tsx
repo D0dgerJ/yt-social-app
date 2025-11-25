@@ -1,6 +1,7 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import useFriends from "../../hooks/useFriends";
+import useOnlineUsers from "../../hooks/useOnlineUsers";
 import RightBarHome from "./RightBarHome";
 import RightBarProfile from "./RightBarProfile";
 import "./Rightbar.scss";
@@ -30,10 +31,20 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
 
   const targetId = user?.id ?? currentUser?.id;
   const {
-    data: friends,
+    data: friends = [],
     loading: friendsLoading,
     error: friendsError,
   } = useFriends(typeof targetId === "number" ? targetId : undefined);
+
+  const onlineUserIds = useOnlineUsers();
+
+  const onlineFriends = useMemo<Friend[]>(
+    () =>
+      (friends as Friend[]).filter((f) =>
+        onlineUserIds.includes(f.id)
+      ),
+    [friends, onlineUserIds]
+  );
 
   return (
     <div className="rightbar">
@@ -42,7 +53,7 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
           <RightBarProfile user={user} friends={friends as Friend[]} />
         ) : (
           <RightBarHome
-            friends={friends as Friend[]}
+            friends={onlineFriends}
             loading={friendsLoading}
             error={!!friendsError}
           />
