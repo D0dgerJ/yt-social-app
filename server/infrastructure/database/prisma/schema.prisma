@@ -152,7 +152,7 @@ model Follow {
 
 model Notification {
   id         Int      @id @default(autoincrement())
-  type       String // 'like', 'comment', 'follow', etc.
+  type       String   // 'like', 'comment', 'follow', etc.
   content    String?
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
@@ -160,6 +160,8 @@ model Notification {
   fromUserId Int
   toUser     User     @relation("NotificationTo", fields: [toUserId], references: [id])
   toUserId   Int
+
+  @@index([toUserId, isRead, createdAt])
 }
 
 model SavedPost {

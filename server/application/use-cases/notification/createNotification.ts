@@ -1,18 +1,25 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import type { NotificationType } from "./notificationTypes.ts";
 
-interface CreateNotificationInput {
+export interface CreateNotificationInput {
   fromUserId: number;
   toUserId: number;
-  type: string;
-  content?: string;
+  type: NotificationType;
+  payload?: Record<string, unknown>;
 }
 
 export const createNotification = async ({
   fromUserId,
   toUserId,
   type,
-  content,
+  payload,
 }: CreateNotificationInput) => {
+  if (fromUserId === toUserId) {
+    return null;
+  }
+
+  const content = payload ? JSON.stringify(payload) : undefined;
+
   return prisma.notification.create({
     data: {
       fromUserId,
