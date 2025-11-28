@@ -16,16 +16,30 @@ interface FriendRequest {
   };
 }
 
-const NotificationsInteractions: React.FC = () => {
+interface NotificationsInteractionsProps {
+  onCountChange?: (count: number) => void;
+}
+
+const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
+  onCountChange,
+}) => {
   const { user } = useContext(AuthContext);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchRequests = async () => {
+    if (!user) {
+      setRequests([]);
+      onCountChange?.(0);
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await getIncomingFriendRequests();
-      setRequests(data);
+      const safe = Array.isArray(data) ? data : [];
+      setRequests(safe);
+      onCountChange?.(safe.length);
     } catch (error) {
       console.error("Ошибка при загрузке запросов:", error);
     } finally {
@@ -40,7 +54,11 @@ const NotificationsInteractions: React.FC = () => {
   const handleAccept = async (requestId: number) => {
     try {
       await acceptFriendRequest(requestId);
-      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      setRequests((prev) => {
+        const next = prev.filter((r) => r.id !== requestId);
+        onCountChange?.(next.length);
+        return next;
+      });
     } catch (error) {
       console.error("Ошибка при принятии запроса:", error);
     }
@@ -49,7 +67,11 @@ const NotificationsInteractions: React.FC = () => {
   const handleReject = async (requestId: number) => {
     try {
       await rejectFriendRequest(requestId);
-      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      setRequests((prev) => {
+        const next = prev.filter((r) => r.id !== requestId);
+        onCountChange?.(next.length);
+        return next;
+      });
     } catch (error) {
       console.error("Ошибка при отклонении запроса:", error);
     }
@@ -57,7 +79,6 @@ const NotificationsInteractions: React.FC = () => {
 
   return (
     <div className="notifications-interactions">
-
       {loading ? (
         <p>Загрузка...</p>
       ) : requests.length === 0 ? (

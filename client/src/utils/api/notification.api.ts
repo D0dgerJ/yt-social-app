@@ -1,28 +1,28 @@
-import axios from './axiosInstance';
+import axios from "./axiosInstance";
+import type { NotificationType } from "../types/notification";
 
-interface NotificationInput {
-  userId: number;
-  type: 'like' | 'follow' | 'save';
-  postId?: number;
-  senderId?: number;
+export interface CreateNotificationRequest {
+  receiverId: number;
+  type: NotificationType;
+  payload?: Record<string, unknown>;
 }
 
-export const createNotification = async (data: NotificationInput) => {
-  const response = await axios.post('/notifications', data);
+export const createNotification = async (data: CreateNotificationRequest) => {
+  const response = await axios.post("/notifications", data);
   return response.data;
 };
 
-export const deleteNotification = async (id: number) => {
-  const response = await axios.delete(`/notifications/${id}`);
+export const getNotifications = async () => {
+  const response = await axios.get("/notifications");
   return response.data;
 };
 
-export const markNotificationAsRead = async (id: number) => {
-  const response = await axios.patch(`/notifications/${id}/read`);
+export const markNotificationAsRead = async (notificationId: number) => {
+  const response = await axios.put(`/notifications/${notificationId}/read`);
   return response.data;
 };
 
-export const getUserNotifications = async (userId: number) => {
-  const response = await axios.get(`/notifications/user/${userId}`);
+export const deleteNotification = async (notificationId: number) => {
+  const response = await axios.delete(`/notifications/${notificationId}`);
   return response.data;
 };

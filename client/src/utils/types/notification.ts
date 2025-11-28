@@ -1,0 +1,16 @@
+export type NotificationType =
+  | "post_like"
+  | "post_comment"
+  | "comment_reply"
+  | "comment_like"
+  | "comment_mention"
+  | "follow"
+  | "friend_request"
+  | "friend_accept"
+  | "direct_message"
+  | "group_message"
+  | "message_reaction"
+  | "saved_post"
+  | "story_view"
+  | "story_mention"
+  | "stream_start";

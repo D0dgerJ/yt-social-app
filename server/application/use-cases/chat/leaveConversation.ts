@@ -4,7 +4,7 @@ import { deleteConversationIfEmpty } from "./deleteConversationIfEmpty.ts";
 
 interface LeaveConversationInput {
   conversationId: number;
-  userId: number; 
+  userId: number;
   requestedById: number;
 }
 
@@ -62,10 +62,6 @@ export const leaveConversation = async ({
     });
 
     const conversationDeleted = await deleteConversationIfEmpty(conversationId);
-
-    if (conversationDeleted) {
-      io.to(String(conversationId)).emit("chat:deleted", { conversationId });
-    }
 
     return { conversationDeleted };
   } catch (error) {

@@ -1,5 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
+import type { NotificationType } from "../notification/notificationTypes.ts";
+import { extractMentions } from "../notification/extractMentions.ts";
 
 type MediaKind = "image" | "video" | "file" | "gif" | "audio";
 
@@ -249,6 +251,85 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
           content: withRelations.encryptedContent,
         };
       });
+
+      try {
+        const [participants, conversation] = await Promise.all([
+          prisma.participant.findMany({
+            where: {
+              conversationId,
+              userId: { not: message.senderId },
+            },
+            select: { userId: true },
+          }),
+          prisma.conversation.findUnique({
+            where: { id: conversationId },
+            select: { isGroup: true, name: true },
+          }),
+        ]);
+
+        if (participants.length > 0 && conversation) {
+          const type: NotificationType = conversation.isGroup
+            ? "group_message"
+            : "direct_message";
+
+          const basePayload = {
+            conversationId,
+            messageId: message.id,
+            conversationName: conversation.name ?? null,
+          };
+
+          await prisma.notification.createMany({
+            data: participants.map((p) => ({
+              fromUserId: senderId,
+              toUserId: p.userId,
+              type,
+              content: JSON.stringify(basePayload),
+            })),
+          });
+
+          const rawText = message.encryptedContent ?? "";
+          const usernames = extractMentions(rawText);
+
+          if (usernames.length > 0) {
+            const uniqueUsernames = Array.from(new Set(usernames));
+
+            const mentionedUsers = await prisma.user.findMany({
+              where: { username: { in: uniqueUsernames } },
+              select: { id: true, username: true },
+            });
+
+            const participantIds = new Set(
+              participants.map((p) => p.userId),
+            );
+
+            const mentionTargets = mentionedUsers
+              .map((u) => u.id)
+              .filter(
+                (id) => id !== senderId && participantIds.has(id),
+              );
+
+            if (mentionTargets.length > 0) {
+              await prisma.notification.createMany({
+                data: mentionTargets.map((toUserId) => ({
+                  fromUserId: senderId,
+                  toUserId,
+                  type: "message_mention" as NotificationType,
+                  content: JSON.stringify({
+                    conversationId,
+                    messageId: message.id,
+                  }),
+                })),
+                skipDuplicates: true,
+              });
+            }
+          }
+        }
+      } catch (notifError) {
+        console.error(
+          "❌ Ошибка при создании чат-уведомлений:",
+          notifError,
+        );
+      }
 
       return message;
     } catch (e: any) {

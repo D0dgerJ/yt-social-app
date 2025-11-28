@@ -14,6 +14,7 @@ export type NotificationType =
   | "message_reaction"
   | "message_quote"
   | "message_mention"
+  | "added_to_conversation"
 
   // 🔹 Стримы
   | "stream_started"

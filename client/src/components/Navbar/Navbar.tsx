@@ -1,21 +1,101 @@
-import React, { useContext, useState } from "react";
-import {
-  IoSearch,
-  IoPersonSharp,
-  IoChatboxEllipses,
-} from "react-icons/io5";
+import React, { useContext, useState, useEffect } from "react";
+import { IoSearch, IoPersonSharp, IoChatboxEllipses } from "react-icons/io5";
 import { IoIosNotifications } from "react-icons/io";
+import { Link } from "react-router-dom";
+
 import Logo from "../Logo/Logo";
 import noProfile from "../../assets/profile/user.png";
-import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import "./Navbar.scss";
+
 import NotificationsInteractions from "../NotificationsInteractions/NotificationsInteractions";
-// число notification должно меняться в зависемости от количества уведомлений (когда перейдёш к уведомлениям)
+import ChatNotificationsDropdown from "../ChatNotificationsDropdown/ChatNotificationsDropdown";
+import NotificationsDropdown from "../NotificationsDropdown/NotificationsDropdown";
+
+import { useNotificationStore } from "../../stores/notificationStore";
+import { getIncomingFriendRequests } from "../../utils/api/user.api";
+
+import "./Navbar.scss";
+
+const CHAT_NOTIFICATION_TYPES = new Set<string>([
+  "direct_message",
+  "group_message",
+  "message_mention",
+  "message_reaction",
+  "message_quote",
+  "added_to_conversation",
+]);
 
 const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
+
+  const [showFriendRequests, setShowFriendRequests] = useState(false);
+  const [showChatNotifications, setShowChatNotifications] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const [friendRequestsCount, setFriendRequestsCount] = useState(0);
+
+  const { fetchNotifications } = useNotificationStore();
+
+  const chatUnreadCount = useNotificationStore((state) =>
+    state.notifications.filter((n) => {
+      const t = String(n.type);
+      const isChatType = CHAT_NOTIFICATION_TYPES.has(t);
+      return isChatType && !n.isRead;
+    }).length
+  );
+
+  const generalUnreadCount = useNotificationStore((state) =>
+    state.notifications.filter((n) => {
+      const t = String(n.type);
+      const isChatType = CHAT_NOTIFICATION_TYPES.has(t);
+      return !isChatType && !n.isRead;
+    }).length
+  );
+
+  useEffect(() => {
+    if (!user) {
+      setFriendRequestsCount(0);
+      return;
+    }
+
+    fetchNotifications();
+
+    const loadFriendRequestsCount = async () => {
+      try {
+        const data = await getIncomingFriendRequests();
+        const safe = Array.isArray(data) ? data : [];
+        setFriendRequestsCount(safe.length);
+      } catch (e) {
+        console.error("[Navbar] failed to load friend requests:", e);
+      }
+    };
+
+    loadFriendRequestsCount();
+  }, [user, fetchNotifications]);
+
+  const closeAll = () => {
+    setShowFriendRequests(false);
+    setShowChatNotifications(false);
+    setShowNotifications(false);
+  };
+
+  const toggleFriends = () => {
+    setShowFriendRequests((prev) => !prev);
+    setShowChatNotifications(false);
+    setShowNotifications(false);
+  };
+
+  const toggleChat = () => {
+    setShowChatNotifications((prev) => !prev);
+    setShowFriendRequests(false);
+    setShowNotifications(false);
+  };
+
+  const toggleNotifications = () => {
+    setShowNotifications((prev) => !prev);
+    setShowFriendRequests(false);
+    setShowChatNotifications(false);
+  };
 
   return (
     <div className="navbar">
@@ -39,24 +119,57 @@ const Navbar: React.FC = () => {
           <span>Home</span>
           <span>Timeline</span>
         </div>
+
         <div className="tab-icons">
-          <div className="tab-icon">
+          {/* Друзья / подписки */}
+          <div className="tab-icon" onClick={toggleFriends}>
             <IoPersonSharp />
-            <span className="icon-badge">1</span>
+            {friendRequestsCount > 0 && (
+              <span className="icon-badge">{friendRequestsCount}</span>
+            )}
+
+            {showFriendRequests && (
+              <div
+                className="notifications-popup"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <NotificationsInteractions
+                  onCountChange={setFriendRequestsCount}
+                />
+              </div>
+            )}
           </div>
-          <div className="tab-icon">
+
+          {/* Чаты */}
+          <div className="tab-icon" onClick={toggleChat}>
             <IoChatboxEllipses />
-            <span className="icon-badge">1</span>
+            {chatUnreadCount > 0 && (
+              <span className="icon-badge">{chatUnreadCount}</span>
+            )}
+
+            {showChatNotifications && (
+              <div
+                className="notifications-popup"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ChatNotificationsDropdown />
+              </div>
+            )}
           </div>
-          <div
-            className="tab-icon"
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
+
+          {/* Общие уведомления (лайки, комменты и т.п.) */}
+          <div className="tab-icon" onClick={toggleNotifications}>
             <IoIosNotifications />
-            <span className="icon-badge">1</span>
+            {generalUnreadCount > 0 && (
+              <span className="icon-badge">{generalUnreadCount}</span>
+            )}
+
             {showNotifications && (
-              <div className="notifications-popup">
-                <NotificationsInteractions />
+              <div
+                className="notifications-popup"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <NotificationsDropdown onClose={closeAll} />
               </div>
             )}
           </div>
