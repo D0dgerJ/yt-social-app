@@ -46,7 +46,7 @@ export const createChat = async (data: CreateChatInput) => {
           name: isGroup ? name || "Групповой чат" : null,
           isGroup,
           participants: {
-            create: userIds.map(userId => ({
+            create: userIds.map((userId) => ({
               user: { connect: { id: userId } },
               role: userId === creatorId ? "owner" : "member",
             })),
@@ -70,7 +70,7 @@ export const createChat = async (data: CreateChatInput) => {
 
     const io = getIO();
     for (const participant of conversation.participants) {
-      io.to(String(participant.userId)).emit("chat:created", {
+      io.to(`user:${participant.user.id}`).emit("chat:created", {
         conversation,
       });
     }

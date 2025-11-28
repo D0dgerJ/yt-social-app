@@ -1,5 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
+import { createNotification } from "../notification/createNotification.ts";
 
 interface AddParticipantInput {
   conversationId: number;
@@ -24,7 +25,9 @@ export const addParticipant = async ({
       throw new Error("Чат не найден");
     }
 
-    const addedBy = conversation.participants.find(p => p.userId === addedById);
+    const addedBy = conversation.participants.find(
+      (p) => p.userId === addedById,
+    );
     if (!addedBy || !["admin", "owner"].includes(addedBy.role)) {
       throw new Error("У вас нет прав добавлять участников");
     }
@@ -35,6 +38,7 @@ export const addParticipant = async ({
     if (existing) {
       throw new Error("Пользователь уже участвует в чате");
     }
+
     const participant = await prisma.participant.create({
       data: {
         conversationId,
@@ -57,6 +61,23 @@ export const addParticipant = async ({
       conversationId,
       participant,
     });
+
+    try {
+      await createNotification({
+        fromUserId: addedById,
+        toUserId: userId,
+        type: "added_to_conversation",
+        payload: {
+          conversationId,
+          conversationName: conversation.name ?? null,
+        },
+      });
+    } catch (notifError) {
+      console.error(
+        "❌ Ошибка при создании уведомления added_to_conversation:",
+        notifError,
+      );
+    }
 
     return participant;
   } catch (error) {

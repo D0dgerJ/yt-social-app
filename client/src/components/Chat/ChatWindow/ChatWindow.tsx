@@ -1,18 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useUserStore } from '@/stores/userStore';
-import { useChatStore } from '@/stores/chatStore';
-import { useMessageStore } from '@/stores/messageStore';
-import { useMessagesDecrypted } from '@/hooks/useMessages';
-import MessageList from './MessageList/MessageList';
-import TypingIndicator from '@/components/Chat/Indicators/TypingIndicator';
-import { useReadReceipts } from '@/hooks/useReadReceipts';
-import { useMessageActions } from '@/hooks/useMessageActions';
-import { getChatMessages } from '@/services/chatApi';
-import './ChatWindow.scss';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useUserStore } from "@/stores/userStore";
+import { useChatStore } from "@/stores/chatStore";
+import { useMessageStore } from "@/stores/messageStore";
+import { useMessagesDecrypted } from "@/hooks/useMessages";
+import MessageList from "./MessageList/MessageList";
+import TypingIndicator from "@/components/Chat/Indicators/TypingIndicator";
+import { useReadReceipts } from "@/hooks/useReadReceipts";
+import { useMessageActions } from "@/hooks/useMessageActions";
+import { getChatMessages } from "@/services/chatApi";
+import "./ChatWindow.scss";
 
 const PAGE_SIZE = 30;
 
-const ChatWindow: React.FC = () => {
+interface ChatWindowProps {
+  scrollToMessageId?: number;
+}
+
+const ChatWindow: React.FC<ChatWindowProps> = ({ scrollToMessageId }) => {
   const meId = useUserStore((s) => s.currentUser?.id) as number | undefined;
   const { currentConversationId } = useChatStore();
 
@@ -54,7 +58,6 @@ const ChatWindow: React.FC = () => {
     return () => clearInterval(interval);
   }, [conversationId, messages, removeMessage]);
 
-
   const initialLoad = useCallback(
     async (convId: number) => {
       setIsLoadingOlder(true);
@@ -82,7 +85,6 @@ const ChatWindow: React.FC = () => {
     }
   }, [currentConversationId, setActiveConversation, initialLoad]);
 
-
   const loadOlder = useCallback(async () => {
     if (!conversationId || isLoadingOlder || !hasMoreOlder) return;
 
@@ -91,7 +93,7 @@ const ChatWindow: React.FC = () => {
       const res = await getChatMessages(conversationId, {
         limit: PAGE_SIZE,
         cursorId: oldestCursorRef.current ?? undefined,
-        direction: 'backward',
+        direction: "backward",
       });
 
       if (res.messages.length) {
@@ -116,12 +118,13 @@ const ChatWindow: React.FC = () => {
         isLoadingOlder={isLoadingOlder}
         hasMoreOlder={hasMoreOlder}
         loadOlder={loadOlder}
-        onRetry={(m) => console.log('retry', m)}
+        onRetry={(m) => console.log("retry", m)}
         onReply={(m) => setReplyTarget(m)}
         onReact={(m, emoji) => reactToMessage(m, emoji)}
-        onOpenAttachment={(url) => window.open(url, '_blank')}
+        onOpenAttachment={(url) => window.open(url, "_blank")}
         onEdit={(m) => beginEditMessage(m)}
         onDelete={(m) => deleteMessage(m)}
+        scrollToMessageId={scrollToMessageId}
       />
 
       <TypingIndicator conversationId={currentConversationId} />

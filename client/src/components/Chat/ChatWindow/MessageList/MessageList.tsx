@@ -4,26 +4,26 @@ import React, {
   useCallback,
   useRef,
   useEffect,
-} from 'react';
-import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { Message } from '@/stores/messageStore';
-import { DateSeparator } from './DateSeparator';
-import { SystemMessage } from './SystemMessage';
-import MessageItem from '@/components/Chat/MessageItem/MessageItem';
-import MessageContextMenu from '@/components/Chat/MessageItem/MessageContextMenu';
-import { useChatStore } from '@/stores/chatStore';
-import { useMessageStore } from '@/stores/messageStore';
+} from "react";
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
+import { Message } from "@/stores/messageStore";
+import { DateSeparator } from "./DateSeparator";
+import { SystemMessage } from "./SystemMessage";
+import MessageItem from "@/components/Chat/MessageItem/MessageItem";
+import MessageContextMenu from "@/components/Chat/MessageItem/MessageContextMenu";
+import { useChatStore } from "@/stores/chatStore";
+import { useMessageStore } from "@/stores/messageStore";
 import {
   pinMessage as pinMessageApi,
   unpinMessage as unpinMessageApi,
-} from '@/utils/api/chat.api';
-import { toast } from 'react-toastify';
-import './MessageList.scss';
+} from "@/utils/api/chat.api";
+import { toast } from "react-toastify";
+import "./MessageList.scss";
 
 type ListItem =
-  | { type: 'date'; key: string; label: string }
-  | { type: 'system'; key: string; text: string; time?: string }
-  | { type: 'message'; key: string; data: Message };
+  | { type: "date"; key: string; label: string }
+  | { type: "system"; key: string; text: string; time?: string }
+  | { type: "message"; key: string; data: Message };
 
 function formatDateLabel(iso: string) {
   const d = new Date(iso);
@@ -37,18 +37,18 @@ function formatDateLabel(iso: string) {
     tD = today.getDate();
 
   if (dY === tY && dM === tM && dD === tD) {
-    return 'Сегодня';
+    return "Сегодня";
   }
 
-  const y = d.toLocaleDateString(undefined, { year: 'numeric' });
-  const m = d.toLocaleDateString(undefined, { month: 'long' });
-  const day = d.toLocaleDateString(undefined, { day: '2-digit' });
+  const y = d.toLocaleDateString(undefined, { year: "numeric" });
+  const m = d.toLocaleDateString(undefined, { month: "long" });
+  const day = d.toLocaleDateString(undefined, { day: "2-digit" });
   return `${day} ${m} ${y}`;
 }
 
 function withDateSeparators(messages: Message[]): ListItem[] {
   const out: ListItem[] = [];
-  let prevDate = '';
+  let prevDate = "";
 
   const seen = new Set<string>();
 
@@ -61,18 +61,18 @@ function withDateSeparators(messages: Message[]): ListItem[] {
     if (dayKey !== prevDate) {
       prevDate = dayKey;
       out.push({
-        type: 'date',
+        type: "date",
         key: `date-${dayKey}`,
         label: formatDateLabel(m.createdAt),
       });
     }
 
-    const isSystem = (m as any).kind === 'system';
+    const isSystem = (m as any).kind === "system";
     if (isSystem) {
       out.push({
-        type: 'system',
+        type: "system",
         key: `sys-${m.id}`,
-        text: m.content || '[system]',
+        text: m.content || "[system]",
         time: m.createdAt,
       });
     } else {
@@ -80,7 +80,7 @@ function withDateSeparators(messages: Message[]): ListItem[] {
         ? `c-${m.clientMessageId}`
         : `s-${m.id}`;
       out.push({
-        type: 'message',
+        type: "message",
         key: msgKey,
         data: m,
       });
@@ -102,6 +102,7 @@ type Props = {
   onOpenAttachment?: (url: string) => void;
   onEdit?: (m: Message) => void;
   onDelete?: (m: Message) => void;
+  scrollToMessageId?: number;
 };
 
 const MessageList: React.FC<Props> = ({
@@ -115,6 +116,7 @@ const MessageList: React.FC<Props> = ({
   onOpenAttachment,
   onEdit,
   onDelete,
+  scrollToMessageId,
 }) => {
   const items = useMemo(() => withDateSeparators(messages), [messages]);
 
@@ -174,14 +176,12 @@ const MessageList: React.FC<Props> = ({
 
     if (didInitialScrollRef.current[convId]) return;
 
-    didInitialScrollRef.current[convId] = true;
-
     const lastIndex = items.length - 1;
 
     virtuosoRef.current?.scrollToIndex({
       index: lastIndex,
-      align: 'end',
-      behavior: 'auto',
+      align: "end",
+      behavior: "auto",
     });
   }, [items, currentConversationId]);
 
@@ -193,48 +193,63 @@ const MessageList: React.FC<Props> = ({
   const scrollToMessage = useCallback(
     (msgId: number) => {
       const index = items.findIndex(
-        (it) => it.type === 'message' && (it as any).data.id === msgId
+        (it) => it.type === "message" && (it as any).data.id === msgId
       );
       if (index >= 0) {
         virtuosoRef.current?.scrollToIndex({
           index,
-          align: 'center',
-          behavior: 'smooth',
+          align: "center",
+          behavior: "smooth",
         });
       }
     },
     [items]
   );
 
+  useEffect(() => {
+    if (!scrollToMessageId) return;
+    if (!currentConversationId) return;
+    if (!items.length) return;
+
+    const index = items.findIndex(
+      (it) => it.type === "message" && (it as any).data.id === scrollToMessageId
+    );
+    if (index < 0) return;
+
+    virtuosoRef.current?.scrollToIndex({
+      index,
+      align: "center",
+      behavior: "smooth",
+    });
+
+    didInitialScrollRef.current[currentConversationId] = true;
+  }, [scrollToMessageId, items, currentConversationId]);
+
   const handleTogglePinMessage = useCallback(
     async (m: Message) => {
       try {
         if (m.isPinned) {
           await unpinMessageApi(m.conversationId, m.id);
-          useMessageStore
-            .getState()
-            .updateMessage({
-              id: m.id,
-              conversationId: m.conversationId,
-              isPinned: false,
-              pinnedAt: null,
-            });
+          useMessageStore.getState().updateMessage({
+            id: m.id,
+            conversationId: m.conversationId,
+            isPinned: false,
+            pinnedAt: null,
+          });
         } else {
           await pinMessageApi(m.conversationId, m.id);
-          useMessageStore
-            .getState()
-            .updateMessage({
-              id: m.id,
-              conversationId: m.conversationId,
-              isPinned: true,
-              pinnedAt: new Date().toISOString(),
-            });
+          useMessageStore.getState().updateMessage({
+            id: m.id,
+            conversationId: m.conversationId,
+            isPinned: true,
+            pinnedAt: new Date().toISOString(),
+          });
         }
       } catch (err: any) {
-        console.error('Ошибка при смене пина сообщения:', err);
+        console.error("Ошибка при смене пина сообщения:", err);
         const msg =
           err?.response?.data?.message ||
-          'Не удалось изменить закреп сообщения';
+          "Не удалось изменить закреп сообщения";
         toast.error(msg);
       } finally {
         closeMenu();
@@ -246,10 +261,10 @@ const MessageList: React.FC<Props> = ({
   const renderItem = useCallback(
     (_index: number, item: ListItem) => {
       switch (item.type) {
-        case 'date':
+        case "date":
           return <DateSeparator label={item.label} />;
 
-        case 'system':
+        case "system":
           return (
             <SystemMessage
               text={item.text}
@@ -257,12 +272,14 @@ const MessageList: React.FC<Props> = ({
             />
           );
 
-        case 'message': {
+        case "message": {
           const m = item.data;
           return (
             <div
               className={
-                m.isPinned ? 'msg-item-wrapper msg-item-wrapper--pinned' : 'msg-item-wrapper'
+                m.isPinned
+                  ? "msg-item-wrapper msg-item-wrapper--pinned"
+                  : "msg-item-wrapper"
               }
               onContextMenu={(e) => openContextMenu(e, m)}
             >
@@ -270,7 +287,7 @@ const MessageList: React.FC<Props> = ({
                 conversationId={m.conversationId}
                 messageId={m.id}
                 clientMessageId={m.clientMessageId}
-                content={m.content || ''}
+                content={m.content || ""}
                 currentUserId={meId}
                 senderId={m.senderId}
                 senderUsername={
@@ -318,10 +335,10 @@ const MessageList: React.FC<Props> = ({
     const Header: React.FC = () => (
       <div className="msg-loader-top">
         {isLoadingOlder
-          ? 'Загружаем сообщения…'
+          ? "Загружаем сообщения…"
           : hasMoreOlder
-          ? 'Прокрутите вверх для истории'
-          : 'История закончилась'}
+          ? "Прокрутите вверх для истории"
+          : "История закончилась"}
       </div>
     );
     return { Header };
@@ -335,12 +352,12 @@ const MessageList: React.FC<Props> = ({
           {pinnedMessages.map((m) => {
             const label =
               (m.content && m.content.slice(0, 40)) ||
-              (m.mediaType === 'image' && '📷 Изображение') ||
-              (m.mediaType === 'video' && '🎬 Видео') ||
-              (m.mediaType === 'audio' && '🎧 Аудио') ||
-              (m.mediaType === 'gif' && 'GIF') ||
-              (m.mediaType === 'sticker' && 'Стикер') ||
-              (m.mediaType === 'file' && (m.fileName || '📎 Файл')) ||
+              (m.mediaType === "image" && "📷 Изображение") ||
+              (m.mediaType === "video" && "🎬 Видео") ||
+              (m.mediaType === "audio" && "🎧 Аудио") ||
+              (m.mediaType === "gif" && "GIF") ||
+              (m.mediaType === "sticker" && "Стикер") ||
+              (m.mediaType === "file" && (m.fileName || "📎 Файл")) ||
               `Сообщение #${m.id}`;
 
             return (
@@ -374,39 +391,39 @@ const MessageList: React.FC<Props> = ({
           onClose={closeMenu}
           items={[
             {
-              key: 'reply',
-              label: 'Ответить',
+              key: "reply",
+              label: "Ответить",
               onClick: () => onReply?.(menu.m),
             },
             {
-              key: 'edit',
-              label: 'Редактировать',
+              key: "edit",
+              label: "Редактировать",
               onClick: () => onEdit?.(menu.m),
             },
             {
-              key: 'del',
-              label: 'Удалить',
+              key: "del",
+              label: "Удалить",
               onClick: () => onDelete?.(menu.m),
               danger: true,
             },
             {
-              key: 'r1',
-              label: '❤️ Реакция',
-              onClick: () => onReact?.(menu.m, '❤️'),
+              key: "r1",
+              label: "❤️ Реакция",
+              onClick: () => onReact?.(menu.m, "❤️"),
             },
             {
-              key: 'r2',
-              label: '👍 Реакция',
-              onClick: () => onReact?.(menu.m, '👍'),
+              key: "r2",
+              label: "👍 Реакция",
+              onClick: () => onReact?.(menu.m, "👍"),
             },
             {
-              key: 'r3',
-              label: '😂 Реакция',
-              onClick: () => onReact?.(menu.m, '😂'),
+              key: "r3",
+              label: "😂 Реакция",
+              onClick: () => onReact?.(menu.m, "😂"),
             },
             {
-              key: menu.m.isPinned ? 'unpin' : 'pin',
-              label: menu.m.isPinned ? 'Открепить' : 'Закрепить',
+              key: menu.m.isPinned ? "unpin" : "pin",
+              label: menu.m.isPinned ? "Открепить" : "Закрепить",
               onClick: () => handleTogglePinMessage(menu.m),
             },
           ]}
