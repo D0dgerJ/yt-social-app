@@ -17,16 +17,18 @@ import { logoutUser } from "./utils/auth";
 import axios from "axios";
 
 import { SocketProvider } from "./context/SocketContext";
+import { useChatSocket } from "./hooks/useChatSocket";
 
-function App(): JSX.Element {
+const AppInner: React.FC = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isAppReady, setIsAppReady] = useState(false);
 
+  useChatSocket();
+
   useEffect(() => {
     const checkUser = async () => {
       try {
-        console.log("Checking user profile...");
         if (user) {
           const profile = await getUserProfile();
           console.log("PROFILE OK", profile);
@@ -47,29 +49,44 @@ function App(): JSX.Element {
   if (!isAppReady) return <div className="loader">Loading...</div>;
 
   return (
+    <>
+      <ToastContainer />
+      <Routes>
+        <Route
+          path="/"
+          element={user ? <Home /> : <Navigate to="/register" />}
+        />
+        <Route path="/profile/:username" element={<Profile />} />
+        <Route
+          path="/shorts"
+          element={user ? <Shorts /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/chat"
+          element={user ? <Chat /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/events"
+          element={user ? <Events /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/register"
+          element={user ? <Navigate to="/" /> : <Register />}
+        />
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/" /> : <Login />}
+        />
+      </Routes>
+    </>
+  );
+};
+
+function App(): JSX.Element {
+  return (
     <SocketProvider>
-      <>
-        <ToastContainer />
-        <Routes>
-          <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
-          <Route path="/profile/:username" element={<Profile />} />
-          <Route path="/shorts" element={user ? <Shorts /> : <Navigate to="/login" />} />
-          <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
-          <Route
-            path="/events"
-            element={user ? <Events /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/register"
-            element={user ? <Navigate to="/" /> : <Register />}
-          />
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/" /> : <Login />}
-          />
-        </Routes>
-      </>
-  </SocketProvider>
+      <AppInner />
+    </SocketProvider>
   );
 }
 
