@@ -24,11 +24,25 @@ export interface ApiNotification {
   fromUser: ApiUserShort;
 }
 
+const CHAT_NOTIFICATION_TYPES = new Set<string>([
+  "direct_message",
+  "group_message",
+  "message_mention",
+  "message_reaction",
+  "message_quote",
+  "added_to_conversation",
+]);
+
+const isChatNotificationType = (type: NotificationType | string): boolean =>
+  CHAT_NOTIFICATION_TYPES.has(String(type));
+
 interface NotificationState {
   notifications: ApiNotification[];
   loading: boolean;
   error: string | null;
+
   unreadCount: number;
+  chatUnreadCount: number;
 
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: number) => Promise<void>;
@@ -42,6 +56,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   loading: false,
   error: null,
   unreadCount: 0,
+  chatUnreadCount: 0,
 
   fetchNotifications: async () => {
     set({ loading: true, error: null });
@@ -49,11 +64,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const data: ApiNotification[] = await getNotifications();
 
+      const generalUnread = data.filter(
+        (n) => !n.isRead && !isChatNotificationType(n.type)
+      ).length;
+
+      const chatUnread = data.filter(
+        (n) => !n.isRead && isChatNotificationType(n.type)
+      ).length;
+
       set({
         notifications: data,
         loading: false,
         error: null,
-        unreadCount: data.filter((n) => !n.isRead).length,
+        unreadCount: generalUnread,
+        chatUnreadCount: chatUnread,
       });
     } catch (e: any) {
       set({
@@ -69,9 +93,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const updated = prev.map((n) =>
       n.id === id ? { ...n, isRead: true } : n
     );
+
+    const generalUnread = updated.filter(
+      (n) => !n.isRead && !isChatNotificationType(n.type)
+    ).length;
+
+    const chatUnread = updated.filter(
+      (n) => !n.isRead && isChatNotificationType(n.type)
+    ).length;
+
     set({
       notifications: updated,
-      unreadCount: updated.filter((n) => !n.isRead).length,
+      unreadCount: generalUnread,
+      chatUnreadCount: chatUnread,
     });
 
     try {
@@ -86,9 +120,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const prev = get().notifications;
     const updated = prev.filter((n) => n.id !== id);
 
+    const generalUnread = updated.filter(
+      (n) => !n.isRead && !isChatNotificationType(n.type)
+    ).length;
+
+    const chatUnread = updated.filter(
+      (n) => !n.isRead && isChatNotificationType(n.type)
+    ).length;
+
     set({
       notifications: updated,
-      unreadCount: updated.filter((n) => !n.isRead).length,
+      unreadCount: generalUnread,
+      chatUnreadCount: chatUnread,
     });
 
     try {
@@ -107,15 +150,29 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
 
     const updated = [notification, ...prev];
+
+    const generalUnread = updated.filter(
+      (n) => !n.isRead && !isChatNotificationType(n.type)
+    ).length;
+
+    const chatUnread = updated.filter(
+      (n) => !n.isRead && isChatNotificationType(n.type)
+    ).length;
+
     set({
       notifications: updated,
-      unreadCount: updated.filter((n) => !n.isRead).length,
+      unreadCount: generalUnread,
+      chatUnreadCount: chatUnread,
     });
   },
 
   setAllReadLocal: () => {
     const prev = get().notifications;
     const updated = prev.map((n) => ({ ...n, isRead: true }));
-    set({ notifications: updated, unreadCount: 0 });
+    set({
+      notifications: updated,
+      unreadCount: 0,
+      chatUnreadCount: 0,
+    });
   },
 }));

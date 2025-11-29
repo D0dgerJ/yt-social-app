@@ -1,4 +1,5 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { likePost } from "./likePost.ts";
 
 interface ToggleLikeInput {
   userId: number;
@@ -15,6 +16,6 @@ export const toggleLike = async ({ userId, postId }: ToggleLikeInput) => {
     return { liked: false };
   }
 
-  await prisma.like.create({ data: { userId, postId } });
-  return { liked: true };
+  const like = await likePost({ userId, postId });
+  return { liked: true, like };
 };

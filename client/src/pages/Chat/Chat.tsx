@@ -13,7 +13,6 @@ import ChatHeader from "../../components/Chat/ChatListHeader/ChatHeader";
 import { useChatStore } from "@/stores/chatStore";
 import { useMessageStore } from "@/stores/messageStore";
 import { useNotificationStore } from "@/stores/notificationStore";
-import { useChatSocket } from "@/hooks/useChatSocket";
 
 import "./Chat.scss";
 
@@ -42,8 +41,6 @@ const Chat: React.FC = () => {
   const { clearMessages, setActiveConversation } = useMessageStore();
 
   const { notifications, markAsRead } = useNotificationStore();
-
-  useChatSocket();
 
   useEffect(() => {
     return () => {

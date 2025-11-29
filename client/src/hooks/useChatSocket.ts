@@ -4,6 +4,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useMessageStore } from '@/stores/messageStore';
 import { useTypingStore } from '@/stores/typingStore';
 import { useSocket } from '@/context/SocketContext';
+import { useNotificationStore } from '@/stores/notificationStore';
 import type { Message as ServerMessage } from '@/utils/types/MessageTypes';
 import type { GroupedReaction } from '@/stores/messageStore';
 
@@ -97,6 +98,8 @@ export const useChatSocket = () => {
     markHandled,
   } = useMessageStore();
 
+  const addNotification = useNotificationStore((s) => s.addNotification);
+
   const prevConversationIdRef = useRef<number | null>(null);
   const purgeTimerRef = useRef<number | null>(null);
 
@@ -118,6 +121,14 @@ export const useChatSocket = () => {
   useEffect(() => {
     if (!socket || !currentUser) return;
     const typingApi = useTypingStore.getState();
+
+    const onNotificationNew = (notification: any) => {
+      try {
+        addNotification(notification);
+      } catch (e) {
+        console.error('[useChatSocket] failed to add notification:', e);
+      }
+    };
 
     const onReceiveMessage = (raw: ServerMessage) => {
       if (raw.conversationId !== currentConversationId) return;
@@ -222,6 +233,7 @@ export const useChatSocket = () => {
       typingApi.stopTyping(p.conversationId, p.userId);
     };
 
+    socket.on('notification:new', onNotificationNew);
     socket.on('receiveMessage', onReceiveMessage);
     socket.on('message:ack', onMessageAck);
     socket.on('messageUpdated', onMessageUpdated);
@@ -246,6 +258,7 @@ export const useChatSocket = () => {
 
     return () => {
       [
+        'notification:new',
         'receiveMessage',
         'message:ack',
         'messageUpdated',
@@ -281,6 +294,7 @@ export const useChatSocket = () => {
     updateMessageReactions,
     isHandled,
     markHandled,
+    addNotification,
   ]);
 
   useEffect(() => {

@@ -1,4 +1,6 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { createNotification } from "../notification/createNotification.ts";
+import { notifyMentions } from "../notification/notifyMentions.ts";
 
 interface CreateCommentParams {
   postId: number;
@@ -19,12 +21,12 @@ export const createComment = async ({
   videos = [],
   files = [],
 }: CreateCommentParams) => {
-  const postExists = await prisma.post.findUnique({
+  const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { id: true },
+    select: { id: true, userId: true },
   });
 
-  if (!postExists) {
+  if (!post) {
     throw new Error("Post does not exist.");
   }
 
@@ -33,7 +35,7 @@ export const createComment = async ({
       postId,
       userId,
       content,
-      parentId,
+      parentId: parentId ?? null,
       images,
       videos,
       files,
@@ -54,6 +56,56 @@ export const createComment = async ({
       },
     },
   });
+
+  const trimmed = content.trim();
+  const snippet =
+    trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
+
+  try {
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { id: true, userId: true, postId: true },
+      });
+
+      if (parentComment && parentComment.userId !== userId) {
+        await createNotification({
+          fromUserId: userId,
+          toUserId: parentComment.userId,
+          type: "reply_to_comment",
+          payload: {
+            postId: parentComment.postId,
+            commentId: parentComment.id,
+            replyId: comment.id,
+            snippet,
+          },
+        });
+      }
+    } else {
+      if (post.userId !== userId) {
+        await createNotification({
+          fromUserId: userId,
+          toUserId: post.userId,
+          type: "comment_on_post",
+          payload: {
+            postId: post.id,
+            commentId: comment.id,
+            snippet,
+          },
+        });
+      }
+    }
+
+    await notifyMentions({
+      content,
+      fromUserId: userId,
+      postId,
+      commentId: comment.id,
+      context: "comment",
+    });
+  } catch (err) {
+    console.error("[createComment] notification error:", err);
+  }
 
   return comment;
 };

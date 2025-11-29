@@ -1,16 +1,23 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { extractMentions } from "./extractMentions.ts";
 import { createNotification } from "./createNotification.ts";
+import type { NotificationType } from "./notificationTypes.ts";
+
+export interface NotifyMentionsInput {
+  content: string;
+  fromUserId: number;
+  postId: number;
+  commentId?: number;
+  context?: "post" | "comment";
+}
 
 export const notifyMentions = async ({
   content,
   fromUserId,
   postId,
-}: {
-  content: string;
-  fromUserId: number;
-  postId: number;
-}) => {
+  commentId,
+  context,
+}: NotifyMentionsInput) => {
   const usernames = extractMentions(content);
 
   if (!usernames.length) {
@@ -24,8 +31,15 @@ export const notifyMentions = async ({
     select: { id: true, username: true },
   });
 
+  const trimmed = content.trim();
   const snippet =
-    content.length > 140 ? `${content.slice(0, 137)}...` : content;
+    trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
+
+  const ctx: "post" | "comment" =
+    context ?? (commentId ? "comment" : "comment");
+
+  const type: NotificationType =
+    ctx === "post" ? "post_mention" : "comment_mention";
 
   const tasks = mentionedUsers
     .filter((user) => user.id !== fromUserId)
@@ -33,9 +47,10 @@ export const notifyMentions = async ({
       createNotification({
         fromUserId,
         toUserId: user.id,
-        type: "comment_mention",
+        type,
         payload: {
           postId,
+          commentId: ctx === "comment" ? commentId : undefined,
           mentionedUsername: user.username,
           snippet,
         },
