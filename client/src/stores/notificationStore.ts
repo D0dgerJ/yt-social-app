@@ -144,12 +144,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   addNotification: (notification: ApiNotification) => {
     const prev = get().notifications;
+    const index = prev.findIndex((n) => n.id === notification.id);
 
-    if (prev.some((n) => n.id === notification.id)) {
-      return;
+    let updated: ApiNotification[];
+
+    if (index >= 0) {
+      updated = [...prev];
+      updated[index] = { ...prev[index], ...notification };
+    } else {
+      updated = [notification, ...prev];
     }
-
-    const updated = [notification, ...prev];
 
     const generalUnread = updated.filter(
       (n) => !n.isRead && !isChatNotificationType(n.type)

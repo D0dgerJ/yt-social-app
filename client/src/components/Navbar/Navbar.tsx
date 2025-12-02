@@ -16,15 +16,6 @@ import { getIncomingFriendRequests } from "../../utils/api/user.api";
 
 import "./Navbar.scss";
 
-const CHAT_NOTIFICATION_TYPES = new Set<string>([
-  "direct_message",
-  "group_message",
-  "message_mention",
-  "message_reaction",
-  "message_quote",
-  "added_to_conversation",
-]);
-
 const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
 
@@ -34,23 +25,11 @@ const Navbar: React.FC = () => {
 
   const [friendRequestsCount, setFriendRequestsCount] = useState(0);
 
-  const { fetchNotifications } = useNotificationStore();
-
-  const chatUnreadCount = useNotificationStore((state) =>
-    state.notifications.filter((n) => {
-      const t = String(n.type);
-      const isChatType = CHAT_NOTIFICATION_TYPES.has(t);
-      return isChatType && !n.isRead;
-    }).length
-  );
-
-  const generalUnreadCount = useNotificationStore((state) =>
-    state.notifications.filter((n) => {
-      const t = String(n.type);
-      const isChatType = CHAT_NOTIFICATION_TYPES.has(t);
-      return !isChatType && !n.isRead;
-    }).length
-  );
+  const {
+    fetchNotifications,
+    unreadCount: generalUnreadCount,
+    chatUnreadCount,
+  } = useNotificationStore();
 
   useEffect(() => {
     if (!user) {
