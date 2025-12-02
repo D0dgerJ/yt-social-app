@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
 import type { NotificationType } from "../notification/notificationTypes.ts";
 import { extractMentions } from "../notification/extractMentions.ts";
+import { getIO } from "../../../infrastructure/websocket/socket.ts";
 
 type MediaKind = "image" | "video" | "file" | "gif" | "audio";
 
@@ -55,7 +56,6 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       gifUrl,
       stickerUrl,
       repliedToId,
-
       ttlSeconds,
       maxViewsPerUser,
     } = data;
@@ -66,6 +66,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       where: { conversationId, userId: senderId },
       select: { id: true },
     });
+
     if (!isParticipant) {
       throw new Error("Вы не являетесь участником этого чата");
     }
@@ -75,6 +76,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         where: { id: repliedToId },
         select: { id: true, conversationId: true },
       });
+
       if (!original || original.conversationId !== conversationId) {
         throw new Error("Ответ на сообщение из другого чата запрещён");
       }
@@ -268,7 +270,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         ]);
 
         if (participants.length > 0 && conversation) {
-          const type: NotificationType = conversation.isGroup
+          const baseType: NotificationType = conversation.isGroup
             ? "group_message"
             : "direct_message";
 
@@ -278,14 +280,60 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             conversationName: conversation.name ?? null,
           };
 
-          await prisma.notification.createMany({
-            data: participants.map((p) => ({
-              fromUserId: senderId,
-              toUserId: p.userId,
-              type,
-              content: JSON.stringify(basePayload),
-            })),
-          });
+          const contentStr = JSON.stringify(basePayload);
+          const notifTime = new Date();
+          const io = getIO();
+
+          for (const p of participants) {
+            const toUserId = p.userId;
+
+            const existing = await prisma.notification.findFirst({
+              where: {
+                toUserId,
+                type: baseType,
+                content: {
+                  contains: `"conversationId":${conversationId}`,
+                },
+              },
+              orderBy: { createdAt: "desc" },
+            });
+
+            const saved = existing
+              ? await prisma.notification.update({
+                  where: { id: existing.id },
+                  data: {
+                    fromUserId: senderId,
+                    content: contentStr,
+                    isRead: false,
+                    createdAt: notifTime,
+                  },
+                })
+              : await prisma.notification.create({
+                  data: {
+                    fromUserId: senderId,
+                    toUserId,
+                    type: baseType,
+                    content: contentStr,
+                  },
+                });
+
+            const full = await prisma.notification.findUnique({
+              where: { id: saved.id },
+              include: {
+                fromUser: {
+                  select: {
+                    id: true,
+                    username: true,
+                    profilePicture: true,
+                  },
+                },
+              },
+            });
+
+            if (full) {
+              io.to(`user:${toUserId}`).emit("notification:new", full);
+            }
+          }
 
           const rawText = message.encryptedContent ?? "";
           const usernames = extractMentions(rawText);
@@ -298,9 +346,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
               select: { id: true, username: true },
             });
 
-            const participantIds = new Set(
-              participants.map((p) => p.userId),
-            );
+            const participantIds = new Set(participants.map((p) => p.userId));
 
             const mentionTargets = mentionedUsers
               .map((u) => u.id)
@@ -309,26 +355,67 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
               );
 
             if (mentionTargets.length > 0) {
-              await prisma.notification.createMany({
-                data: mentionTargets.map((toUserId) => ({
-                  fromUserId: senderId,
-                  toUserId,
-                  type: "message_mention" as NotificationType,
-                  content: JSON.stringify({
-                    conversationId,
-                    messageId: message.id,
-                  }),
-                })),
-                skipDuplicates: true,
+              const mentionPayload = JSON.stringify({
+                conversationId,
+                messageId: message.id,
               });
+
+              for (const toUserId of mentionTargets) {
+                const existingMention = await prisma.notification.findFirst({
+                  where: {
+                    toUserId,
+                    type: "message_mention",
+                    content: {
+                      contains: `"conversationId":${conversationId}`,
+                    },
+                  },
+                  orderBy: { createdAt: "desc" },
+                });
+
+                const savedMention = existingMention
+                  ? await prisma.notification.update({
+                      where: { id: existingMention.id },
+                      data: {
+                        fromUserId: senderId,
+                        content: mentionPayload,
+                        isRead: false,
+                        createdAt: notifTime,
+                      },
+                    })
+                  : await prisma.notification.create({
+                      data: {
+                        fromUserId: senderId,
+                        toUserId,
+                        type: "message_mention",
+                        content: mentionPayload,
+                      },
+                    });
+
+                const fullMention = await prisma.notification.findUnique({
+                  where: { id: savedMention.id },
+                  include: {
+                    fromUser: {
+                      select: {
+                        id: true,
+                        username: true,
+                        profilePicture: true,
+                      },
+                    },
+                  },
+                });
+
+                if (fullMention) {
+                  io.to(`user:${toUserId}`).emit(
+                    "notification:new",
+                    fullMention,
+                  );
+                }
+              }
             }
           }
         }
       } catch (notifError) {
-        console.error(
-          "❌ Ошибка при создании чат-уведомлений:",
-          notifError,
-        );
+        console.error("❌ Ошибка при создании чат-уведомлений:", notifError);
       }
 
       return message;
