@@ -92,7 +92,7 @@ const MessageInput: React.FC = () => {
   );
 
   const handleSend = async () => {
-    if (!currentConversationId || isSending) return;
+    if (!currentConversationId) return;
 
     const trimmed = text.trim();
 
@@ -125,7 +125,6 @@ const MessageInput: React.FC = () => {
       }
     }
 
-    setIsSending(true);
     try {
       await send({
         conversationId: currentConversationId,
@@ -138,8 +137,6 @@ const MessageInput: React.FC = () => {
       resetComposer();
     } catch (err) {
       console.error('Ошибка при отправке сообщения:', err);
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -153,7 +150,7 @@ const MessageInput: React.FC = () => {
   const filesLeft = MAX_FILES_PER_MESSAGE - files.length;
   const canAddMoreFiles = !isEditMode && filesLeft > 0;
 
-  const ephemeralDisabled = isEditMode; 
+  const ephemeralDisabled = isEditMode;
 
   return (
     <div className="composer">
@@ -215,7 +212,9 @@ const MessageInput: React.FC = () => {
               className="composer__ephemeral-select"
               disabled={ephemeralDisabled}
               value={ttlSeconds}
-              onChange={(e) => setTtlSeconds(Number(e.target.value) || TTL_PRESETS[2].seconds)}
+              onChange={(e) =>
+                setTtlSeconds(Number(e.target.value) || TTL_PRESETS[2].seconds)
+              }
             >
               {TTL_PRESETS.map((p) => (
                 <option key={p.seconds} value={p.seconds}>
@@ -322,14 +321,14 @@ const MessageInput: React.FC = () => {
         onFocus={typingStart}
         onBlur={typingStop}
         rows={1}
-        disabled={isSending}
+        disabled={isSending && isEditMode}
       />
 
       <button
         className="composer__send"
         onClick={handleSend}
         aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
-        disabled={isSending}
+        disabled={isSending && isEditMode}
       >
         {isEditMode ? '💾' : '➡️'}
       </button>
