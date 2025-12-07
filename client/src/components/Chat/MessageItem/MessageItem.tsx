@@ -305,19 +305,29 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
+    const normalizeTime = (sec: number): number => {
+    if (!Number.isFinite(sec) || Number.isNaN(sec) || sec < 0) {
+      return 0;
+    }
+    return sec;
+  };
+
+  const safeDuration = normalizeTime(audioDuration);
+  const safeCurrentTime = normalizeTime(audioCurrentTime);
+
   const audioProgress =
     audioDuration > 0 ? audioCurrentTime / audioDuration : 0;
 
   const handleAudioLoadedMetadata = () => {
-    if (audioRef.current) {
-      setAudioDuration(audioRef.current.duration || 0);
-    }
+    if (!audioRef.current) return;
+    const dur = normalizeTime(audioRef.current.duration);
+    setAudioDuration(dur);
   };
 
   const handleAudioTimeUpdate = () => {
-    if (audioRef.current) {
-      setAudioCurrentTime(audioRef.current.currentTime || 0);
-    }
+    if (!audioRef.current) return;
+    const t = normalizeTime(audioRef.current.currentTime);
+    setAudioCurrentTime(t);
   };
 
   const handleAudioEnded = () => {
@@ -337,7 +347,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
   };
 
   const formatTime = (sec: number) => {
-    const total = Math.floor(sec || 0);
+    const normalized = normalizeTime(sec);
+    const total = Math.floor(normalized);
     const mm = Math.floor(total / 60)
       .toString()
       .padStart(2, '0');
@@ -762,7 +773,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
               />
 
               <div className="message-audio-time">
-                {formatTime(audioCurrentTime)} / {formatTime(audioDuration)}
+                {formatTime(safeCurrentTime)}
+                {safeDuration > 0 && <> / {formatTime(safeDuration)}</>}
               </div>
 
               <audio
