@@ -13,6 +13,25 @@
   color: #333;
 }
 
+.chat-header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.chat-popout-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #555;
+  cursor: pointer;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #1976d2;
+  }
+}
+
 .chat-close-btn {
   background: none;
   border: none;

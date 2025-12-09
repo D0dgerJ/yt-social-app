@@ -18,6 +18,7 @@ import axios from "axios";
 
 import { SocketProvider } from "./context/SocketContext";
 import { useChatSocket } from "./hooks/useChatSocket";
+import FloatingChatWindow from "@/components/Chat/FloatingChatWindow/FloatingChatWindow";
 
 const AppInner: React.FC = () => {
   const { user } = useContext(AuthContext);
@@ -78,6 +79,8 @@ const AppInner: React.FC = () => {
           element={user ? <Navigate to="/" /> : <Login />}
         />
       </Routes>
+
+      <FloatingChatWindow />
     </>
   );
 };
