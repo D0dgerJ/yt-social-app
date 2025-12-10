@@ -14,11 +14,18 @@ const PAGE_SIZE = 30;
 
 interface ChatWindowProps {
   scrollToMessageId?: number;
+  conversationIdOverride?: number | null;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ scrollToMessageId }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({
+  scrollToMessageId,
+  conversationIdOverride,
+}) => {
   const meId = useUserStore((s) => s.currentUser?.id) as number | undefined;
   const { currentConversationId } = useChatStore();
+
+  const effectiveConversationId =
+    conversationIdOverride ?? currentConversationId;
 
   const { conversationId, messages } = useMessagesDecrypted();
   const { loadHistory, setActiveConversation, removeMessage } =
@@ -76,14 +83,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ scrollToMessageId }) => {
   );
 
   useEffect(() => {
-    if (!currentConversationId) return;
+    if (!effectiveConversationId) return;
 
-    setActiveConversation(currentConversationId);
+    setActiveConversation(effectiveConversationId);
 
-    if (!loadedOnceRef.current[currentConversationId]) {
-      void initialLoad(currentConversationId);
+    if (!loadedOnceRef.current[effectiveConversationId]) {
+      void initialLoad(effectiveConversationId);
     }
-  }, [currentConversationId, setActiveConversation, initialLoad]);
+  }, [effectiveConversationId, setActiveConversation, initialLoad]);
 
   const loadOlder = useCallback(async () => {
     if (!conversationId || isLoadingOlder || !hasMoreOlder) return;
@@ -108,7 +115,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ scrollToMessageId }) => {
     }
   }, [conversationId, hasMoreOlder, isLoadingOlder, loadHistory]);
 
-  if (!currentConversationId || !meId) return null;
+  if (!effectiveConversationId || !meId) return null;
 
   return (
     <div className="chat-window chat-scroll">
@@ -127,7 +134,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ scrollToMessageId }) => {
         scrollToMessageId={scrollToMessageId}
       />
 
-      <TypingIndicator conversationId={currentConversationId} />
+      <TypingIndicator conversationId={effectiveConversationId} />
     </div>
   );
 };

@@ -102,10 +102,10 @@ const FloatingChatWindow: React.FC = () => {
       {!minimized && (
         <div className="floating-chat__body">
           <div className="floating-chat__messages">
-            <ChatWindow />
+            <ChatWindow conversationIdOverride={conversationId} />
           </div>
           <div className="floating-chat__input">
-            <MessageInput />
+            <MessageInput conversationIdOverride={conversationId} />
           </div>
         </div>
       )}
