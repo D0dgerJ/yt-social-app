@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useTyping } from '@/hooks/useTyping';
@@ -22,8 +28,17 @@ const TTL_PRESETS = [
 
 type EphemeralMode = 'none' | 'time' | 'views';
 
-const MessageInput: React.FC = () => {
+type MessageInputProps = {
+  conversationIdOverride?: number | null;
+};
+
+const MessageInput: React.FC<MessageInputProps> = ({
+  conversationIdOverride,
+}) => {
   const { currentConversationId } = useChatStore();
+  const effectiveConversationId =
+    conversationIdOverride ?? currentConversationId;
+
   const { send } = useSendMessage();
   const { start: typingStart, stop: typingStop } = useTyping();
 
@@ -92,7 +107,7 @@ const MessageInput: React.FC = () => {
   );
 
   const handleSend = async () => {
-    if (!currentConversationId) return;
+    if (!effectiveConversationId) return;
 
     const trimmed = text.trim();
 
@@ -127,7 +142,7 @@ const MessageInput: React.FC = () => {
 
     try {
       await send({
-        conversationId: currentConversationId,
+        conversationId: effectiveConversationId,
         text: trimmed || undefined,
         files,
         replyToId: replyIdNum,
@@ -247,7 +262,9 @@ const MessageInput: React.FC = () => {
       </div>
 
       <label
-        className={`composer__attach ${!canAddMoreFiles ? 'composer__attach--disabled' : ''}`}
+        className={`composer__attach ${
+          !canAddMoreFiles ? 'composer__attach--disabled' : ''
+        }`}
         title={
           isEditMode
             ? 'Нельзя менять вложения при редактировании'
@@ -271,7 +288,7 @@ const MessageInput: React.FC = () => {
         disabled={isSending || isEditMode}
         canAddMoreFiles={canAddMoreFiles}
         onSend={async (file) => {
-          if (!currentConversationId) return;
+          if (!effectiveConversationId) return;
 
           let ttlToSend: number | undefined;
           let maxViewsToSend: number | undefined;
@@ -285,7 +302,7 @@ const MessageInput: React.FC = () => {
           }
 
           await send({
-            conversationId: currentConversationId,
+            conversationId: effectiveConversationId,
             files: [file],
             replyToId: replyIdNum,
             ttlSeconds: ttlToSend,
@@ -311,7 +328,9 @@ const MessageInput: React.FC = () => {
       <textarea
         ref={textareaRef}
         className="composer__input"
-        placeholder={isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'}
+        placeholder={
+          isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'
+        }
         value={text}
         onChange={(e) => {
           setText(e.target.value);
