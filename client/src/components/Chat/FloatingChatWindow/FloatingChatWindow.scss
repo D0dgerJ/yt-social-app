@@ -18,6 +18,11 @@
   font-family: inherit;
 }
 
+.floating-chat--minimized {
+  height: 44px;
+}
+
+
 .floating-chat__header {
   cursor: move;
   padding: 8px 12px;
