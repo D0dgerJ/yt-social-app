@@ -30,10 +30,12 @@ type EphemeralMode = 'none' | 'time' | 'views';
 
 type MessageInputProps = {
   conversationIdOverride?: number | null;
+  compact?: boolean;
 };
 
 const MessageInput: React.FC<MessageInputProps> = ({
   conversationIdOverride,
+  compact = false,
 }) => {
   const { currentConversationId } = useChatStore();
   const effectiveConversationId =
@@ -167,6 +169,194 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
   const ephemeralDisabled = isEditMode;
 
+  const mainRow = compact ? (
+    <div className="composer__main-row">
+      <label
+        className={`composer__attach ${
+          !canAddMoreFiles ? 'composer__attach--disabled' : ''
+        }`}
+        title={
+          isEditMode
+            ? 'Нельзя менять вложения при редактировании'
+            : canAddMoreFiles
+            ? 'Прикрепить файл'
+            : 'Лимит 10 вложений'
+        }
+      >
+        📎
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          disabled={!canAddMoreFiles}
+          onChange={onPickFiles}
+        />
+      </label>
+
+      <VoiceRecorder
+        disabled={isSending || isEditMode}
+        canAddMoreFiles={canAddMoreFiles}
+        onSend={async (file) => {
+          if (!effectiveConversationId) return;
+
+          let ttlToSend: number | undefined;
+          let maxViewsToSend: number | undefined;
+
+          if (!isEditMode) {
+            if (ephemeralMode === 'time') {
+              ttlToSend = ttlSeconds > 0 ? ttlSeconds : undefined;
+            } else if (ephemeralMode === 'views') {
+              maxViewsToSend = viewsLimit > 0 ? viewsLimit : undefined;
+            }
+          }
+
+          await send({
+            conversationId: effectiveConversationId,
+            files: [file],
+            replyToId: replyIdNum,
+            ttlSeconds: ttlToSend,
+            maxViewsPerUser: maxViewsToSend,
+          });
+          if (replyTarget) setReplyTarget(undefined);
+        }}
+      />
+
+      <EmojiGifPopup
+        textareaRef={textareaRef}
+        replyToId={replyIdNum}
+        onAddFile={(file) => {
+          if (!canAddMoreFiles) return;
+          setFiles((prev) => {
+            if (prev.length >= MAX_FILES_PER_MESSAGE) return prev;
+            return [...prev, file];
+          });
+        }}
+        onTextInsert={(s) => setText((prev) => (prev ?? '') + s)}
+      />
+
+      <textarea
+        ref={textareaRef}
+        className="composer__input"
+        placeholder={
+          isEditMode ? 'Измени сообщение' : 'Напиши сообщение'
+        }
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          typingStart();
+        }}
+        onKeyDown={onKeyDown}
+        onFocus={typingStart}
+        onBlur={typingStop}
+        rows={1}
+        disabled={isSending && isEditMode}
+      />
+
+      <button
+        className="composer__send"
+        onClick={handleSend}
+        aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
+        disabled={isSending && isEditMode}
+      >
+        {isEditMode ? '💾' : '➡️'}
+      </button>
+    </div>
+  ) : (
+    <>
+      <label
+        className={`composer__attach ${
+          !canAddMoreFiles ? 'composer__attach--disabled' : ''
+        }`}
+        title={
+          isEditMode
+            ? 'Нельзя менять вложения при редактировании'
+            : canAddMoreFiles
+            ? 'Прикрепить файл'
+            : 'Лимит 10 вложений'
+        }
+      >
+        📎
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          disabled={!canAddMoreFiles}
+          onChange={onPickFiles}
+        />
+      </label>
+
+      <VoiceRecorder
+        disabled={isSending || isEditMode}
+        canAddMoreFiles={canAddMoreFiles}
+        onSend={async (file) => {
+          if (!effectiveConversationId) return;
+
+          let ttlToSend: number | undefined;
+          let maxViewsToSend: number | undefined;
+
+          if (!isEditMode) {
+            if (ephemeralMode === 'time') {
+              ttlToSend = ttlSeconds > 0 ? ttlSeconds : undefined;
+            } else if (ephemeralMode === 'views') {
+              maxViewsToSend = viewsLimit > 0 ? viewsLimit : undefined;
+            }
+          }
+
+          await send({
+            conversationId: effectiveConversationId,
+            files: [file],
+            replyToId: replyIdNum,
+            ttlSeconds: ttlToSend,
+            maxViewsPerUser: maxViewsToSend,
+          });
+          if (replyTarget) setReplyTarget(undefined);
+        }}
+      />
+
+      <EmojiGifPopup
+        textareaRef={textareaRef}
+        replyToId={replyIdNum}
+        onAddFile={(file) => {
+          if (!canAddMoreFiles) return;
+          setFiles((prev) => {
+            if (prev.length >= MAX_FILES_PER_MESSAGE) return prev;
+            return [...prev, file];
+          });
+        }}
+        onTextInsert={(s) => setText((prev) => (prev ?? '') + s)}
+      />
+
+      <textarea
+        ref={textareaRef}
+        className="composer__input"
+        placeholder={
+          isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'
+        }
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          typingStart();
+        }}
+        onKeyDown={onKeyDown}
+        onFocus={typingStart}
+        onBlur={typingStop}
+        rows={1}
+        disabled={isSending && isEditMode}
+      />
+
+      <button
+        className="composer__send"
+        onClick={handleSend}
+        aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
+        disabled={isSending && isEditMode}
+      >
+        {isEditMode ? '💾' : '➡️'}
+      </button>
+    </>
+  );
+
   return (
     <div className="composer">
       {(isReplyMode || isEditMode) && (
@@ -261,96 +451,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         )}
       </div>
 
-      <label
-        className={`composer__attach ${
-          !canAddMoreFiles ? 'composer__attach--disabled' : ''
-        }`}
-        title={
-          isEditMode
-            ? 'Нельзя менять вложения при редактировании'
-            : canAddMoreFiles
-            ? 'Прикрепить файл'
-            : 'Лимит 10 вложений'
-        }
-      >
-        📎
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          hidden
-          disabled={!canAddMoreFiles}
-          onChange={onPickFiles}
-        />
-      </label>
-
-      <VoiceRecorder
-        disabled={isSending || isEditMode}
-        canAddMoreFiles={canAddMoreFiles}
-        onSend={async (file) => {
-          if (!effectiveConversationId) return;
-
-          let ttlToSend: number | undefined;
-          let maxViewsToSend: number | undefined;
-
-          if (!isEditMode) {
-            if (ephemeralMode === 'time') {
-              ttlToSend = ttlSeconds > 0 ? ttlSeconds : undefined;
-            } else if (ephemeralMode === 'views') {
-              maxViewsToSend = viewsLimit > 0 ? viewsLimit : undefined;
-            }
-          }
-
-          await send({
-            conversationId: effectiveConversationId,
-            files: [file],
-            replyToId: replyIdNum,
-            ttlSeconds: ttlToSend,
-            maxViewsPerUser: maxViewsToSend,
-          });
-          if (replyTarget) setReplyTarget(undefined);
-        }}
-      />
-
-      <EmojiGifPopup
-        textareaRef={textareaRef}
-        replyToId={replyIdNum}
-        onAddFile={(file) => {
-          if (!canAddMoreFiles) return;
-          setFiles((prev) => {
-            if (prev.length >= MAX_FILES_PER_MESSAGE) return prev;
-            return [...prev, file];
-          });
-        }}
-        onTextInsert={(s) => setText((prev) => (prev ?? '') + s)}
-      />
-
-      <textarea
-        ref={textareaRef}
-        className="composer__input"
-        placeholder={
-          isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'
-        }
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          typingStart();
-        }}
-        onKeyDown={onKeyDown}
-        onFocus={typingStart}
-        onBlur={typingStop}
-        rows={1}
-        disabled={isSending && isEditMode}
-      />
-
-      <button
-        className="composer__send"
-        onClick={handleSend}
-        aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
-        disabled={isSending && isEditMode}
-      >
-        {isEditMode ? '💾' : '➡️'}
-      </button>
+      {mainRow}
 
       {!!files.length && (
         <div className="composer__previews">

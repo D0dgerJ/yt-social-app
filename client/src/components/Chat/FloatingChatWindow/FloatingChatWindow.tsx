@@ -218,7 +218,10 @@ const SingleFloatingChatWindow: React.FC<SingleWindowProps> = ({
             <PopupChatBody conversationId={conversationId} />
           </div>
           <div className="floating-chat__input">
-            <MessageInput conversationIdOverride={conversationId} />
+            <MessageInput
+              conversationIdOverride={conversationId}
+              compact
+            />
           </div>
         </div>
       )}

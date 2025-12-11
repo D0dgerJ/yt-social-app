@@ -381,3 +381,10 @@
     opacity: 0.2;
   }
 }
+
+.composer__main-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
