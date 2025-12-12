@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useLayoutEffect,
 } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Message } from "@/stores/messageStore";
@@ -168,8 +169,9 @@ const MessageList: React.FC<Props> = ({
 
   const virtuosoRef = useRef<VirtuosoHandle | null>(null);
   const didInitialScrollRef = useRef<Record<number, boolean>>({});
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const convId = currentConversationId;
     if (!convId) return;
     if (!items.length) return;
@@ -183,7 +185,10 @@ const MessageList: React.FC<Props> = ({
       align: "end",
       behavior: "auto",
     });
-  }, [items, currentConversationId]);
+
+    didInitialScrollRef.current[convId] = true;
+  }, [items.length, currentConversationId]);
+
 
   const pinnedMessages = useMemo(
     () => messages.filter((m) => m.isPinned),
@@ -374,6 +379,7 @@ const MessageList: React.FC<Props> = ({
       )}
 
       <Virtuoso<ListItem>
+        key={currentConversationId ?? "no-conv"}
         ref={virtuosoRef}
         data={items}
         className="msg-virtuoso"
@@ -382,6 +388,9 @@ const MessageList: React.FC<Props> = ({
         itemContent={renderItem}
         components={components}
         computeItemKey={(_index, item) => item.key}
+        initialTopMostItemIndex={Math.max(items.length - 1, 0)}
+        followOutput={isAtBottom ? "auto" : false}
+        atBottomStateChange={setIsAtBottom}
       />
 
       {menu && (
