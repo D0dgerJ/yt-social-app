@@ -3,28 +3,31 @@ import CreateChatModal from "../CreateChatModal/CreateChatModal";
 import "./ChatListHeader.scss";
 
 interface ChatListHeaderProps {
+  value?: string;
   onSearchChange?: (value: string) => void;
 }
 
-const ChatListHeader: React.FC<ChatListHeaderProps> = ({ onSearchChange }) => {
-  const [search, setSearch] = useState("");
+const ChatListHeader: React.FC<ChatListHeaderProps> = ({
+  value = "",
+  onSearchChange,
+}) => {
   const [showModal, setShowModal] = useState(false);
-
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    onSearchChange?.(value);
-  };
 
   return (
     <div className="chat-list-header">
-      <button onClick={() => setShowModal(true)} className="create-chat-btn">
+      <button
+        onClick={() => setShowModal(true)}
+        className="create-chat-btn"
+        type="button"
+      >
         ➕ Создать чат
       </button>
+
       <input
         type="text"
-        placeholder="Поиск чатов..."
-        value={search}
-        onChange={(e) => handleSearch(e.target.value)}
+        placeholder="Поиск чатов и участников..."
+        value={value}
+        onChange={(e) => onSearchChange?.(e.target.value)}
         className="chat-search"
       />
 

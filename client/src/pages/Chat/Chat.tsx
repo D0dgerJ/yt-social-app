@@ -30,16 +30,13 @@ const Chat: React.FC = () => {
 
   const [searchParams] = useSearchParams();
   const conversationIdParam = searchParams.get("conversationId");
-  const messageIdParam = searchParams.get("messageId");
 
   const deepLinkConversationId = conversationIdParam
     ? Number(conversationIdParam)
     : null;
-  const deepLinkMessageId = messageIdParam ? Number(messageIdParam) : null;
 
   const { currentConversationId, setCurrentConversationId } = useChatStore();
   const { clearMessages, setActiveConversation } = useMessageStore();
-
   const { notifications, markAsRead } = useNotificationStore();
 
   useEffect(() => {
@@ -79,6 +76,7 @@ const Chat: React.FC = () => {
   return (
     <>
       <Navbar />
+
       <div className="chat-layout">
         <div className="chat-sidebar-wrapper">
           <Sidebar />
@@ -89,7 +87,7 @@ const Chat: React.FC = () => {
             currentConversationId ? "chat-split" : ""
           }`}
         >
-          <ChatListHeader onSearchChange={setSearch} />
+          <ChatListHeader value={search} onSearchChange={setSearch} />
 
           <div className="chat-main-content">
             <div className="chat-list-pane">
@@ -99,7 +97,7 @@ const Chat: React.FC = () => {
             {currentConversationId && (
               <div className="chat-window-pane">
                 <ChatHeader />
-                <ChatWindow scrollToMessageId={deepLinkMessageId ?? undefined} />
+                <ChatWindow />
                 <MessageInput />
               </div>
             )}
