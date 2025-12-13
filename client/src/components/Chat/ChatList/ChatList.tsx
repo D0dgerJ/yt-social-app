@@ -47,6 +47,8 @@ type ConversationLike = {
   pinnedAt?: string | null;
 };
 
+const norm = (s: string) => (s ?? "").toLowerCase().trim();
+
 const mediaPreview = (m?: ConversationLike["lastMessage"]) => {
   if (!m) return "";
   const type = (m.mediaType || "").toLowerCase();
@@ -77,7 +79,19 @@ const getAvatarFromConv = (conv?: ConversationLike): string => {
     first?.user?.profilePicture ??
     first?.profilePicture ??
     "/default-avatar.png";
+
   return avatar || "/default-avatar.png";
+};
+
+const getParticipantNames = (conv: ConversationLike) => {
+  const parts: ParticipantLike[] = Array.isArray(conv?.participants)
+    ? conv.participants!
+    : [];
+
+  return parts
+    .map((p) => p?.user?.username ?? p?.username ?? "")
+    .filter(Boolean)
+    .join(" ");
 };
 
 const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
@@ -116,12 +130,15 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
     return names.length ? names.join(", ") : "Без названия";
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+  const filteredChats = useMemo(() => {
+    const q = norm(search);
     if (!q) return conversations as ConversationLike[];
-    return (conversations as ConversationLike[]).filter((conv) =>
-      getTitle(conv).toLowerCase().includes(q)
-    );
+
+    return (conversations as ConversationLike[]).filter((conv) => {
+      const title = getTitle(conv);
+      const people = getParticipantNames(conv);
+      return norm(`${title} ${people}`).includes(q);
+    });
   }, [conversations, search, getTitle]);
 
   const handleSelect = useCallback(
@@ -153,7 +170,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
   return (
     <div className="chat-list">
       <ul className="chat-list-items">
-        {filtered.map((chat) => {
+        {filteredChats.map((chat) => {
           const chatTitle = getTitle(chat);
           const avatar = getAvatarFromConv(chat);
 
@@ -204,7 +221,6 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
                 <div className="chat-title-row">
                   <span className="chat-title">{chatTitle}</span>
 
-                  {/* 🔹 кнопка пина чата */}
                   <button
                     className={`chat-pin-btn ${
                       chat.isPinned ? "chat-pin-btn--active" : ""
@@ -213,6 +229,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
                       chat.isPinned ? "Открепить чат" : "Закрепить чат наверху"
                     }
                     onClick={(e) => handleTogglePin(chat, e)}
+                    type="button"
                   >
                     {chat.isPinned ? "📌" : "📍"}
                   </button>

@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface Chat {
   id: number;
@@ -49,11 +49,14 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
       conversations: state.conversations.filter((c) => c.id !== id),
     })),
 
-  clearStore: () => set({ conversations: [], currentConversationId: null }),
+  clearStore: () =>
+    set({
+      conversations: [],
+      currentConversationId: null,
+    }),
 
-  getConversation: (id) => {
-    return get().conversations.find((c) => c.id === id);
-  },
+  getConversation: (id) =>
+    get().conversations.find((c) => c.id === id),
 
   resolveName: (convId, userId) => {
     const conv = get().conversations.find((c) => c.id === convId);
