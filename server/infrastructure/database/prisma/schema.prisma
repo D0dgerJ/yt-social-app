@@ -59,6 +59,8 @@ model User {
   pinnedMessages      PinnedMessage[]
 
   messageViews MessageView[]
+
+  events Event[]
 }
 
 model FriendRequest {
@@ -418,4 +420,23 @@ enum ProcessingStatus {
   PROCESSING
   READY
   FAILED
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime?
+  allDay      Boolean  @default(true)
+  color       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startAt])
+  @@index([userId, endAt])
 }
