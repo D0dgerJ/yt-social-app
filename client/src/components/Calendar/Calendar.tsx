@@ -1,5 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import "./Calendar.scss";
+import { eventsApi, EventDTO } from "../../utils/api/event.api";
+import CreateEventModal from "./CreateEventModal";
+import DayEventsModal from "./DayEventsModal";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -21,8 +24,8 @@ const generateMonthGrid = (year: number, month: number) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const firstDay = new Date(year, month, 1);
-  const jsDay = firstDay.getDay(); 
-  const startOffset = (jsDay + 6) % 7; 
+  const jsDay = firstDay.getDay();
+  const startOffset = (jsDay + 6) % 7;
 
   const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
 
@@ -36,7 +39,27 @@ const generateMonthGrid = (year: number, month: number) => {
     }
   }
 
-  return { cells, daysInMonth, startOffset, totalCells };
+  return { cells };
+};
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+const makeISODateUTC = (year: number, month: number, day: number) => {
+  return `${year}-${pad2(month + 1)}-${pad2(day)}T00:00:00.000Z`;
+};
+
+const monthRangeUTC = (year: number, month: number) => {
+  const from = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString();
+  const to = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0)).toISOString();
+  return { from, to };
+};
+
+const formatDayLabel = (year: number, month: number, day: number) => {
+  return new Date(year, month, day).toLocaleDateString("ru-RU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 
 const Calendar: React.FC = () => {
@@ -48,17 +71,52 @@ const Calendar: React.FC = () => {
 
   const { year, month } = viewDate;
 
-  const { cells } = useMemo(
-    () => generateMonthGrid(year, month),
-    [year, month]
-  );
+  const { cells } = useMemo(() => generateMonthGrid(year, month), [year, month]);
+
+  const [events, setEvents] = useState<EventDTO[]>([]);
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const [isDayModalOpen, setIsDayModalOpen] = useState(false);
+
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<string, EventDTO[]>();
+    for (const e of events) {
+      const key = e.startAt.slice(0, 10); 
+      const list = map.get(key) ?? [];
+      list.push(e);
+      map.set(key, list);
+    }
+    return map;
+  }, [events]);
+
+  const selectedDayLabel =
+    selectedDay == null ? "" : formatDayLabel(year, month, selectedDay);
+
+  const selectedDayKey =
+    selectedDay == null ? null : `${year}-${pad2(month + 1)}-${pad2(selectedDay)}`;
+
+  const selectedDayEvents = useMemo(() => {
+    if (!selectedDayKey) return [];
+    return eventsByDay.get(selectedDayKey) ?? [];
+  }, [eventsByDay, selectedDayKey]);
+
+  const reloadMonth = async () => {
+    const { from, to } = monthRangeUTC(year, month);
+    const res = await eventsApi.getRange(from, to);
+    setEvents(res.data);
+  };
+
+  useEffect(() => {
+    reloadMonth().catch(console.error);
+  }, [year, month]);
 
   const handlePrevMonth = () => {
     setViewDate((prev) => {
       const newMonth = prev.month - 1;
-      if (newMonth < 0) {
-        return { year: prev.year - 1, month: 11 };
-      }
+      if (newMonth < 0) return { year: prev.year - 1, month: 11 };
       return { year: prev.year, month: newMonth };
     });
   };
@@ -66,9 +124,7 @@ const Calendar: React.FC = () => {
   const handleNextMonth = () => {
     setViewDate((prev) => {
       const newMonth = prev.month + 1;
-      if (newMonth > 11) {
-        return { year: prev.year + 1, month: 0 };
-      }
+      if (newMonth > 11) return { year: prev.year + 1, month: 0 };
       return { year: prev.year, month: newMonth };
     });
   };
@@ -80,7 +136,9 @@ const Calendar: React.FC = () => {
     });
   };
 
-  const classifyDay = (day: number | null): "past" | "today" | "future" | "empty" => {
+  const classifyDay = (
+    day: number | null
+  ): "past" | "today" | "future" | "empty" => {
     if (day == null) return "empty";
 
     const isSameYear = year === today.year;
@@ -100,60 +158,170 @@ const Calendar: React.FC = () => {
     return "future";
   };
 
-  return (
-    <div className="calendar">
-      <div className="calendar-header">
-        <button
-          type="button"
-          className="calendar-nav-button"
-          onClick={handlePrevMonth}
-        >
-          ‹
-        </button>
+  const openDay = (day: number) => {
+    setSelectedDay(day);
 
-        <div className="calendar-title">
-          {formatMonthTitle(year, month)}
+    const key = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+    const list = eventsByDay.get(key) ?? [];
+
+    if (list.length === 0) {
+      setIsCreateModalOpen(true);
+      setIsDayModalOpen(false);
+    } else {
+      setIsDayModalOpen(true);
+      setIsCreateModalOpen(false);
+    }
+  };
+
+  const handleCreate = async (data: {
+    title: string;
+    description?: string;
+    color?: string;
+  }) => {
+    if (selectedDay == null) return;
+
+    const startAt = makeISODateUTC(year, month, selectedDay);
+
+    const res = await eventsApi.create({
+      title: data.title,
+      description: data.description,
+      startAt,
+      allDay: true,
+      color: data.color,
+    });
+
+    setEvents((prev) => [...prev, res.data]);
+    setIsCreateModalOpen(false);
+  };
+
+  const handleUpdate = async (
+    eventId: number,
+    data: { title: string; description?: string; color?: string }
+  ) => {
+    await eventsApi.update(eventId, {
+      title: data.title,
+      description: data.description,
+      color: data.color,
+    });
+
+    await reloadMonth();
+  };
+
+  const handleDelete = async (eventId: number) => {
+    await eventsApi.remove(eventId);
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  };
+
+  return (
+    <>
+      <div className="calendar">
+        <div className="calendar-header">
+          <button
+            type="button"
+            className="calendar-nav-button"
+            onClick={handlePrevMonth}
+          >
+            ‹
+          </button>
+
+          <div className="calendar-title">{formatMonthTitle(year, month)}</div>
+
+          <button
+            type="button"
+            className="calendar-nav-button"
+            onClick={handleNextMonth}
+          >
+            ›
+          </button>
         </div>
 
-        <button
-          type="button"
-          className="calendar-nav-button"
-          onClick={handleNextMonth}
-        >
-          ›
-        </button>
-      </div>
-
-      <div className="calendar-weekdays">
-        {WEEKDAYS.map((day) => (
-          <div key={day} className="calendar-weekday">
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div className="calendar-grid">
-        {cells.map((cell, index) => {
-          const status = classifyDay(cell.day);
-          const isEmpty = status === "empty";
-
-          return (
-            <div
-              key={index}
-              className={[
-                "calendar-day",
-                `calendar-day--${status}`,
-                isEmpty ? "calendar-day--empty" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {!isEmpty && <span className="calendar-day-number">{cell.day}</span>}
+        <div className="calendar-weekdays">
+          {WEEKDAYS.map((day) => (
+            <div key={day} className="calendar-weekday">
+              {day}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        <div className="calendar-grid">
+          {cells.map((cell, index) => {
+            const status = classifyDay(cell.day);
+            const isEmpty = status === "empty";
+
+            const dayKey =
+              cell.day == null
+                ? null
+                : `${year}-${pad2(month + 1)}-${pad2(cell.day)}`;
+
+            const dayEvents = dayKey ? eventsByDay.get(dayKey) ?? [] : [];
+
+            return (
+              <div
+                key={index}
+                className={[
+                  "calendar-day",
+                  `calendar-day--${status}`,
+                  isEmpty ? "calendar-day--empty" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => {
+                  if (isEmpty || cell.day == null) return;
+                  openDay(cell.day);
+                }}
+                role={!isEmpty ? "button" : undefined}
+                tabIndex={!isEmpty ? 0 : -1}
+              >
+                {!isEmpty && (
+                  <>
+                    <span className="calendar-day-number">{cell.day}</span>
+
+                    <div className="calendar-events">
+                      {dayEvents.slice(0, 3).map((e) => (
+                        <div
+                          key={e.id}
+                          className="calendar-event"
+                          style={{ background: e.color ?? "#2f54eb" }}
+                          title={e.title}
+                        >
+                          {e.title}
+                        </div>
+                      ))}
+
+                      {dayEvents.length > 3 && (
+                        <div className="calendar-event calendar-event--more">
+                          +{dayEvents.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <DayEventsModal
+        isOpen={isDayModalOpen}
+        dateLabel={selectedDayLabel}
+        events={selectedDayEvents}
+        onClose={() => setIsDayModalOpen(false)}
+        onCreate={() => {
+          setIsDayModalOpen(false);
+          setIsCreateModalOpen(true);
+        }}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+      />
+
+      <CreateEventModal
+        isOpen={isCreateModalOpen}
+        dateLabel={selectedDayLabel}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreate}
+      />
+    </>
   );
 };
 

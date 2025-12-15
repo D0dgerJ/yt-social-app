@@ -64,7 +64,9 @@
 
 .calendar-day {
   position: relative;
-  min-height: 90px;
+  height: 90px;         
+  min-height: 90px;    
+  overflow: hidden;    
   border-radius: 12px;
   background: #f7f8fc;
   padding: 8px 10px;
@@ -72,11 +74,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  cursor: default;
+  cursor: pointer;
   transition: background 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease;
 }
 
 .calendar-day--empty {
+  cursor: default;
   background: transparent;
   box-shadow: none;
 }
@@ -121,6 +124,7 @@
   }
 
   .calendar-day {
+    height: 70px;       
     min-height: 70px;
     border-radius: 10px;
   }
@@ -132,4 +136,33 @@
   .calendar-day-number {
     font-size: 14px;
   }
+}
+
+.calendar-events {
+  position: absolute;   
+  left: 8px;
+  right: 8px;
+  top: 32px;           
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none; 
+}
+
+.calendar-event {
+  pointer-events: none;
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.1;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event--more {
+  background: #e4e7ee;
+  color: #333;
 }
