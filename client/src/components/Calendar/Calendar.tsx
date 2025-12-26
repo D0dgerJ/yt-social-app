@@ -3,6 +3,7 @@ import "./Calendar.scss";
 import { eventsApi, EventDTO } from "../../utils/api/event.api";
 import CreateEventModal from "./CreateEventModal";
 import DayEventsModal from "./DayEventsModal";
+import { buildHolidayMapForYear } from "./holidays";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -76,7 +77,6 @@ const Calendar: React.FC = () => {
   const [events, setEvents] = useState<EventDTO[]>([]);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -84,13 +84,15 @@ const Calendar: React.FC = () => {
   const eventsByDay = useMemo(() => {
     const map = new Map<string, EventDTO[]>();
     for (const e of events) {
-      const key = e.startAt.slice(0, 10); 
+      const key = e.startAt.slice(0, 10);
       const list = map.get(key) ?? [];
       list.push(e);
       map.set(key, list);
     }
     return map;
   }, [events]);
+
+  const holidaysByDay = useMemo(() => buildHolidayMapForYear(year), [year]);
 
   const selectedDayLabel =
     selectedDay == null ? "" : formatDayLabel(year, month, selectedDay);
@@ -111,6 +113,7 @@ const Calendar: React.FC = () => {
 
   useEffect(() => {
     reloadMonth().catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
 
   const handlePrevMonth = () => {
@@ -136,9 +139,7 @@ const Calendar: React.FC = () => {
     });
   };
 
-  const classifyDay = (
-    day: number | null
-  ): "past" | "today" | "future" | "empty" => {
+  const classifyDay = (day: number | null): "past" | "today" | "future" | "empty" => {
     if (day == null) return "empty";
 
     const isSameYear = year === today.year;
@@ -173,11 +174,7 @@ const Calendar: React.FC = () => {
     }
   };
 
-  const handleCreate = async (data: {
-    title: string;
-    description?: string;
-    color?: string;
-  }) => {
+  const handleCreate = async (data: { title: string; description?: string; color?: string }) => {
     if (selectedDay == null) return;
 
     const startAt = makeISODateUTC(year, month, selectedDay);
@@ -216,21 +213,13 @@ const Calendar: React.FC = () => {
     <>
       <div className="calendar">
         <div className="calendar-header">
-          <button
-            type="button"
-            className="calendar-nav-button"
-            onClick={handlePrevMonth}
-          >
+          <button type="button" className="calendar-nav-button" onClick={handlePrevMonth}>
             ‹
           </button>
 
           <div className="calendar-title">{formatMonthTitle(year, month)}</div>
 
-          <button
-            type="button"
-            className="calendar-nav-button"
-            onClick={handleNextMonth}
-          >
+          <button type="button" className="calendar-nav-button" onClick={handleNextMonth}>
             ›
           </button>
         </div>
@@ -249,11 +238,10 @@ const Calendar: React.FC = () => {
             const isEmpty = status === "empty";
 
             const dayKey =
-              cell.day == null
-                ? null
-                : `${year}-${pad2(month + 1)}-${pad2(cell.day)}`;
+              cell.day == null ? null : `${year}-${pad2(month + 1)}-${pad2(cell.day)}`;
 
             const dayEvents = dayKey ? eventsByDay.get(dayKey) ?? [] : [];
+            const dayHolidays = dayKey ? holidaysByDay.get(dayKey) ?? [] : [];
 
             return (
               <div
@@ -276,24 +264,48 @@ const Calendar: React.FC = () => {
                   <>
                     <span className="calendar-day-number">{cell.day}</span>
 
-                    <div className="calendar-events">
-                      {dayEvents.slice(0, 3).map((e) => (
-                        <div
-                          key={e.id}
-                          className="calendar-event"
-                          style={{ background: e.color ?? "#2f54eb" }}
-                          title={e.title}
-                        >
-                          {e.title}
-                        </div>
-                      ))}
+                    {dayHolidays.length > 0 && (
+                      <div className="calendar-holidays">
+                        {dayHolidays.slice(0, 2).map((h) => (
+                          <div
+                            key={h.key}
+                            className="calendar-holiday"
+                            style={{ background: h.color ?? "#16a34a" }}
+                            title={h.title}
+                          >
+                            {h.icon ? `${h.icon} ` : ""}
+                            {h.title}
+                          </div>
+                        ))}
 
-                      {dayEvents.length > 3 && (
-                        <div className="calendar-event calendar-event--more">
-                          +{dayEvents.length - 3}
-                        </div>
-                      )}
-                    </div>
+                        {dayHolidays.length > 2 && (
+                          <div className="calendar-holiday calendar-holiday--more">
+                            +{dayHolidays.length - 2}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {dayEvents.length > 0 && (
+                      <div className="calendar-events">
+                        {dayEvents.slice(0, 3).map((e) => (
+                          <div
+                            key={e.id}
+                            className="calendar-event"
+                            style={{ background: e.color ?? "#2f54eb" }}
+                            title={e.title}
+                          >
+                            {e.title}
+                          </div>
+                        ))}
+
+                        {dayEvents.length > 3 && (
+                          <div className="calendar-event calendar-event--more">
+                            +{dayEvents.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
