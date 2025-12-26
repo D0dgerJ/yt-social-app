@@ -54,10 +54,6 @@ const Sidebar: React.FC = () => {
             <span>Bookmarks</span>
           </li>
           <li className="sidebar-list-item">
-            <BsFillQuestionSquareFill className="sidebar-icon" />
-            <span>Questions</span>
-          </li>
-          <li className="sidebar-list-item">
             <NavLink to="/events" className="sidebar-link">
               <BiCalendar className="sidebar-icon" />
               <span>Events</span>

@@ -64,9 +64,9 @@
 
 .calendar-day {
   position: relative;
-  height: 90px;         
-  min-height: 90px;    
-  overflow: hidden;    
+  height: 90px;      
+  min-height: 90px;
+  overflow: hidden;  
   border-radius: 12px;
   background: #f7f8fc;
   padding: 8px 10px;
@@ -117,6 +117,65 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
+.calendar-holidays {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 32px;       
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.calendar-holiday {
+  pointer-events: none;
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.1;
+  color: #ffffff;
+  padding: 5px 7px;
+  border-radius: 7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+.calendar-holiday--more {
+  background: #e4e7ee;
+  color: #333;
+}
+
+.calendar-events {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 58px;       
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.calendar-event {
+  pointer-events: none;
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.1;
+  color: #ffffff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event--more {
+  background: #e4e7ee;
+  color: #333;
+}
+
 @media (max-width: 900px) {
   .calendar {
     padding: 16px 12px 24px;
@@ -124,7 +183,7 @@
   }
 
   .calendar-day {
-    height: 70px;       
+    height: 70px;
     min-height: 70px;
     border-radius: 10px;
   }
@@ -136,33 +195,12 @@
   .calendar-day-number {
     font-size: 14px;
   }
-}
 
-.calendar-events {
-  position: absolute;   
-  left: 8px;
-  right: 8px;
-  top: 32px;           
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  pointer-events: none; 
-}
+  .calendar-holidays {
+    top: 28px;
+  }
 
-.calendar-event {
-  pointer-events: none;
-  width: 100%;
-  font-size: 12px;
-  line-height: 1.1;
-  color: #fff;
-  padding: 6px 8px;
-  border-radius: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.calendar-event--more {
-  background: #e4e7ee;
-  color: #333;
+  .calendar-events {
+    top: 48px;
+  }
 }
