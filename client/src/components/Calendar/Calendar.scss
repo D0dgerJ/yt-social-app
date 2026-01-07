@@ -64,9 +64,9 @@
 
 .calendar-day {
   position: relative;
-  height: 90px;      
+  height: 90px;
   min-height: 90px;
-  overflow: hidden;  
+  overflow: hidden;
   border-radius: 12px;
   background: #f7f8fc;
   padding: 8px 10px;
@@ -121,15 +121,14 @@
   position: absolute;
   left: 8px;
   right: 8px;
-  top: 32px;       
+  top: 32px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .calendar-holiday {
-  pointer-events: none;
   width: 100%;
   font-size: 11px;
   line-height: 1.1;
@@ -139,19 +138,43 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.9;
+  opacity: 0.92;
+}
+
+.calendar-holiday--link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    opacity: 1;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(47, 84, 235, 0.45);
+    outline-offset: 2px;
+  }
 }
 
 .calendar-holiday--more {
   background: #e4e7ee;
   color: #333;
+  pointer-events: none;
 }
 
 .calendar-events {
   position: absolute;
   left: 8px;
   right: 8px;
-  top: 58px;       
+  top: 58px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -159,7 +182,6 @@
 }
 
 .calendar-event {
-  pointer-events: none;
   width: 100%;
   font-size: 12px;
   line-height: 1.1;
@@ -169,11 +191,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 .calendar-event--more {
   background: #e4e7ee;
   color: #333;
+  pointer-events: none;
 }
 
 @media (max-width: 900px) {
@@ -202,5 +226,15 @@
 
   .calendar-events {
     top: 48px;
+  }
+
+  .calendar-holiday {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+
+  .calendar-event {
+    font-size: 11px;
+    padding: 5px 7px;
   }
 }
