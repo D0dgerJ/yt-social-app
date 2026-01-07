@@ -1,8 +1,10 @@
+import { buildFloatingHolidayMapForYear } from "./floatingHolidays";
+
 export type Holiday = {
   key: string;
   title: string;
-  month: number; 
-  day: number; 
+  month: number;
+  day: number;
   color?: string;
   icon?: string;
 };
@@ -62,11 +64,19 @@ const FIXED_HOLIDAYS: Holiday[] = [
 export const buildHolidayMapForYear = (year: number) => {
   const map = new Map<string, Holiday[]>();
 
+  // 1) fixed
   for (const h of FIXED_HOLIDAYS) {
     const key = `${year}-${pad2(h.month + 1)}-${pad2(h.day)}`;
     const list = map.get(key) ?? [];
     list.push(h);
     map.set(key, list);
+  }
+
+  // 2) floating
+  const floating = buildFloatingHolidayMapForYear(year);
+  for (const [key, list] of floating.entries()) {
+    const prev = map.get(key) ?? [];
+    map.set(key, [...prev, ...list]);
   }
 
   return map;

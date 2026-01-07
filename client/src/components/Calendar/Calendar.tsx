@@ -105,6 +105,12 @@ const Calendar: React.FC = () => {
     return eventsByDay.get(selectedDayKey) ?? [];
   }, [eventsByDay, selectedDayKey]);
 
+  const selectedDayHolidays = useMemo(() => {
+    if (!selectedDayKey) return [];
+    return holidaysByDay.get(selectedDayKey) ?? [];
+  }, [holidaysByDay, selectedDayKey]);
+
+
   const reloadMonth = async () => {
     const { from, to } = monthRangeUTC(year, month);
     const res = await eventsApi.getRange(from, to);
@@ -163,9 +169,11 @@ const Calendar: React.FC = () => {
     setSelectedDay(day);
 
     const key = `${year}-${pad2(month + 1)}-${pad2(day)}`;
-    const list = eventsByDay.get(key) ?? [];
 
-    if (list.length === 0) {
+    const listEvents = eventsByDay.get(key) ?? [];
+    const listHolidays = holidaysByDay.get(key) ?? [];
+
+    if (listEvents.length === 0 && listHolidays.length === 0) {
       setIsCreateModalOpen(true);
       setIsDayModalOpen(false);
     } else {
@@ -317,6 +325,7 @@ const Calendar: React.FC = () => {
       <DayEventsModal
         isOpen={isDayModalOpen}
         dateLabel={selectedDayLabel}
+        holidays={selectedDayHolidays}
         events={selectedDayEvents}
         onClose={() => setIsDayModalOpen(false)}
         onCreate={() => {
