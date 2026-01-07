@@ -107,10 +107,34 @@
   justify-content: space-between;
 }
 
+.day-holiday-card--link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease,
+    border-color 0.1s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+    background: #f3f5ff;
+    border-color: #e3e8f7;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(47, 84, 235, 0.35);
+    outline-offset: 2px;
+  }
+}
+
 .day-holiday-left {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .day-holiday-title {
@@ -120,6 +144,14 @@
   font-size: 15px;
   font-weight: 700;
   color: #1f2937;
+  min-width: 0;
+
+  span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .day-holiday-icon {
@@ -130,6 +162,14 @@
 .day-holiday-note {
   font-size: 12px;
   color: #6b6f7f;
+}
+
+.day-holiday-open {
+  font-size: 16px;
+  color: #6b6f7f;
+  margin-left: 10px;
+  flex-shrink: 0;
+  opacity: 0.9;
 }
 
 .day-event-card {

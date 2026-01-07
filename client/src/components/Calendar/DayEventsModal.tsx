@@ -17,6 +17,13 @@ type Props = {
   onDelete: (eventId: number) => void;
 };
 
+const buildWikiUrl = (h: Holiday) => {
+  if (h.wiki) return h.wiki;
+
+  const q = encodeURIComponent(h.title);
+  return `https://ru.wikipedia.org/w/index.php?search=${q}`;
+};
+
 const DayEventsModal: React.FC<Props> = ({
   isOpen,
   dateLabel,
@@ -88,26 +95,42 @@ const DayEventsModal: React.FC<Props> = ({
               <div className="day-section-title">Праздники</div>
 
               <div className="day-holidays-list">
-                {holidays.map((h) => (
-                  <div
-                    key={h.key}
-                    className="day-holiday-card"
-                    style={{ borderLeftColor: h.color ?? "#16a34a" }}
-                    title={h.title}
-                  >
-                    <div className="day-holiday-left">
-                      <div className="day-holiday-title">
-                        {h.icon ? <span className="day-holiday-icon">{h.icon}</span> : null}
-                        <span>{h.title}</span>
+                {holidays.map((h) => {
+                  const url = buildWikiUrl(h);
+
+                  return (
+                    <a
+                      key={h.key}
+                      className="day-holiday-card day-holiday-card--link"
+                      style={{ borderLeftColor: h.color ?? "#16a34a" }}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Открыть в Википедии"
+                      onMouseDown={(e) => e.stopPropagation()} 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="day-holiday-left">
+                        <div className="day-holiday-title">
+                          {h.icon ? (
+                            <span className="day-holiday-icon">{h.icon}</span>
+                          ) : null}
+                          <span>{h.title}</span>
+                        </div>
+                        <div className="day-holiday-note">
+                          Системный праздник • Wikipedia
+                        </div>
                       </div>
-                      <div className="day-holiday-note">Системный праздник</div>
-                    </div>
-                  </div>
-                ))}
+
+                      <div className="day-holiday-open" aria-hidden="true">
+                        ↗
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           )}
-
           {events.length > 0 && (
             <div className="day-section">
               <div className="day-section-title">Мои события</div>
@@ -146,13 +169,20 @@ const DayEventsModal: React.FC<Props> = ({
                       </>
                     ) : (
                       <>
-                        <div className="event-title" style={{ color: e.color ?? "#2f54eb" }}>
+                        <div
+                          className="event-title"
+                          style={{ color: e.color ?? "#2f54eb" }}
+                        >
                           {e.title}
                         </div>
-                        {e.description && <div className="event-desc">{e.description}</div>}
+                        {e.description && (
+                          <div className="event-desc">{e.description}</div>
+                        )}
 
                         <div className="actions">
-                          <button onClick={() => startEdit(e)}>Редактировать</button>
+                          <button onClick={() => startEdit(e)}>
+                            Редактировать
+                          </button>
                           <button onClick={() => onDelete(e.id)}>Удалить</button>
                         </div>
                       </>

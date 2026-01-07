@@ -4,6 +4,7 @@ import { eventsApi, EventDTO } from "../../utils/api/event.api";
 import CreateEventModal from "./CreateEventModal";
 import DayEventsModal from "./DayEventsModal";
 import { buildHolidayMapForYear } from "./holidays";
+import type { Holiday } from "./holidays";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -63,6 +64,12 @@ const formatDayLabel = (year: number, month: number, day: number) => {
   });
 };
 
+const buildWikiUrl = (h: Holiday) => {
+  if (h.wiki) return h.wiki;
+  const q = encodeURIComponent(h.title);
+  return `https://ru.wikipedia.org/w/index.php?search=${q}`;
+};
+
 const Calendar: React.FC = () => {
   const today = useMemo(() => getToday(), []);
   const [viewDate, setViewDate] = useState<ViewDate>({
@@ -98,7 +105,9 @@ const Calendar: React.FC = () => {
     selectedDay == null ? "" : formatDayLabel(year, month, selectedDay);
 
   const selectedDayKey =
-    selectedDay == null ? null : `${year}-${pad2(month + 1)}-${pad2(selectedDay)}`;
+    selectedDay == null
+      ? null
+      : `${year}-${pad2(month + 1)}-${pad2(selectedDay)}`;
 
   const selectedDayEvents = useMemo(() => {
     if (!selectedDayKey) return [];
@@ -109,7 +118,6 @@ const Calendar: React.FC = () => {
     if (!selectedDayKey) return [];
     return holidaysByDay.get(selectedDayKey) ?? [];
   }, [holidaysByDay, selectedDayKey]);
-
 
   const reloadMonth = async () => {
     const { from, to } = monthRangeUTC(year, month);
@@ -138,14 +146,16 @@ const Calendar: React.FC = () => {
     });
   };
 
-  const formatMonthTitle = (year: number, month: number) => {
-    return new Date(year, month, 1).toLocaleDateString("ru-RU", {
+  const formatMonthTitle = (y: number, m: number) => {
+    return new Date(y, m, 1).toLocaleDateString("ru-RU", {
       year: "numeric",
       month: "long",
     });
   };
 
-  const classifyDay = (day: number | null): "past" | "today" | "future" | "empty" => {
+  const classifyDay = (
+    day: number | null
+  ): "past" | "today" | "future" | "empty" => {
     if (day == null) return "empty";
 
     const isSameYear = year === today.year;
@@ -182,7 +192,11 @@ const Calendar: React.FC = () => {
     }
   };
 
-  const handleCreate = async (data: { title: string; description?: string; color?: string }) => {
+  const handleCreate = async (data: {
+    title: string;
+    description?: string;
+    color?: string;
+  }) => {
     if (selectedDay == null) return;
 
     const startAt = makeISODateUTC(year, month, selectedDay);
@@ -221,13 +235,21 @@ const Calendar: React.FC = () => {
     <>
       <div className="calendar">
         <div className="calendar-header">
-          <button type="button" className="calendar-nav-button" onClick={handlePrevMonth}>
+          <button
+            type="button"
+            className="calendar-nav-button"
+            onClick={handlePrevMonth}
+          >
             ‹
           </button>
 
           <div className="calendar-title">{formatMonthTitle(year, month)}</div>
 
-          <button type="button" className="calendar-nav-button" onClick={handleNextMonth}>
+          <button
+            type="button"
+            className="calendar-nav-button"
+            onClick={handleNextMonth}
+          >
             ›
           </button>
         </div>
@@ -246,7 +268,9 @@ const Calendar: React.FC = () => {
             const isEmpty = status === "empty";
 
             const dayKey =
-              cell.day == null ? null : `${year}-${pad2(month + 1)}-${pad2(cell.day)}`;
+              cell.day == null
+                ? null
+                : `${year}-${pad2(month + 1)}-${pad2(cell.day)}`;
 
             const dayEvents = dayKey ? eventsByDay.get(dayKey) ?? [] : [];
             const dayHolidays = dayKey ? holidaysByDay.get(dayKey) ?? [] : [];
@@ -275,15 +299,20 @@ const Calendar: React.FC = () => {
                     {dayHolidays.length > 0 && (
                       <div className="calendar-holidays">
                         {dayHolidays.slice(0, 2).map((h) => (
-                          <div
+                          <a
                             key={h.key}
-                            className="calendar-holiday"
+                            className="calendar-holiday calendar-holiday--link"
                             style={{ background: h.color ?? "#16a34a" }}
-                            title={h.title}
+                            title="Открыть в Википедии"
+                            href={buildWikiUrl(h)}
+                            target="_blank"
+                            rel="noreferrer"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {h.icon ? `${h.icon} ` : ""}
                             {h.title}
-                          </div>
+                          </a>
                         ))}
 
                         {dayHolidays.length > 2 && (
