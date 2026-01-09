@@ -229,22 +229,18 @@ export function useSendMessage() {
               }));
             }
 
-            (['message:send', 'sendMessage'] as const).forEach((ev) => {
-              console.log('[DEBUG attachments]', body.attachments?.length, body.attachments);
-              socket.emit(ev, body, (resp?: any) => {
-                if (
-                  resp?.status === 'ok' &&
-                  resp.message?.clientMessageId === clientMessageId
-                ) {
-                  socket.off('message:ack', complete);
-                  socket.off('receiveMessage', complete);
+            console.log('[DEBUG attachments]', body.attachments?.length, body.attachments);
 
-                  finalizeOk(
-                    resp.message,
-                    chunkIndex === 0 ? trimmed : undefined,
-                  );
-                }
-              });
+            socket.emit('message:send', body, (resp?: any) => {
+              if (
+                resp?.status === 'ok' &&
+                resp.message?.clientMessageId === clientMessageId
+              ) {
+                socket.off('message:ack', complete);
+                socket.off('receiveMessage', complete);
+
+                finalizeOk(resp.message, chunkIndex === 0 ? trimmed : undefined);
+              }
             });
 
             await new Promise<void>((r) => setTimeout(r, ACK_WAIT_SOCKET_MS));

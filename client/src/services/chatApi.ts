@@ -1,4 +1,3 @@
-// /services/chatApi.ts
 import axios from '@/utils/api/axiosInstance';
 import * as legacy from '@/utils/api/chat.api';
 
