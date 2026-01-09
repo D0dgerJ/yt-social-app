@@ -8,6 +8,12 @@ let io: Server;
 
 const onlineUsers = new Map<number, Set<string>>();
 
+const recentClientMsgs = new Map<string, { message: any; ts: number }>();
+const RECENT_TTL_MS = 15_000;
+
+const makeKey = (userId: number, clientMessageId?: string | null) =>
+  clientMessageId ? `${userId}:${clientMessageId}` : null;
+
 const addOnlineUser = (userId: number, socketId: string) => {
   if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
   onlineUsers.get(userId)!.add(socketId);
@@ -94,8 +100,26 @@ export const initSocket = (server: http.Server) => {
       callback?: (res: { status: "ok"; message: any } | { status: "error"; error: string }) => void
     ) => {
       try {
+        const cmid = (messageInput?.clientMessageId ?? null) as string | null;
+        const key = makeKey(userId, cmid);
+
+        if (key) {
+          const cached = recentClientMsgs.get(key);
+          if (cached && Date.now() - cached.ts < RECENT_TTL_MS) {
+            callback?.({ status: "ok", message: cached.message });
+            return;
+          }
+        }
+
         const fullInput = { ...messageInput, senderId: userId };
         const message = await sendMessage(fullInput);
+
+        const key2 = makeKey(userId, message?.clientMessageId ?? null);
+        if (key2) {
+          recentClientMsgs.set(key2, { message, ts: Date.now() });
+          setTimeout(() => recentClientMsgs.delete(key2), RECENT_TTL_MS + 1000);
+        }
+
         const room = String(message.conversationId);
 
         if (!socket.rooms.has(room)) socket.join(room);
@@ -112,7 +136,6 @@ export const initSocket = (server: http.Server) => {
     };
 
     socket.on("message:send", handleSendMessage);
-    socket.on("sendMessage", handleSendMessage);
 
     socket.on("messageDelivered", (p: { conversationId: number; messageId: number }) => {
       io.to(String(p.conversationId)).emit("message:delivered", p);
