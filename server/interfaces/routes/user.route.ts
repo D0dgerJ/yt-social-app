@@ -24,15 +24,11 @@
 
   const router = express.Router();
 
-  // ⚠️ Порядок имеет значение!
-  // Более специфичные маршруты должны быть выше
-
   router.get("/username/:username", getUserByUsernameController);
   router.get("/profile", authMiddleware, getUserProfileController);
   router.get("/friends/:id", authMiddleware, getUserFriendsController);
-  router.get("/:id", getUserByIdController); // должен быть в самом конце
+  router.get("/:id", getUserByIdController);
 
-  // ⬇️ Всё, что требует авторизации — ниже
   router.use(authMiddleware);
 
   router.put("/:id", updateUserController);

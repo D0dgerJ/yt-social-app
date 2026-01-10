@@ -1,4 +1,4 @@
-import { AuthState, AuthAction } from './types';
+import type { AuthState, AuthAction } from './types';
 
 const AuthReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
@@ -6,21 +6,21 @@ const AuthReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         user: null,
         isFetching: true,
-        error: false,
+        error: null,
       };
 
     case 'LOGIN_SUCCESS':
       return {
         user: action.payload,
         isFetching: false,
-        error: false,
+        error: null,
       };
 
     case 'LOGIN_FAILURE':
       return {
         user: null,
         isFetching: false,
-        error: true,
+        error: action.payload,
       };
 
     case 'FOLLOW':
@@ -39,9 +39,8 @@ const AuthReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: {
           ...state.user,
-          followings: state.user.followings?.filter(
-            (following) => following !== action.payload
-          ) || [],
+          followings:
+            state.user.followings?.filter((id) => id !== action.payload) || [],
         },
       };
 

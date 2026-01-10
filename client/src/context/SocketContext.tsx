@@ -9,6 +9,7 @@ import {
   useCallback,
 } from "react";
 import { io, Socket } from "socket.io-client";
+import { getToken } from "@/utils/authStorage";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 
@@ -38,7 +39,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
   // === Создание сокета ===
   useEffect(() => {
-    const token = localStorage.getItem("token") || undefined;
+    const token = getToken();
 
     if (socketRef.current) {
       socketRef.current.auth = { token };
@@ -80,7 +81,10 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
     socketRef.current = s;
     setSocket(s);
-    s.connect();
+
+    if (token) {
+      s.connect();
+    }
 
     // 🧹 Очистка при размонтировании
     return () => {
@@ -99,7 +103,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
   // === Logout через localStorage (другая вкладка) ===
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "token" && !e.newValue) {
+      if (e.key === "user" && !e.newValue) {
         if (socketRef.current) {
           try {
             socketRef.current.removeAllListeners();
@@ -120,18 +124,29 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
   // === Обновление токена без перезагрузки ===
   useEffect(() => {
     const syncToken = () => {
-      const token = localStorage.getItem("token") || undefined;
-      const s = socketRef.current;
-      if (!s) return;
-      const current = (s.auth as any)?.token;
-      if (token !== current) {
-        s.auth = { token };
-        if (s.connected) {
-          s.disconnect();
-        }
-        s.connect();
-      }
-    };
+    const token = getToken();
+    const s = socketRef.current;
+    if (!s) return;
+
+    const current = (s.auth as any)?.token;
+
+    if (!token) {
+      s.auth = { token: undefined };
+      if (s.connected) s.disconnect();
+      return;
+    }
+
+    if (token !== current) {
+      s.auth = { token };
+      if (s.connected) s.disconnect();
+      s.connect();
+      return;
+    }
+
+    if (!s.connected && !s.active) {
+      s.connect();
+    }
+  };
 
     // первый прогон
     syncToken();

@@ -1,5 +1,3 @@
-// constants/mime.ts
-
 /** ✅ Разрешённые MIME-типы изображений */
 export const IMAGE_MIME = [
   "image/jpeg",

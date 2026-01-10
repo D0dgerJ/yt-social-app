@@ -1,22 +1,9 @@
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  token: string;
-  followings?: number[];
-  profilePicture?: string;
-  coverPicture?: string;
-  isAdmin: boolean;
-  from?: string;
-  city?: string;
-  relationship?: number;
-  desc?: string;
-}
+import type { User } from '@/stores/userStore';
 
 export interface AuthState {
   user: User | null;
   isFetching: boolean;
-  error: boolean;
+  error: string | null;
 }
 
 export type AuthAction =

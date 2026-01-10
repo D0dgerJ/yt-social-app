@@ -40,7 +40,6 @@ export function useReadReceipts() {
 
           if (isNumeric && numericId > 0) {
             socket?.emit?.('messageRead', { conversationId, messageId: numericId });
-            socket?.emit?.('message:read', { conversationId, messageId: numericId });
           }
         }
       },
