@@ -68,15 +68,8 @@ function hydrateDecrypted(msg: ServerMessage): IncomingMessage {
   return { ...(msg as any), content, repliedTo };
 }
 
-
 /**
  * Единый хук подписок на чатовые события по сокету.
- * - receiveMessage / message:ack → обновление optimistic
- * - delivered/read
- * - edit/delete
- * - реакции
- * - typing start/stop
- * - join/leave при смене беседы
  */
 export const useChatSocket = () => {
   const { currentUser } = useUserStore();
@@ -102,6 +95,35 @@ export const useChatSocket = () => {
 
   const prevConversationIdRef = useRef<number | null>(null);
   const purgeTimerRef = useRef<number | null>(null);
+  const handlersRef = useRef<{
+    onNotificationNew?: (notification: any) => void;
+    onReceiveMessage?: (raw: ServerMessage) => void;
+    onMessageAck?: (raw: ServerMessage) => void;
+    onMessageUpdated?: (updated: ServerMessage | { message?: ServerMessage }) => void;
+    onMessageDelete?: (payload: { messageId: number }) => void;
+    onDelivered?: (p: { conversationId: number; messageId: number }) => void;
+    onRead?: (p: { conversationId: number; messageId: number }) => void;
+    onReactionsUpdated?: (p: {
+      conversationId: number;
+      messageId: number;
+      groupedReactions: GroupedReaction[];
+    }) => void;
+    onMessageReaction?: (payload: {
+      conversationId: number;
+      messageId: number;
+      emoji: string;
+      userId: number;
+      toggledOn?: boolean;
+    }) => void;
+    onTypingStart?: (p: {
+      conversationId: number;
+      userId: number;
+      username?: string;
+      displayName?: string;
+      timestamp?: number;
+    }) => void;
+    onTypingStop?: (p: { conversationId: number; userId: number }) => void;
+  }>({});
 
   useEffect(() => {
     if (!socket) return;
@@ -120,6 +142,7 @@ export const useChatSocket = () => {
 
   useEffect(() => {
     if (!socket || !currentUser) return;
+
     const typingApi = useTypingStore.getState();
 
     const onNotificationNew = (notification: any) => {
@@ -233,6 +256,20 @@ export const useChatSocket = () => {
       typingApi.stopTyping(p.conversationId, p.userId);
     };
 
+    handlersRef.current = {
+      onNotificationNew,
+      onReceiveMessage,
+      onMessageAck,
+      onMessageUpdated,
+      onMessageDelete,
+      onDelivered,
+      onRead,
+      onReactionsUpdated,
+      onMessageReaction,
+      onTypingStart,
+      onTypingStop,
+    };
+
     socket.on('notification:new', onNotificationNew);
     socket.on('receiveMessage', onReceiveMessage);
     socket.on('message:ack', onMessageAck);
@@ -257,20 +294,24 @@ export const useChatSocket = () => {
     }
 
     return () => {
-      [
-        'notification:new',
-        'receiveMessage',
-        'message:ack',
-        'messageUpdated',
-        'message:edit',
-        'message:delete',
-        'message:delivered',
-        'message:read',
-        'reaction:updated',
-        'message:reaction',
-        'typing:start',
-        'typing:stop',
-      ].forEach((e) => socket.off(e));
+      const h = handlersRef.current;
+
+      if (h.onNotificationNew) socket.off('notification:new', h.onNotificationNew);
+      if (h.onReceiveMessage) socket.off('receiveMessage', h.onReceiveMessage);
+      if (h.onMessageAck) socket.off('message:ack', h.onMessageAck);
+      if (h.onMessageUpdated) {
+        socket.off('messageUpdated', h.onMessageUpdated);
+        socket.off('message:edit', h.onMessageUpdated);
+      }
+      if (h.onMessageDelete) socket.off('message:delete', h.onMessageDelete);
+      if (h.onDelivered) socket.off('message:delivered', h.onDelivered);
+      if (h.onRead) socket.off('message:read', h.onRead);
+      if (h.onReactionsUpdated) socket.off('reaction:updated', h.onReactionsUpdated);
+      if (h.onMessageReaction) socket.off('message:reaction', h.onMessageReaction);
+      if (h.onTypingStart) socket.off('typing:start', h.onTypingStart);
+      if (h.onTypingStop) socket.off('typing:stop', h.onTypingStop);
+
+      handlersRef.current = {};
 
       if (purgeTimerRef.current) {
         window.clearInterval(purgeTimerRef.current);

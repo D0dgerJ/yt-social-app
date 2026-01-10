@@ -1,5 +1,5 @@
 import axios from '@/utils/api/axiosInstance';
-import * as legacy from '@/utils/api/chat.api';
+import { getToken } from '@/utils/authStorage';
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
@@ -155,7 +155,7 @@ export async function markReadREST(conversationId: number) {
 // ---------- transcribe ----------
 
 export async function transcribeMessageREST(messageId: number): Promise<string> {
-  const token = localStorage.getItem('token');
+  const token = getToken();
 
   const res = await fetch(`${API_BASE}/api/v1/chat/messages/${messageId}/transcribe`, {
     method: 'POST',

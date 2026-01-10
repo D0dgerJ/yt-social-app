@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from '@/utils/authStorage';
 
 const instance = axios.create({
   baseURL: 'http://localhost:5000/api/v1',
@@ -6,8 +7,7 @@ const instance = axios.create({
 });
 
 instance.interceptors.request.use((config) => {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  const token = user?.token;
+  const token = getToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
