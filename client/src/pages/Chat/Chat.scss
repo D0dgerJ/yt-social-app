@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .chat-layout {
   display: flex;
   justify-content: center;
@@ -33,6 +35,69 @@
     .chat-window-pane {
       display: flex;
     }
+  }
+}
+
+// Tablets/phones: full width content and show either list OR chat window (no split)
+@include respond(tablet) {
+  .chat-sidebar-wrapper {
+    width: 0;
+    flex: 0 0 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  .rightbar-wrapper {
+    display: none;
+  }
+
+  .chat-wrapper {
+    width: 100%;
+  }
+}
+
+
+@include respond(phone) {
+  .chat-layout {
+    min-height: 100dvh;
+    padding-bottom: 64px;
+  }
+
+  .chat-wrapper {
+    width: 100%;
+    min-height: calc(100dvh - 64px);
+    height: calc(100dvh - 64px);
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-wrapper .chat-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-wrapper .chat-window-pane {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chat-wrapper.chat-split .chat-list-pane {
+    display: none;
+  }
+
+  .chat-wrapper.chat-split .chat-window-pane {
+    display: flex;
   }
 }
 

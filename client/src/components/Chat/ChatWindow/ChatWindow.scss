@@ -1,15 +1,17 @@
 .chat-window {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: #89e27e;
   border-left: 1px solid #ddd;
+  overflow: hidden;
+  height: auto;
 
   .messages {
     flex: 1;
-    overflow-y: auto;
+    min-height: 0;   
+    overflow-y: auto; 
     padding: 16px;
     display: flex;
     flex-direction: column;

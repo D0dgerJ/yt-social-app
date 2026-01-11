@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .post-container {
   width: 100%;
   height: auto;
@@ -134,6 +136,54 @@
       font-size: 0.875rem;
       cursor: pointer;
     }
+  }
+}
+
+@include respond(phone) {
+  .post-container {
+    padding: 8px;
+
+    .post-top {
+      padding: 8px;
+      .post-user {
+        .post-username {
+          margin: 0 8px;
+        }
+        .post-time {
+          font-size: 0.8rem;
+        }
+      }
+    }
+
+    .post-content {
+      margin: 14px 0;
+
+      .post-image-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      }
+
+      .post-video {
+        max-height: 260px;
+      }
+
+      .post-files {
+        .post-file-wrapper {
+          max-width: 100%;
+        }
+
+        .post-file-link {
+          max-width: calc(100vw - 64px);
+        }
+      }
+    }
+  }
+
+  .lightbox-close-button {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
   }
 }
 
