@@ -254,3 +254,28 @@
     text-decoration: underline;
   }
 }
+
+@media (max-width: 600px) {
+  .comment-section {
+    padding: 0 10px;
+
+    .comment-item {
+      .avatar {
+        width: 32px;
+        height: 32px;
+      }
+
+      .replies {
+        margin-left: 24px;
+      }
+    }
+
+    .comment-item.reply-item {
+      margin-left: 24px;
+
+      &::before {
+        left: -14px;
+      }
+    }
+  }
+}

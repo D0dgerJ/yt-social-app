@@ -28,23 +28,40 @@ const Sidebar: React.FC = () => {
       <div className="sidebar-wrapper">
         <ul className="sidebar-list">
           <li className="sidebar-list-item">
-            <NavLink to="/" className="sidebar-link">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? "active" : ""}`
+              }
+            >
               <SiFeedly className="sidebar-icon" />
               <span>Feeds</span>
             </NavLink>
           </li>
           <li className="sidebar-list-item">
-            <NavLink to="/shorts" className="sidebar-link">
+            <NavLink
+              to="/shorts"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? "active" : ""}`
+              }
+            >
               <BiSolidVideos className="sidebar-icon" />
               <span>Videos</span>
             </NavLink>
           </li>
           <li className="sidebar-list-item">
-            <MdGroups className="sidebar-icon" />
-            <span>Groups</span>
+            <NavLink to="" className={({isActive}) => `sidebar-link ${isActive ? "active" : ""}`}>
+              <MdGroups className="sidebar-icon" />
+              <span>Groups</span>
+            </NavLink>
           </li>
           <li className="sidebar-list-item">
-            <NavLink to="/chat" className="sidebar-link">
+            <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? "active" : ""}`
+              }
+            >
               <IoChatboxEllipsesSharp className="sidebar-icon" />
               <span>Chat</span>
             </NavLink>
@@ -54,7 +71,7 @@ const Sidebar: React.FC = () => {
             <span>Bookmarks</span>
           </li>
           <li className="sidebar-list-item">
-            <NavLink to="/events" className="sidebar-link">
+            <NavLink to="/events" className={({isActive}) => `sidebar-link ${isActive ? "active" : ""}`}>
               <BiCalendar className="sidebar-icon" />
               <span>Events</span>
             </NavLink>

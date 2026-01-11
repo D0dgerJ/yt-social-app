@@ -1,3 +1,5 @@
+@use '../../styles/mixins' as *;
+
 .upload-post {
   width: 100%;
   border-radius: 12px;
@@ -113,6 +115,47 @@
 
   input[type="file"] {
     display: none;
+  }
+}
+
+@include respond(phone) {
+  .upload-post {
+    border-radius: 10px;
+
+    &__wrapper {
+      padding: 10px 8px;
+    }
+
+    &__profile-pic {
+      width: 42px;
+      height: 42px;
+    }
+
+    &__input {
+      width: 100%;
+      font-size: 15px;
+    }
+
+    &__bottom {
+      padding: 0 8px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    &__options {
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    &__button {
+      width: 100%;
+      padding: 10px 16px;
+    }
+  }
+
+  .upload-post__preview-files .upload-post__file-wrapper {
+    max-width: 100%;
   }
 }
 
