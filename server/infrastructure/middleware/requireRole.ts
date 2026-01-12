@@ -10,21 +10,18 @@ const ROLE_RANK: Record<UserRole, number> = {
 };
 
 function getEffectiveRole(dbRole: UserRole, isAdmin: boolean): UserRole {
-  // Совместимость со старым флагом:
-  // если isAdmin=true, то минимум ADMIN
   if (isAdmin && ROLE_RANK[dbRole] < ROLE_RANK.ADMIN) return UserRole.ADMIN;
   return dbRole;
 }
 
 export const requireRole =
-  (minRole: UserRole) => async (req: Request, res: Response, next: NextFunction) => {
+  (minRole: UserRole) => async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user?.id) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
       }
 
-      // Если роль уже есть в req.user — используем её.
-      // Но в v1 authMiddleware кладёт только id, поэтому чаще всего будет запрос в БД.
       if (!req.user.role) {
         const dbUser = await prisma.user.findUnique({
           where: { id: req.user.id },
@@ -32,7 +29,8 @@ export const requireRole =
         });
 
         if (!dbUser) {
-          return res.status(401).json({ message: 'Unauthorized' });
+          res.status(401).json({ message: 'Unauthorized' });
+          return;
         }
 
         req.user.role = getEffectiveRole(dbUser.role, dbUser.isAdmin);
@@ -42,12 +40,13 @@ export const requireRole =
       const requiredRank = ROLE_RANK[minRole];
 
       if (userRank < requiredRank) {
-        return res.status(403).json({ message: 'Forbidden' });
+        res.status(403).json({ message: 'Forbidden' });
+        return;
       }
 
-      return next();
-    } catch (e) {
-      return res.status(500).json({ message: 'Role check failed' });
+      next();
+    } catch {
+      res.status(500).json({ message: 'Role check failed' });
     }
   };
 
