@@ -22,6 +22,7 @@ model User {
   coverPicture   String? // Cloudinary URL
   desc           String? @default("")
   isAdmin        Boolean @default(false)
+  role           UserRole @default(USER)
   from           String? @default("Ghana")
   city           String? @default("Accra")
   relationship   Int?    @default(1)
@@ -420,6 +421,13 @@ enum ProcessingStatus {
   PROCESSING
   READY
   FAILED
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  OWNER
 }
 
 model Event {

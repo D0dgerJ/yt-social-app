@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+export type UserRole = 'USER' | 'MODERATOR' | 'ADMIN' | 'OWNER';
+
 export interface User {
   id: number;
   username: string;
@@ -13,6 +15,7 @@ export interface User {
   city?: string;
   relationship?: number;
   desc?: string;
+  role?: UserRole;
 }
 
 interface UserStore {

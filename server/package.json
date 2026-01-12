@@ -20,9 +20,10 @@
     "migrate:both": "npm run migrate:prod && npm run migrate:test",
     "migrate:prod": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/social_app'; npx prisma migrate dev --schema=./infrastructure/database/prisma/schema.prisma\"",
     "migrate:test": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/dodgerjsocial_test'; npx prisma migrate deploy --schema=./infrastructure/database/prisma/schema.prisma\"",
-    "migrate:reset": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/social_app'; npx prisma migrate reset --force --skip-seed --schema=./infrastructure/database/prisma/schema.prisma\"",
+    "DANGEROUS:migrate:reset": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/social_app'; npx prisma migrate reset --force --skip-seed --schema=./infrastructure/database/prisma/schema.prisma\"",
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "postinstall": "npm run prisma:generate"
+    "postinstall": "npm run prisma:generate",
+    "seed:user": "node --loader ts-node/esm scripts/createPrivilegedUser.ts"
   },
   "keywords": [],
   "author": "",
