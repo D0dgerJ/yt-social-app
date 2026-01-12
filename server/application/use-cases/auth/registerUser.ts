@@ -33,5 +33,7 @@ export const registerUser = async ({ username, email, password }: RegisterInput)
     username: newUser.username,
     email: newUser.email,
     token,
+    isAdmin: newUser.isAdmin,
+    role: newUser.role,
   };
 };
