@@ -64,6 +64,8 @@ model User {
   events Event[]
 
   moderationActions ModerationAction[]
+  hiddenPosts       Post[]             @relation("PostHiddenBy")
+  deletedPosts      Post[]             @relation("PostDeletedBy")
 }
 
 model FriendRequest {
@@ -79,17 +81,19 @@ model FriendRequest {
 }
 
 model Post {
-  id        Int         @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   userId    Int
-  user      User        @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
   desc      String?
   mediaUrl  String?
-  mediaType String      @default("image") // image / video
-  likes     Like[]
-  comments  Comment[]
-  savedBy   SavedPost[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  mediaType String  @default("image") // image / video
+
+  likes    Like[]
+  comments Comment[]
+  savedBy  SavedPost[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   images String[] @default([]) // массив URL-ов к изображениям
   videos String[] @default([]) // массив URL-ов к видео
@@ -97,6 +101,18 @@ model Post {
 
   tags     String[] @default([]) // новый массив тегов
   location String? // необязательная строка (город, страна и т.п.)
+
+  status ContentStatus @default(ACTIVE)
+
+  hiddenAt     DateTime?
+  hiddenById   Int?
+  hiddenBy     User?     @relation("PostHiddenBy", fields: [hiddenById], references: [id], onDelete: SetNull)
+  hiddenReason String?
+
+  deletedAt     DateTime?
+  deletedById   Int?
+  deletedBy     User?     @relation("PostDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  deletedReason String?
 }
 
 model Like {
@@ -454,6 +470,12 @@ enum ModerationActionType {
   BOT_AUTO_ACTION
 }
 
+enum ContentStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
 model Event {
   id          Int       @id @default(autoincrement())
   userId      Int
@@ -489,4 +511,28 @@ model ModerationAction {
   @@index([actorId])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model ModerationOutbox {
+  id         Int    @id @default(autoincrement())
+  eventType  String
+  entityType String
+  entityId   String
+  payload    Json
+
+  status    OutboxStatus @default(PENDING)
+  attempts  Int          @default(0)
+  lastError String?
+  createdAt DateTime     @default(now())
+  sentAt    DateTime?
+
+  @@index([status, createdAt])
+  @@index([entityType, entityId])
 }

@@ -1,6 +1,8 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { createNotification } from "../notification/createNotification.ts";
 import { notifyMentions } from "../notification/notifyMentions.ts";
+import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
 interface CreateCommentParams {
   postId: number;
@@ -21,13 +23,19 @@ export const createComment = async ({
   videos = [],
   files = [],
 }: CreateCommentParams) => {
+  if (!postId || postId <= 0) {
+    throw Errors.validation("Invalid post ID");
+  }
+
+  await assertPostActionAllowed(postId);
+
   const post = await prisma.post.findUnique({
     where: { id: postId },
     select: { id: true, userId: true },
   });
 
   if (!post) {
-    throw new Error("Post does not exist.");
+    throw Errors.notFound("Post not found");
   }
 
   const comment = await prisma.comment.create({
@@ -41,25 +49,14 @@ export const createComment = async ({
       files,
     },
     include: {
-      user: {
-        select: {
-          id: true,
-          username: true,
-          profilePicture: true,
-        },
-      },
-      _count: {
-        select: { likes: true },
-      },
-      likes: {
-        select: { userId: true },
-      },
+      user: { select: { id: true, username: true, profilePicture: true } },
+      _count: { select: { likes: true } },
+      likes: { select: { userId: true } },
     },
   });
 
   const trimmed = content.trim();
-  const snippet =
-    trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
+  const snippet = trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
 
   try {
     if (parentId) {
@@ -87,11 +84,7 @@ export const createComment = async ({
           fromUserId: userId,
           toUserId: post.userId,
           type: "comment_on_post",
-          payload: {
-            postId: post.id,
-            commentId: comment.id,
-            snippet,
-          },
+          payload: { postId: post.id, commentId: comment.id, snippet },
         });
       }
     }

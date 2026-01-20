@@ -1,10 +1,10 @@
 import prisma from '../../../infrastructure/database/prismaClient.ts';
+import { ContentStatus } from '@prisma/client';
 
 export const getAllPosts = async () => {
   return prisma.post.findMany({
-    orderBy: {
-      createdAt: 'desc',
-    },
+    where: { status: ContentStatus.ACTIVE },
+    orderBy: { createdAt: 'desc' },
     include: {
       user: {
         select: {
@@ -15,10 +15,7 @@ export const getAllPosts = async () => {
       },
       likes: true,
       _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
+        select: { likes: true, comments: true },
       },
     },
   });

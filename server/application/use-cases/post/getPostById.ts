@@ -1,12 +1,13 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { ContentStatus } from "@prisma/client";
 
 export const getPostById = async (postId: number) => {
-  if (!postId || isNaN(postId)) {
+  if (!postId || Number.isNaN(postId)) {
     throw new Error("Invalid or missing postId");
   }
 
-  return prisma.post.findUnique({
-    where: { id: postId },
+  const post = await prisma.post.findFirst({
+    where: { id: postId, status: ContentStatus.ACTIVE },
     include: {
       user: {
         select: {
@@ -14,9 +15,13 @@ export const getPostById = async (postId: number) => {
           username: true,
         },
       },
-      _count: {
-        select: { likes: true }
-      }
+      _count: { select: { likes: true } },
     },
   });
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  return post;
 };

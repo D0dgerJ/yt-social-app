@@ -1,5 +1,4 @@
-import { Request, Response } from "express";
-import prisma from '../../infrastructure/database/prismaClient.ts';
+import { Request, Response, NextFunction } from "express";
 import {
   createPost,
   deletePost,
@@ -11,162 +10,166 @@ import {
   getPostById,
   unsavePost,
   getUserPostsByUsername,
-  getAllPosts 
-} from '../../application/use-cases/post/index.ts';
+  getAllPosts,
+} from "../../application/use-cases/post/index.ts";
+import { Errors } from "../../infrastructure/errors/ApiError.ts";
 
-export const create = async (req: Request, res: Response): Promise<void> => {
+export const create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user!.id;
     const { desc, images, videos, files, tags, location } = req.body;
 
     const post = await createPost({ userId, desc, images, videos, files, tags, location });
     res.status(201).json(post);
-  } catch (error: any) {
-    console.error("Post creation error:", error);
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const update = async (req: Request, res: Response) => {
+export const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const postId = Number(req.params.id);
-    const userId = Number(req.body.userId);
+    if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid post ID");
+
+    const userId = req.user!.id;
     const { desc, images, videos, files, tags, location } = req.body;
 
     const post = await updatePost({ postId, userId, desc, images, videos, files, tags, location });
     res.status(200).json(post);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const remove = async (req: Request, res: Response): Promise<void> => {
+export const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { postId } = req.body;
-    await deletePost(postId);
+    const postId = Number(req.params.id);
+    if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid post ID");
+
+    await deletePost({ postId, userId: req.user!.id });
     res.status(204).send();
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const like = async (req: Request, res: Response) => {
+export const like = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user!.id;
     const postId = Number(req.params.id);
+    if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid post ID");
+
     const result = await toggleLike({ postId, userId });
     res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const save = async (req: Request, res: Response) => {
+export const save = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { postId } = req.body;
+    const postId = Number(req.params.id); // ВАЖНО: у тебя save роут = PUT "/:id/save"
+    if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid post ID");
+
     const result = await savePost({ postId, userId });
     res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getUser = async (req: Request, res: Response) => {
+export const unsave = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const postId = Number(req.params.id); // ВАЖНО: у тебя unsave роут = PUT "/:id/unsave"
+    if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid post ID");
+
+    const result = await unsavePost({ postId, userId });
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = Number(req.params.userId);
+    if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+
     const posts = await getUserPosts(userId);
     res.status(200).json(posts);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getFeed = async (req: Request, res: Response) => {
+export const getFeed = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // const userId = req.user!.id;
-    // const posts = await getFeedPosts(userId);
     const posts = await getAllPosts();
     res.status(200).json(posts);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getById = async (req: Request, res: Response): Promise<void> => {
+export const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const postId = Number(req.params.id);
-    if (isNaN(postId)) {
-      res.status(400).json({ message: "Invalid post ID" });
-      return;
-    }
+    if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid post ID");
 
     const post = await getPostById(postId);
     res.status(200).json(post);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const unsave = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const { postId } = req.body;
-    const result = await unsavePost({ postId, userId });
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-export const getByUsername = async (req: Request, res: Response) => {
+export const getByUsername = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { username } = req.params;
     const posts = await getUserPostsByUsername(username);
     res.status(200).json(posts);
-  } catch (error: any) {
-    res.status(404).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getFeedById = async (req: Request, res: Response) => {
+export const getFeedById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = Number(req.params.id);
+    if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+
     const posts = await getFeedPosts(userId);
     res.status(200).json(posts);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getAll = async (req: Request, res: Response) => {
+export const getAll = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const posts = await getAllPosts();
     res.status(200).json(posts);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getUserPostsFlexible = async (req: Request, res: Response): Promise<void> => {
+export const getUserPostsFlexible = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId, username } = req.query;
 
     if (!userId && !username) {
-      res.status(400).json({ message: "userId or username is required" });
-      return;
+      throw Errors.validation("userId or username is required");
     }
 
-    let posts;
-
-    if (userId) {
-      posts = await getUserPosts(Number(userId));
-    } else {
-      posts = await getUserPostsByUsername(String(username));
-    }
+    const posts = userId
+      ? await getUserPosts(Number(userId))
+      : await getUserPostsByUsername(String(username));
 
     res.status(200).json(posts);
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };

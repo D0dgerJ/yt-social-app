@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { ContentStatus } from "@prisma/client";
 
 export const getUserPostsByUsername = async (username: string) => {
   const user = await prisma.user.findUnique({
@@ -10,8 +11,8 @@ export const getUserPostsByUsername = async (username: string) => {
     throw new Error("User not found");
   }
 
-  const posts = await prisma.post.findMany({
-    where: { userId: user.id },
+  return prisma.post.findMany({
+    where: { userId: user.id, status: ContentStatus.ACTIVE },
     orderBy: { createdAt: "desc" },
     include: {
       user: {
@@ -21,19 +22,8 @@ export const getUserPostsByUsername = async (username: string) => {
           profilePicture: true,
         },
       },
-      likes: {
-        select: {
-          userId: true,
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-        },
-      },
+      likes: { select: { userId: true } },
+      _count: { select: { likes: true, comments: true } },
     },
   });
-
-  return posts;
 };

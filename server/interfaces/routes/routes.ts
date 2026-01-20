@@ -11,7 +11,7 @@ import uploadRoutes from "./uploadRoutes.ts";
 import downloadRoutes from "./downloadRoutes.ts";
 import mediaRoutes from "./media.ts";
 import eventRoutes from "./eventRoutes.ts";
-import modRoute from './mod.route.ts';
+import modRoute from "./mod.route.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 
@@ -27,11 +27,10 @@ router.use("/chat", chatRoutes);
 router.use("/events", authMiddleware, eventRoutes);
 
 router.use("/upload", authMiddleware, uploadRoutes);
-
 router.use("/download", downloadRoutes);
 
 router.use(mediaRoutes);
 
-router.use('/mod', modRoute);
+router.use("/mod", modRoute);
 
 export default router;

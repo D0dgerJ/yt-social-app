@@ -22,6 +22,7 @@ try {
   const mime = await import("mime-types");
 
   await import("../cron/storyCleaner.ts");
+  await import("../cron/moderationOutboxWorker.ts");
 
   app = express();
 

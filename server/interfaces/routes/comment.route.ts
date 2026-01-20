@@ -6,19 +6,24 @@ import prisma from "../../infrastructure/database/prismaClient.ts";
 
 const router = express.Router();
 
-// Комментарии и ответы (универсальный эндпоинт)
 router.post("/", authMiddleware, controller.create);
 
 // Получение комментариев к посту
 router.get("/post/:postId", controller.getComments);
 
-// Получение одного комментария по ID
+// Получение ответов на конкретный комментарий (ДОЛЖНО БЫТЬ ДО "/:commentId")
+router.get("/replies/:commentId", controller.getReplies);
+
+// 📊 Получение количества ответов к нескольким комментариям
+router.post("/replies-count", controller.getRepliesCountForManyHandler);
+
+// Получение одного комментария по ID (ПОСЛЕ более конкретных маршрутов)
 router.get("/:commentId", controller.getById);
 
 // Лайк/анлайк комментария
 router.put("/:commentId/like", authMiddleware, controller.likeComment);
 
-// Обновление комментария или ответа
+// Обновление
 router.put(
   "/:commentId",
   authMiddleware,
@@ -31,7 +36,7 @@ router.put(
   controller.update
 );
 
-// Удаление комментария или ответа
+// Удаление
 router.delete(
   "/:commentId",
   authMiddleware,
@@ -43,11 +48,5 @@ router.delete(
   }),
   controller.remove
 );
-
-// Получение ответов на конкретный комментарий
-router.get("/replies/:commentId", controller.getReplies);
-
-// 📊 Получение количества ответов к нескольким комментариям
-router.post("/replies-count", controller.getRepliesCountForManyHandler);
 
 export default router;
