@@ -1,4 +1,5 @@
 import prisma from '../../../infrastructure/database/prismaClient.ts';
+import { ContentStatus } from '@prisma/client';
 
 export const getFeedPosts = async (userId: number) => {
   const following = await prisma.follow.findMany({
@@ -10,10 +11,8 @@ export const getFeedPosts = async (userId: number) => {
 
   return prisma.post.findMany({
     where: {
-      OR: [
-        { userId },
-        { userId: { in: followingIds } },
-      ],
+      status: ContentStatus.ACTIVE,
+      OR: [{ userId }, { userId: { in: followingIds } }],
     },
     orderBy: { createdAt: 'desc' },
     include: {

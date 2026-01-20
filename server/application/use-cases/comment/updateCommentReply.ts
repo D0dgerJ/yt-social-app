@@ -1,4 +1,5 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { ContentStatus } from "@prisma/client";
 
 interface UpdateReplyInput {
   commentId: number;
@@ -11,12 +12,30 @@ interface UpdateReplyInput {
 export const updateCommentReply = async ({
   commentId,
   content,
-  images = [],
-  videos = [],
-  files = [],
+  images,
+  videos,
+  files,
 }: UpdateReplyInput) => {
-  return await prisma.comment.update({
+  const reply = await prisma.comment.findFirst({
+    where: {
+      id: commentId,
+      parentId: { not: null }, 
+      post: { status: ContentStatus.ACTIVE },
+    },
+    select: { id: true },
+  });
+
+  if (!reply) {
+    throw new Error("Comment does not exist.");
+  }
+
+  return prisma.comment.update({
     where: { id: commentId },
-    data: { content, images, videos, files },
+    data: {
+      ...(content !== undefined && { content }),
+      ...(images !== undefined && { images }),
+      ...(videos !== undefined && { videos }),
+      ...(files !== undefined && { files }),
+    },
   });
 };

@@ -1,4 +1,5 @@
 import prisma from '../../../infrastructure/database/prismaClient.ts';
+import { ContentStatus } from '@prisma/client';
 
 interface UpdatePostInput {
   postId: number;
@@ -23,21 +24,30 @@ export const updatePost = async ({
 }: UpdatePostInput) => {
   const existingPost = await prisma.post.findUnique({
     where: { id: postId },
+    select: { id: true, userId: true, status: true },
   });
 
-  if (!existingPost || existingPost.userId !== userId) {
-    throw new Error('Post not found or user is not the owner');
+  if (!existingPost) {
+    throw new Error('Post not found');
+  }
+
+  if (existingPost.userId !== userId) {
+    throw new Error('User is not the owner');
+  }
+
+  if (existingPost.status === ContentStatus.DELETED) {
+    throw new Error('Post is deleted');
   }
 
   return prisma.post.update({
     where: { id: postId },
     data: {
-      desc,
-      images,
-      videos,
-      files,
-      tags,
-      location,
+      ...(desc !== undefined && { desc }),
+      ...(images !== undefined && { images }),
+      ...(videos !== undefined && { videos }),
+      ...(files !== undefined && { files }),
+      ...(tags !== undefined && { tags }),
+      ...(location !== undefined && { location }),
     },
   });
 };
