@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import UploadPost from "../UploadPost/UploadPost";
 import Post from "../Post/Post";
-import { getFeedPosts, getUserPostsByUsername } from "../../utils/api/post.api";
+import { getAllPosts, getUserPostsByUsername } from "../../utils/api/post.api";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import Masonry from "react-masonry-css";
@@ -56,7 +56,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
       try {
         const data: any[] = userPosts
           ? await getUserPostsByUsername(username as string)
-          : await getFeedPosts();
+          : await getAllPosts();
 
         const normalized: PostType[] = data.map((p: any) => {
           const likesArray = toLikeArray(p?.likes);

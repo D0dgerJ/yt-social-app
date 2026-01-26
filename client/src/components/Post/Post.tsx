@@ -1,10 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { MdOutlineMoreVert } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import moment from "moment";
 
 import { getUserById } from "../../utils/api/user.api";
+import { reportPost } from "../../utils/api/post.api";
 import { AuthContext } from "../../context/AuthContext";
 import usePostLikes from "../../hooks/usePostLike";
 
@@ -54,8 +55,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
   const [showPostModal, setShowPostModal] = useState(false);
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (author) return;
+
     (async () => {
       try {
         const res = await getUserById(post.userId);
@@ -65,6 +70,22 @@ const Post: React.FC<PostProps> = ({ post }) => {
       }
     })();
   }, [post.userId, author]);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [isMenuOpen]);
 
   const {
     count: likeCount,
@@ -80,6 +101,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
   const handleLike = async () => {
     if (!currentUser?.id || isLiking) return;
+
     try {
       await toggleLike();
     } catch (err: any) {
@@ -96,6 +118,35 @@ const Post: React.FC<PostProps> = ({ post }) => {
       ? (post as any).comment
       : 0);
 
+  const handleReport = async () => {
+    if (!currentUser?.id) {
+      toast.info("Нужно войти в аккаунт, чтобы отправить жалобу.");
+      return;
+    }
+
+    setIsMenuOpen(false);
+
+    const messageRaw = window.prompt("Опиши проблему (необязательно):");
+    const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
+
+    try {
+      const res = await reportPost(post.id, {
+        reason: "other",
+        message: message || undefined,
+      });
+
+      if (res?.alreadyReported) {
+        toast.info("Ты уже жаловался на этот пост.");
+        return;
+      }
+
+      toast.success("Жалоба отправлена.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Не удалось отправить жалобу");
+    }
+  };
+
   return (
     <div className="post-container" style={{ breakInside: "avoid" }}>
       <div className="post-top">
@@ -110,7 +161,25 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </Link>
           <span className="post-time">{moment(post.createdAt).fromNow()}</span>
         </div>
-        <MdOutlineMoreVert className="options-icon" />
+
+        <div className="post-options" ref={menuRef}>
+          <MdOutlineMoreVert
+            className="options-icon"
+            onClick={() => setIsMenuOpen((v) => !v)}
+          />
+
+          {isMenuOpen && (
+            <div className="post-options-menu">
+              <button
+                type="button"
+                className="post-options-item"
+                onClick={handleReport}
+              >
+                Report
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="post-content">
@@ -126,9 +195,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
         <PostVideos videos={post.videos} />
         <PostFiles files={post.files} />
 
-        {post.location && (
-          <div className="post-location">📍 {post.location}</div>
-        )}
+        {post.location && <div className="post-location">📍 {post.location}</div>}
       </div>
 
       <PostTags tags={post.tags} className="post-tags" />
