@@ -23,6 +23,9 @@ const Sidebar: React.FC = () => {
     typeof user?.id === "number" ? user.id : undefined
   );
 
+  const role = (user as any)?.role;
+  const canModerate = role === "MODERATOR" || role === "ADMIN" || role === "SUPER_ADMIN";
+
   return (
     <div className="sidebar">
       <div className="sidebar-wrapper">
@@ -76,6 +79,16 @@ const Sidebar: React.FC = () => {
               <span>Events</span>
             </NavLink>
           </li>
+          {canModerate && (
+            <li className="sidebar-list-item">
+              <NavLink
+                to="/moderation"
+                className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
+              >
+                <span>Moderation</span>
+              </NavLink>
+            </li>
+          )}
         </ul>
 
         <div className="sidebar-button">
