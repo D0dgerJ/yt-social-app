@@ -1,4 +1,5 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
 interface CreatePostInput {
   userId: number;
@@ -17,8 +18,13 @@ export const createPost = async ({
   videos = [],
   files = [],
   tags = [],
-  location = "",
+  location,
 }: CreatePostInput) => {
+  if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+
+  const cleanLocation =
+    typeof location === "string" ? location.trim() : undefined;
+
   return prisma.post.create({
     data: {
       userId,
@@ -27,7 +33,7 @@ export const createPost = async ({
       videos,
       files,
       tags,
-      location,
+      location: cleanLocation ? cleanLocation : null,
     },
   });
 };

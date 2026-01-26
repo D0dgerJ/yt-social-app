@@ -9,6 +9,9 @@ interface LikePostInput {
 }
 
 export const likePost = async ({ userId, postId }: LikePostInput) => {
+  if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+  if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
+
   await assertPostActionAllowed(postId);
 
   const post = await prisma.post.findUnique({
@@ -16,9 +19,7 @@ export const likePost = async ({ userId, postId }: LikePostInput) => {
     select: { id: true, userId: true, desc: true },
   });
 
-  if (!post) {
-    throw Errors.notFound("Post not found");
-  }
+  if (!post) throw Errors.notFound("Post not found");
 
   let like;
   let createdNow = false;
@@ -33,11 +34,7 @@ export const likePost = async ({ userId, postId }: LikePostInput) => {
 
     if (err.code === "P2002" && err.meta?.target?.includes("userId_postId")) {
       like = await prisma.like.findFirst({ where: { userId, postId } });
-
-      if (!like) {
-        throw Errors.conflict("User already liked this post");
-      }
-
+      if (!like) throw Errors.conflict("User already liked this post");
       return like;
     }
 

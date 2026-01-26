@@ -66,6 +66,9 @@ model User {
   moderationActions ModerationAction[]
   hiddenPosts       Post[]             @relation("PostHiddenBy")
   deletedPosts      Post[]             @relation("PostDeletedBy")
+
+  postReportsSent     PostReport[] @relation("PostReportReporter")
+  postReportsReviewed PostReport[] @relation("PostReportReviewedBy")
 }
 
 model FriendRequest {
@@ -111,8 +114,9 @@ model Post {
 
   deletedAt     DateTime?
   deletedById   Int?
-  deletedBy     User?     @relation("PostDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  deletedBy     User?        @relation("PostDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
   deletedReason String?
+  postReports   PostReport[]
 }
 
 model Like {
@@ -535,4 +539,32 @@ model ModerationOutbox {
 
   @@index([status, createdAt])
   @@index([entityType, entityId])
+}
+
+model PostReport {
+  id         Int          @id @default(autoincrement())
+  postId     Int?
+  reporterId Int
+  reason     String
+  message    String?
+  status     ReportStatus @default(PENDING)
+
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+  reviewedById Int?
+
+  post Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  reporter   User  @relation("PostReportReporter", fields: [reporterId], references: [id])
+  reviewedBy User? @relation("PostReportReviewedBy", fields: [reviewedById], references: [id])
+
+  @@unique([postId, reporterId])
+  @@index([status, createdAt])
+  @@index([postId])
+}
+
+enum ReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

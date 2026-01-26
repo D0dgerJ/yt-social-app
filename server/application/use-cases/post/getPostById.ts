@@ -1,9 +1,10 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus } from "@prisma/client";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
 export const getPostById = async (postId: number) => {
-  if (!postId || Number.isNaN(postId)) {
-    throw new Error("Invalid or missing postId");
+  if (!Number.isFinite(postId) || postId <= 0) {
+    throw Errors.validation("Invalid postId");
   }
 
   const post = await prisma.post.findFirst({
@@ -13,14 +14,17 @@ export const getPostById = async (postId: number) => {
         select: {
           id: true,
           username: true,
+          profilePicture: true,
         },
       },
-      _count: { select: { likes: true } },
+      likes: { select: { userId: true } },
+      savedBy: { select: { userId: true } },
+      _count: { select: { likes: true, comments: true } },
     },
   });
 
   if (!post) {
-    throw new Error("Post not found");
+    throw Errors.notFound("Post not found");
   }
 
   return post;
