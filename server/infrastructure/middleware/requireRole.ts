@@ -1,6 +1,7 @@
-import type { NextFunction, Request, Response } from 'express';
-import { UserRole } from '@prisma/client';
-import prisma from '../database/prismaClient.ts';
+import type { NextFunction, Request, Response } from "express";
+import { UserRole } from "@prisma/client";
+import prisma from "../database/prismaClient.ts";
+import { Errors } from "../errors/ApiError.ts";
 
 const ROLE_RANK: Record<UserRole, number> = {
   USER: 0,
@@ -15,10 +16,11 @@ function getEffectiveRole(dbRole: UserRole, isAdmin: boolean): UserRole {
 }
 
 export const requireRole =
-  (minRole: UserRole) => async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  (minRole: UserRole) =>
+  async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user?.id) {
-        res.status(401).json({ message: 'Unauthorized' });
+        next(Errors.unauthorized("Unauthorized"));
         return;
       }
 
@@ -29,7 +31,7 @@ export const requireRole =
         });
 
         if (!dbUser) {
-          res.status(401).json({ message: 'Unauthorized' });
+          next(Errors.unauthorized("Unauthorized"));
           return;
         }
 
@@ -40,13 +42,13 @@ export const requireRole =
       const requiredRank = ROLE_RANK[minRole];
 
       if (userRank < requiredRank) {
-        res.status(403).json({ message: 'Forbidden' });
+        next(Errors.forbidden("Forbidden"));
         return;
       }
 
       next();
-    } catch {
-      res.status(500).json({ message: 'Role check failed' });
+    } catch (err) {
+      next(Errors.internal("Role check failed", err));
     }
   };
 

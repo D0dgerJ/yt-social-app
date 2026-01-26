@@ -1,5 +1,6 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
-import { ContentStatus } from '@prisma/client';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { ContentStatus } from "@prisma/client";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
 interface UpdatePostInput {
   postId: number;
@@ -22,21 +23,22 @@ export const updatePost = async ({
   tags,
   location,
 }: UpdatePostInput) => {
-  const existingPost = await prisma.post.findUnique({
+  if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
+  if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+
+  const existing = await prisma.post.findUnique({
     where: { id: postId },
     select: { id: true, userId: true, status: true },
   });
 
-  if (!existingPost) {
-    throw new Error('Post not found');
-  }
+  if (!existing) throw Errors.notFound("Post not found");
+  if (existing.userId !== userId) throw Errors.forbidden("User is not the owner");
 
-  if (existingPost.userId !== userId) {
-    throw new Error('User is not the owner');
-  }
+  if (existing.status === ContentStatus.DELETED) throw Errors.postDeleted();
+  if (existing.status === ContentStatus.HIDDEN) throw Errors.postHidden();
 
-  if (existingPost.status === ContentStatus.DELETED) {
-    throw new Error('Post is deleted');
+  if (existing.status !== ContentStatus.ACTIVE) {
+    throw Errors.forbidden("Post cannot be edited in current status");
   }
 
   return prisma.post.update({

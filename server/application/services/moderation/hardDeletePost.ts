@@ -9,15 +9,32 @@ type HardDeletePostInput = {
 export async function hardDeletePost({ actorId, postId, reason }: HardDeletePostInput) {
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    include: {
-      comments: true,
-      likes: true,
-      savedBy: true,
+    select: {
+      id: true,
+      userId: true,
+      desc: true,
+      images: true,
+      videos: true,
+      files: true,
+      tags: true,
+      location: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      hiddenAt: true,
+      hiddenById: true,
+      hiddenReason: true,
+      deletedAt: true,
+      deletedById: true,
+      deletedReason: true,
     },
   });
 
   if (!post) {
-    throw new Error("Post not found");
+    const err = new Error("Post not found");
+    // @ts-expect-error - emulate prisma not found
+    err.code = "P2025";
+    throw err;
   }
 
   await prisma.$transaction(async (tx) => {
@@ -28,7 +45,7 @@ export async function hardDeletePost({ actorId, postId, reason }: HardDeletePost
         entityType: "POST",
         entityId: String(post.id),
         payload: {
-          post,
+          postSnapshot: post,
           reason: reason ?? null,
           deletedByAdminId: actorId,
           deletedAt: new Date().toISOString(),

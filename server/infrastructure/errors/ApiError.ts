@@ -39,4 +39,7 @@ export const Errors = {
 
   postHidden: () => new ApiError(423, "POST_HIDDEN", "Post is hidden"),
   postDeleted: () => new ApiError(410, "POST_DELETED", "Post is deleted"),
+
+  internal: (message = "Internal server error", details?: unknown) =>
+    new ApiError(500, "INTERNAL", message, details),
 };

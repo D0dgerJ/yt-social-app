@@ -1,30 +1,26 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { Errors } from "../errors/ApiError.ts";
 
 interface JwtPayload {
   userId: number;
 }
 
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ message: "Access Denied. No token provided." });
+    next(Errors.unauthorized("Unauthorized"));
     return;
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.slice("Bearer ".length).trim();
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-
     req.user = { id: decoded.userId };
     next();
-  } catch (error) {
-    res.status(401).json({ message: "Invalid token." });
+  } catch {
+    next(Errors.unauthorized("Unauthorized"));
   }
 };

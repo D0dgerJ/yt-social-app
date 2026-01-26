@@ -1,5 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus } from "@prisma/client";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
 type DeletePostInput = {
   postId: number;
@@ -8,6 +9,9 @@ type DeletePostInput = {
 };
 
 export const deletePost = async ({ postId, userId, reason }: DeletePostInput) => {
+  if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
+  if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+
   const post = await prisma.post.findFirst({
     where: {
       id: postId,
@@ -16,8 +20,8 @@ export const deletePost = async ({ postId, userId, reason }: DeletePostInput) =>
     },
     select: {
       id: true,
-      status: true,
       userId: true,
+      status: true,
       desc: true,
       images: true,
       videos: true,
@@ -29,20 +33,37 @@ export const deletePost = async ({ postId, userId, reason }: DeletePostInput) =>
       hiddenAt: true,
       hiddenById: true,
       hiddenReason: true,
+      deletedAt: true,
+      deletedById: true,
+      deletedReason: true,
     },
   });
 
   if (!post) {
-    throw new Error("Post not found or you are not the owner");
+    throw Errors.notFound("Post not found or you are not the owner");
+  }
+
+  if (post.status === ContentStatus.DELETED) {
+    throw Errors.postDeleted();
   }
 
   const isHeavyCase = post.status === ContentStatus.HIDDEN;
 
   await prisma.$transaction(async (tx) => {
+    await tx.post.update({
+      where: { id: post.id },
+      data: {
+        status: ContentStatus.DELETED,
+        deletedAt: new Date(),
+        deletedById: userId,
+        deletedReason: reason ?? null,
+      },
+    });
+
     if (isHeavyCase) {
       await tx.moderationOutbox.create({
         data: {
-          eventType: "POST_AUTHOR_DELETE_WITH_SANCTIONS",
+          eventType: "POST_AUTHOR_SOFT_DELETE_WHILE_HIDDEN",
           entityType: "POST",
           entityId: String(post.id),
           payload: {
@@ -60,25 +81,6 @@ export const deletePost = async ({ postId, userId, reason }: DeletePostInput) =>
       });
     }
 
-    await tx.commentLike.deleteMany({
-      where: { comment: { postId: post.id } },
-    });
-
-    await tx.comment.deleteMany({
-      where: { postId: post.id },
-    });
-
-    await tx.like.deleteMany({
-      where: { postId: post.id },
-    });
-
-    await tx.savedPost.deleteMany({
-      where: { postId: post.id },
-    });
-
-    await tx.post.delete({
-      where: { id: post.id },
-    });
   });
 
   return { ok: true };

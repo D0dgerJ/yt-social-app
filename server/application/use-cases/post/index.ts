@@ -9,3 +9,4 @@ export * from './getPostById.ts';
 export * from './unsavePost.ts';
 export * from './getUserPostsByUsername.ts';
 export * from './getAllPosts.ts';
+export * from "./reportPost.ts";

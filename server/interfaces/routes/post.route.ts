@@ -12,6 +12,7 @@ import {
   getByUsername,
   getFeedById,
   getAll,
+  report,
 } from "../controllers/post.controller.ts";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
@@ -52,6 +53,7 @@ router.get("/feed/:id", getFeedById);
 router.get("/user", getUserPostsFlexible);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
+router.post("/:id/report", authMiddleware, report);
 router.get("/:id", getById);
 
 router.put("/:id/like", authMiddleware, like);
