@@ -24,7 +24,7 @@ const Sidebar: React.FC = () => {
   );
 
   const role = (user as any)?.role;
-  const canModerate = role === "MODERATOR" || role === "ADMIN" || role === "SUPER_ADMIN";
+  const canModerate = role === "MODERATOR" || role === "ADMIN" || role === "OWNER";
 
   return (
     <div className="sidebar">
