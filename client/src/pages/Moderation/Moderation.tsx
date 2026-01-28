@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar/Navbar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import ModerationTable from "@/components/Moderation/ModerationTable";
 
-const ALLOWED = new Set(["MODERATOR", "ADMIN", "SUPER_ADMIN"]);
+const ALLOWED = new Set(["MODERATOR", "ADMIN", "OWNER"]);
 
 export default function Moderation() {
   const { user } = useContext(AuthContext);
