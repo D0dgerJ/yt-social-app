@@ -4,6 +4,9 @@ import { getReportItems } from "@/utils/api/mod.api";
 import PostGallery from "@/components/Post/parts/PostGallery";
 import PostVideos from "@/components/Post/parts/PostVideos";
 import PostFiles from "@/components/Post/parts/PostFiles";
+import UserSanctionsPanel from "./UserSanctionsPanel";
+import PostModerationActions from "./PostModerationActions";
+import ReportItemCard from "./ReportItemCard";
 
 type ReportItem = {
   id: number;
@@ -57,6 +60,15 @@ export default function ModerationPostModal({ open, onClose, postId, status, pos
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [postState, setPostState] = useState<PostFull | null>(post);
+
+  // чтобы блокировать конкретный репорт при клике approve/reject
+  const [busyReportId, setBusyReportId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPostState(post);
+  }, [post]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -67,28 +79,33 @@ export default function ModerationPostModal({ open, onClose, postId, status, pos
     return () => document.removeEventListener("keydown", onEsc);
   }, [open, onClose]);
 
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const data = await getReportItems({ status, postId, take: 200, skip: 0 });
+      setReports(data.items ?? []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
-
-    (async () => {
-      setLoading(true);
-      try {
-        // берём все репорты по этому посту (можно увеличить take)
-        const data = await getReportItems({ status, postId, take: 200, skip: 0 });
-        setReports(data.items ?? []);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    void loadReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, postId, status]);
 
   if (!open) return null;
 
   const likeCount =
-    post?._count?.likes ??
-    (Array.isArray(post?.likes) ? post!.likes!.length : 0);
+    postState?._count?.likes ?? (Array.isArray(postState?.likes) ? postState!.likes!.length : 0);
 
-  const commentsCount = post?._count?.comments ?? 0;
+  const commentsCount = postState?._count?.comments ?? 0;
+
+  const authorId = postState?.user?.id ?? postState?.userId ?? null;
+  const authorUsername = postState?.user?.username ?? undefined;
+
+  const hasApprovedReport = reports.some((r) => r.status === "APPROVED");
 
   return (
     <div className="mod-post-modal__backdrop" onMouseDown={onClose}>
@@ -107,34 +124,44 @@ export default function ModerationPostModal({ open, onClose, postId, status, pos
           <div className="mod-post-modal__left">
             <div className="mod-post-modal__postHeader">
               <div>
-                <b>@{post?.user?.username ?? "unknown"}</b>
+                <b>@{postState?.user?.username ?? "unknown"}</b>
               </div>
+
               <div className="mod-post-modal__muted">
-                {post?.createdAt ? new Date(post.createdAt).toLocaleString() : ""}
+                {postState?.createdAt ? new Date(postState.createdAt).toLocaleString() : ""}
               </div>
+
               <div className="mod-post-modal__chips">
-                <span className="chip">Status: {post?.status ?? "-"}</span>
+                <span className="chip">Status: {postState?.status ?? "-"}</span>
                 <span className="chip">Likes: {likeCount}</span>
                 <span className="chip">Comments: {commentsCount}</span>
+                <span className="chip">Reports: {reports.length}</span>
               </div>
             </div>
 
-            {post?.desc ? <div className="mod-post-modal__desc">{post.desc}</div> : null}
+            <PostModerationActions
+              postId={postId}
+              postStatus={postState?.status}
+              hasApprovedReport={hasApprovedReport}
+              onPostStatusChange={(next) => setPostState((p) => (p ? { ...p, status: next } : p))}
+              onAfterAction={loadReports}
+            />
 
-            {post?.location ? (
-              <div className="mod-post-modal__muted">📍 {post.location}</div>
+            {postState?.desc ? <div className="mod-post-modal__desc">{postState.desc}</div> : null}
+
+            {postState?.location ? (
+              <div className="mod-post-modal__muted">📍 {postState.location}</div>
             ) : null}
 
-            {/* медиа */}
             <div className="mod-post-modal__media">
               <PostGallery
-                images={post?.images}
+                images={postState?.images}
                 gridClassName="post-image-grid"
                 imgClassName="post-image-thumb"
                 showEmpty={false}
               />
-              <PostVideos videos={post?.videos} />
-              <PostFiles files={post?.files} />
+              <PostVideos videos={postState?.videos} />
+              <PostFiles files={postState?.files} />
             </div>
           </div>
 
@@ -151,40 +178,30 @@ export default function ModerationPostModal({ open, onClose, postId, status, pos
               )}
 
               {reports.map((r) => (
-                <div key={r.id} className="mod-post-modal__reportItem">
-                  <div className="mod-post-modal__reportTop">
-                    <div>
-                      <b>{reasonLabel[r.reason] ?? r.reason}</b>{" "}
-                      <span className="mod-post-modal__muted">
-                        @{r.reporter?.username ?? "unknown"}
-                      </span>
-                    </div>
-                    <div className="mod-post-modal__muted">
-                      {new Date(r.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-
-                  {r.message ? (
-                    <div className="mod-post-modal__reportMsg">{r.message}</div>
-                  ) : (
-                    <div className="mod-post-modal__muted">(без сообщения)</div>
-                  )}
-
-                  <div className="mod-post-modal__muted">
-                    Status: <b>{r.status}</b>
-                    {r.reviewedBy ? (
-                      <>
-                        {" · "}Reviewed by @{r.reviewedBy.username}
-                      </>
-                    ) : null}
-                  </div>
-                </div>
+                <ReportItemCard
+                  key={r.id}
+                  item={r}
+                  reasonLabel={reasonLabel}
+                  busy={busyReportId === r.id}
+                  onBusyChange={setBusyReportId}
+                  onAfterAction={loadReports}
+                />
               ))}
             </div>
 
-            <div className="mod-post-modal__hint mod-post-modal__muted">
-              (Дальше можно добавить кнопки approve/reject прямо на каждый репорт)
-            </div>
+            {authorId ? (
+              <div style={{ marginTop: 12 }}>
+                <UserSanctionsPanel
+                  userId={authorId}
+                  username={authorUsername}
+                  defaultEvidence={{
+                    source: "moderation_post_modal",
+                    postId: postState?.id,
+                    reportIds: (reports || []).map((x) => x.id),
+                  }}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
