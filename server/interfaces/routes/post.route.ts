@@ -19,13 +19,17 @@ import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.t
 import { getUserPostsFlexible } from "../controllers/post.controller.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
+import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
+
 const router = express.Router();
 
-router.post("/", authMiddleware, create);
+router.post("/", authMiddleware, enforceSanctions, requireNotRestricted, create);
 
 router.put(
   "/:id",
   authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
   checkOwnership(async (req: express.Request): Promise<number | undefined> => {
     const post = await prisma.post.findUnique({
       where: { id: Number(req.params.id) },
@@ -38,6 +42,8 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
   checkOwnership(async (req: express.Request): Promise<number | undefined> => {
     const post = await prisma.post.findUnique({
       where: { id: Number(req.params.id) },
@@ -48,16 +54,18 @@ router.delete(
 );
 
 router.get("/", getAll);
-router.get("/feed", authMiddleware, getFeed);
+router.get("/feed", authMiddleware, enforceSanctions, getFeed);
 router.get("/feed/:id", getFeedById);
 router.get("/user", getUserPostsFlexible);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
-router.post("/:id/report", authMiddleware, report);
+
+router.post("/:id/report", authMiddleware, enforceSanctions, requireNotRestricted, report);
+
 router.get("/:id", getById);
 
-router.put("/:id/like", authMiddleware, like);
-router.put("/:id/save", authMiddleware, save);
-router.put("/:id/unsave", authMiddleware, unsave);
+router.put("/:id/like", authMiddleware, enforceSanctions, requireNotRestricted, like);
+router.put("/:id/save", authMiddleware, enforceSanctions, save);
+router.put("/:id/unsave", authMiddleware, enforceSanctions, unsave);
 
 export default router;
