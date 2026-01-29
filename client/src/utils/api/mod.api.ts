@@ -104,3 +104,57 @@ export const rejectReport = async (
   const response = await axios.post(`/mod/reports/posts/${reportId}/reject`, payload);
   return response.data;
 };
+
+// --- User sanctions ---
+
+export type UserSanctionType = "WARN" | "RESTRICT" | "TEMP_BAN" | "PERM_BAN";
+export type UserSanctionStatus = "ACTIVE" | "LIFTED" | "EXPIRED";
+
+export type ModerationUserRef = {
+  id: number;
+  username: string;
+};
+
+export type UserSanctionItem = {
+  id: number;
+  userId: number;
+  type: UserSanctionType;
+  status: UserSanctionStatus;
+
+  reason: string;
+  message?: string | null;
+  evidence?: any;
+
+  startsAt: string;
+  endsAt?: string | null;
+
+  createdAt: string;
+  createdBy?: ModerationUserRef | null;
+
+  liftedAt?: string | null;
+  liftReason?: string | null;
+  liftedBy?: ModerationUserRef | null;
+};
+
+export type CreateUserSanctionBody = {
+  type: UserSanctionType;
+  reason: string;
+  message?: string;
+  endsAt?: string;
+  evidence?: any;
+};
+
+export const createUserSanction = async (userId: number, body: CreateUserSanctionBody) => {
+  const response = await axios.post(`/mod/users/${userId}/sanctions`, body);
+  return response.data as { ok: boolean; sanction: UserSanctionItem };
+};
+
+export const liftUserSanction = async (sanctionId: number, body: { reason: string }) => {
+  const response = await axios.post(`/mod/sanctions/${sanctionId}/lift`, body);
+  return response.data as { ok: boolean; sanction: UserSanctionItem };
+};
+
+export const getUserSanctions = async (userId: number) => {
+  const response = await axios.get(`/mod/users/${userId}/sanctions`);
+  return response.data as { ok: boolean; items: UserSanctionItem[] };
+};
