@@ -9,7 +9,11 @@ import { logModerationAction } from "../../application/services/moderation/logMo
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { requireModerator, requireAdmin } from "../../infrastructure/middleware/requireRole.ts";
 
-import { ModerationActionType, ModerationTargetType, ReportStatus } from "@prisma/client";
+import { ModerationActionType, ModerationTargetType, ReportStatus, UserSanctionType  } from "@prisma/client";
+
+import { applyUserSanction } from "../../application/services/moderation/applyUserSanction.ts";
+import { liftUserSanction } from "../../application/services/moderation/liftUserSanction.ts";
+import { getUserSanctions } from "../../application/services/moderation/getUserSanctions.ts";
 
 const router = Router();
 
@@ -41,6 +45,31 @@ async function assertHasApprovedReport(postId: number) {
   if (count <= 0) {
     throw Errors.forbidden("Forbidden: requires approved report");
   }
+}
+
+function getEndsAt(body: any): Date | null | undefined {
+  // ISO string expected
+  const raw = typeof body?.endsAt === "string" ? body.endsAt.trim() : "";
+  if (!raw) return undefined;
+
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) throw Errors.validation("Invalid endsAt");
+  return d;
+}
+
+function getSanctionType(body: any): UserSanctionType {
+  const raw = typeof body?.type === "string" ? body.type.trim() : "";
+  if (!raw) throw Errors.validation("type is required");
+
+  const allowed = Object.values(UserSanctionType) as string[];
+  if (!allowed.includes(raw)) throw Errors.validation("Invalid sanction type");
+
+  return raw as UserSanctionType;
+}
+
+function getEvidence(body: any): any | undefined {
+  // evidence — опциональный Json (мы не валидируем жестко на старте)
+  return body?.evidence;
 }
 
 // -------------------- healthcheck --------------------
@@ -434,6 +463,103 @@ router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator,
     });
 
     res.status(200).json({ ok: true, report: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// -------------------- user sanctions --------------------
+
+/**
+ * POST /mod/users/:userId/sanctions
+ * MODERATOR+
+ * PERM_BAN — только ADMIN+
+ *
+ * body:
+ * {
+ *   type: "WARN" | "RESTRICT" | "TEMP_BAN" | "PERM_BAN",
+ *   reason: string,
+ *   message?: string,
+ *   endsAt?: string (ISO) // required for TEMP_BAN
+ *   evidence?: any (Json)
+ * }
+ */
+router.post("/users/:userId/sanctions", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const userId = parseId(req.params.userId, "Invalid userId");
+
+    const type = getSanctionType(req.body);
+    const reason = getReason(req.body);
+    if (!reason) throw Errors.validation("Reason is required");
+
+    const message = getMessage(req.body);
+    const endsAt = getEndsAt(req.body);
+    const evidence = getEvidence(req.body);
+
+    // PERM_BAN только ADMIN+
+    if (type === UserSanctionType.PERM_BAN) {
+      // requireAdmin уже есть, но у нас сейчас requireModerator.
+      // Делаем ручную проверку: если не ADMIN — forbidden.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: { role: true, isAdmin: true },
+      });
+
+      const effectiveRole = dbUser?.isAdmin && dbUser.role === "USER" ? "ADMIN" : dbUser?.role; // упрощенно
+      if (effectiveRole !== "ADMIN" && effectiveRole !== "OWNER") {
+        throw Errors.forbidden("Forbidden: PERM_BAN requires ADMIN");
+      }
+    }
+
+    const sanction = await applyUserSanction({
+      actorId: req.user!.id,
+      userId,
+      type,
+      reason,
+      message: message || undefined,
+      endsAt: endsAt ?? null,
+      evidence,
+    });
+
+    res.status(201).json({ ok: true, sanction });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /mod/sanctions/:sanctionId/lift
+ * MODERATOR+
+ * body: { reason: string }
+ */
+router.post("/sanctions/:sanctionId/lift", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const sanctionId = parseId(req.params.sanctionId, "Invalid sanctionId");
+    const liftReason = getReason(req.body);
+    if (!liftReason) throw Errors.validation("Reason is required");
+
+    const sanction = await liftUserSanction({
+      actorId: req.user!.id,
+      sanctionId,
+      liftReason,
+    });
+
+    res.status(200).json({ ok: true, sanction });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /mod/users/:userId/sanctions
+ * MODERATOR+
+ */
+router.get("/users/:userId/sanctions", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const userId = parseId(req.params.userId, "Invalid userId");
+    const items = await getUserSanctions(userId);
+
+    res.status(200).json({ ok: true, items });
   } catch (err) {
     next(err);
   }

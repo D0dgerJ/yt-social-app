@@ -24,6 +24,8 @@ import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.t
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
+import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
+
 const router = express.Router();
 
 // Чаты
@@ -40,7 +42,7 @@ router.delete("/:chatId/leave", authMiddleware, leave); // DELETE /api/v1/chat/:
 
 // Сообщения
 router.get("/:chatId/messages", authMiddleware, getConversationMessages); // GET /api/v1/chat/:chatId/messages
-router.post("/:chatId/messages", authMiddleware, send); // POST /api/v1/chat/:chatId/messages
+router.post("/:chatId/messages", authMiddleware, enforceSanctions, requireNotRestricted, send);  // POST /api/v1/chat/:chatId/messages
 
 router.patch(
   "/:chatId/messages/:messageId",
@@ -96,7 +98,7 @@ router.delete(
 ); // DELETE /api/v1/chat/:chatId/messages/:messageId/pin
 
 // Реакции
-router.post("/messages/:messageId/react", authMiddleware, reactToMessage); // POST /api/v1/chat/messages/:messageId/react
+router.post("/messages/:messageId/react", authMiddleware, enforceSanctions, requireNotRestricted, reactToMessage); // POST /api/v1/chat/messages/:messageId/react
 router.get("/messages/:messageId/reactions", authMiddleware, getReactions); // GET /api/v1/chat/messages/:messageId/reactions
 
 // Транскрибация голосовых

@@ -69,6 +69,10 @@ model User {
 
   postReportsSent     PostReport[] @relation("PostReportReporter")
   postReportsReviewed PostReport[] @relation("PostReportReviewedBy")
+
+  sanctions          UserSanction[] @relation("UserSanctions")
+  sanctionsCreated   UserSanction[] @relation("SanctionCreatedBy")
+  sanctionsLifted    UserSanction[] @relation("SanctionLiftedBy")
 }
 
 model FriendRequest {
@@ -567,4 +571,46 @@ enum ReportStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum UserSanctionType {
+  WARN
+  RESTRICT
+  TEMP_BAN
+  PERM_BAN
+}
+
+enum UserSanctionStatus {
+  ACTIVE
+  LIFTED
+  EXPIRED
+}
+
+model UserSanction {
+  id        Int               @id @default(autoincrement())
+  userId    Int
+  type      UserSanctionType
+  status    UserSanctionStatus @default(ACTIVE)
+
+  reason    String
+  message   String?
+  evidence  Json?             // { postIds: number[], reportIds: number[], links: string[] ... }
+
+  startsAt  DateTime          @default(now())
+  endsAt    DateTime?         // null для PERM_BAN / WARN / RESTRICT
+
+  createdById Int
+  liftedById  Int?
+  liftedAt    DateTime?
+  liftReason  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User @relation("UserSanctions", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User @relation("SanctionCreatedBy", fields: [createdById], references: [id])
+  liftedBy  User? @relation("SanctionLiftedBy", fields: [liftedById], references: [id])
+
+  @@index([userId, status])
+  @@index([status, endsAt])
 }

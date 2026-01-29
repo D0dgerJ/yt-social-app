@@ -4,9 +4,11 @@ import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.t
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
+import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
+
 const router = express.Router();
 
-router.post("/", authMiddleware, controller.create);
+router.post("/", authMiddleware, enforceSanctions, requireNotRestricted, controller.create);
 
 // Получение комментариев к посту
 router.get("/post/:postId", controller.getComments);
@@ -21,12 +23,14 @@ router.post("/replies-count", controller.getRepliesCountForManyHandler);
 router.get("/:commentId", controller.getById);
 
 // Лайк/анлайк комментария
-router.put("/:commentId/like", authMiddleware, controller.likeComment);
+router.put("/:commentId/like", authMiddleware, enforceSanctions, requireNotRestricted, controller.likeComment);
 
 // Обновление
 router.put(
   "/:commentId",
   authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
   checkOwnership(async (req) => {
     const comment = await prisma.comment.findUnique({
       where: { id: Number(req.params.commentId) },
@@ -40,6 +44,8 @@ router.put(
 router.delete(
   "/:commentId",
   authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
   checkOwnership(async (req) => {
     const comment = await prisma.comment.findUnique({
       where: { id: Number(req.params.commentId) },
