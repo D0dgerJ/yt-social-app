@@ -190,7 +190,7 @@ export default function ModerationPostModal({ open, onClose, postId, status, pos
             </div>
 
             {authorId ? (
-              <div style={{ marginTop: 12 }}>
+              <div className="mod-post-modal__sanctions">
                 <UserSanctionsPanel
                   userId={authorId}
                   username={authorUsername}

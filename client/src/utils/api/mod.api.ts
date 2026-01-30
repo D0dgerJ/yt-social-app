@@ -158,3 +158,71 @@ export const getUserSanctions = async (userId: number) => {
   const response = await axios.get(`/mod/users/${userId}/sanctions`);
   return response.data as { ok: boolean; items: UserSanctionItem[] };
 };
+
+
+export type ModerationTargetType = "POST" | "COMMENT" | "STORY" | "USER" | "MESSAGE" | "OTHER";
+
+export type ModerationActionType =
+  | "REPORT_CREATED"
+  | "CONTENT_HIDDEN"
+  | "CONTENT_UNHIDDEN"
+  | "CONTENT_DELETED"
+  | "USER_RESTRICTED"
+  | "USER_UNRESTRICTED"
+  | "USER_BANNED"
+  | "USER_UNBANNED"
+  | "NOTE"
+  | "BOT_AUTO_ACTION";
+
+export type ModerationActionItem = {
+  id: number;
+  actorId: number | null;
+  actor?: { id: number; username: string; role: string } | null;
+
+  actionType: ModerationActionType;
+  targetType: ModerationTargetType;
+  targetId: string;
+
+  reason: string | null;
+  metadata: any | null;
+  createdAt: string;
+};
+
+export const getModerationActions = async (params?: {
+  take?: number;
+  skip?: number;
+
+  actorId?: number;
+  actionType?: ModerationActionType;
+  targetType?: ModerationTargetType;
+  targetId?: string;
+
+  q?: string;
+  from?: string; 
+  to?: string;  
+}) => {
+  const search = new URLSearchParams();
+
+  if (params?.take) search.set("take", String(params.take));
+  if (params?.skip) search.set("skip", String(params.skip));
+  if (params?.actorId) search.set("actorId", String(params.actorId));
+  if (params?.actionType) search.set("actionType", params.actionType);
+  if (params?.targetType) search.set("targetType", params.targetType);
+  if (params?.targetId) search.set("targetId", params.targetId);
+  if (params?.q) search.set("q", params.q);
+  if (params?.from) search.set("from", params.from);
+  if (params?.to) search.set("to", params.to);
+
+  const response = await axios.get(`/mod/actions?${search.toString()}`);
+  return response.data;
+};
+
+export const getModerationActionById = async (id: number) => {
+  const response = await axios.get(`/mod/actions/${id}`);
+  return response.data;
+};
+
+export const getModerationActionEvidence = async (id: number) => {
+  const response = await axios.get(`/mod/actions/${id}/evidence`);
+  return response.data;
+};

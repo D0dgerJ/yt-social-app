@@ -164,7 +164,7 @@ export default function PostModerationActions({
         </button>
       </div>
 
-      <div className="mod-post-modal__muted" style={{ marginTop: 6 }}>
+      <div className="mod-post-modal__note">
         Note: soft/hard delete may require an APPROVED report (backend rule).
       </div>
     </div>
