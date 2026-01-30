@@ -9,7 +9,7 @@ import {
   type ReportStatus,
 } from "@/utils/api/mod.api";
 import ModerationPostModal from "./ModerationPostModal";
-import "./ModerationPostModal.scss";
+import "./ModerationTable.scss";
 
 type Row = {
   postId: number;
@@ -23,7 +23,7 @@ type Row = {
   };
   post: null | {
     id: number;
-    userId: number; 
+    userId: number;
     status: string;
     desc: string | null;
     createdAt: string;
@@ -75,7 +75,7 @@ export default function ModerationTable() {
   }
 
   useEffect(() => {
-    load();
+    void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, skip, take]);
 
@@ -110,30 +110,37 @@ export default function ModerationTable() {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>Moderation</h2>
+    <div className="mod-table">
+      <div className="mod-table__top">
+        <h2 className="mod-table__title">Moderation</h2>
 
-        <select value={status} onChange={(e) => { setSkip(0); setStatus(e.target.value as ReportStatus); }}>
+        <select
+          className="mod-table__select"
+          value={status}
+          onChange={(e) => {
+            setSkip(0);
+            setStatus(e.target.value as ReportStatus);
+          }}
+        >
           <option value="PENDING">PENDING</option>
           <option value="APPROVED">APPROVED</option>
           <option value="REJECTED">REJECTED</option>
         </select>
 
-        <div style={{ marginLeft: "auto" }}>
+        <div className="mod-table__meta">
           {loading ? "Loading..." : `Total: ${total} · Page ${page}/${pages}`}
         </div>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="mod-table__scroll">
+        <table className="mod-table__table">
           <thead>
             <tr>
-              <th align="left">Post</th>
-              <th align="left">Reports</th>
-              <th align="left">Last report</th>
-              <th align="left">Post status</th>
-              <th align="left">Actions</th>
+              <th>Post</th>
+              <th>Reports</th>
+              <th>Last report</th>
+              <th>Post status</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
@@ -146,126 +153,98 @@ export default function ModerationTable() {
 
               return (
                 <tr key={row.postId}>
-                  {/* POST */}
-                  <td style={{ padding: "10px 6px", verticalAlign: "top", cursor: "pointer" }} onClick={() => setSelected(row)} title="Open details">
-                    <div style={{ display: "flex", gap: 10 }}>
-                      {/* preview */}
-                      <div style={{ width: 72, flex: "0 0 72px" }}>
+                  <td
+                    className="mod-table__cell mod-table__cell--clickable"
+                    onClick={() => setSelected(row)}
+                    title="Open details"
+                  >
+                    <div className="mod-table__post">
+                      <div className="mod-table__preview">
                         {img ? (
-                          <img
-                            src={img}
-                            alt="post preview"
-                            style={{
-                              width: 72,
-                              height: 72,
-                              objectFit: "cover",
-                              borderRadius: 8,
-                              border: "1px solid #eee",
-                            }}
-                          />
+                          <img className="mod-table__previewImg" src={img} alt="post preview" />
                         ) : video ? (
-                          <div
-                            style={{
-                              width: 72,
-                              height: 72,
-                              borderRadius: 8,
-                              border: "1px solid #eee",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 12,
-                              opacity: 0.8,
-                            }}
-                          >
-                            🎬 video
-                          </div>
+                          <div className="mod-table__previewFallback">🎬 video</div>
                         ) : (
-                          <div
-                            style={{
-                              width: 72,
-                              height: 72,
-                              borderRadius: 8,
-                              border: "1px solid #eee",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 12,
-                              opacity: 0.6,
-                            }}
-                          >
+                          <div className="mod-table__previewFallback mod-table__previewFallback--muted">
                             no media
                           </div>
                         )}
                       </div>
 
-                      {/* content */}
-                      <div style={{ minWidth: 260, maxWidth: 620 }}>
-                        <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+                      <div className="mod-table__content">
+                        <div className="mod-table__contentTop">
                           <b>@{p?.user?.username ?? "unknown"}</b>
-                          <span style={{ fontSize: 12, opacity: 0.7 }}>
+                          <span className="mod-table__time">
                             {p?.createdAt ? new Date(p.createdAt).toLocaleString() : ""}
                           </span>
                         </div>
 
                         {p?.desc ? (
-                          <div style={{ marginTop: 4 }}>
-                            {clip(p.desc, 180)}
-                          </div>
+                          <div className="mod-table__desc">{clip(p.desc, 180)}</div>
                         ) : (
-                          <div style={{ marginTop: 4, opacity: 0.6 }}>(no text)</div>
+                          <div className="mod-table__desc mod-table__desc--muted">(no text)</div>
                         )}
 
-                        <div style={{ marginTop: 6, display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, opacity: 0.8 }}>
+                        <div className="mod-table__badges">
                           {p?.location ? <span>📍 {p.location}</span> : null}
                           {filesCount > 0 ? <span>📎 {filesCount} files</span> : null}
-                          {p?.tags?.length ? <span>🏷 {p.tags.slice(0, 3).join(", ")}{p.tags.length > 3 ? "…" : ""}</span> : null}
+                          {p?.tags?.length ? (
+                            <span>
+                              🏷 {p.tags.slice(0, 3).join(", ")}
+                              {p.tags.length > 3 ? "…" : ""}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </div>
                   </td>
 
-                  {/* REPORTS COUNT */}
-                  <td style={{ padding: "10px 6px", verticalAlign: "top" }}>{row.reportCount}</td>
+                  <td className="mod-table__cell">{row.reportCount}</td>
 
-                  {/* LAST REPORT */}
-                  <td style={{ padding: "10px 6px", verticalAlign: "top" }}>
+                  <td className="mod-table__cell">
                     {row.lastReport ? (
-                      <div style={{ maxWidth: 420 }}>
-                        <div>
-                          <b>{reasonLabel[row.lastReport.reason] ?? row.lastReport.reason}</b>{" "}
-                          <span style={{ opacity: 0.8 }}>
+                      <div className="mod-table__last">
+                        <div className="mod-table__lastTop">
+                          <b>{reasonLabel[row.lastReport.reason] ?? row.lastReport.reason}</b>
+                          <span className="mod-table__lastBy">
                             by @{row.lastReport.reporter?.username ?? "unknown"}
                           </span>
                         </div>
 
                         {row.lastReport.message ? (
-                          <div style={{ marginTop: 4, fontSize: 13 }}>
-                            {clip(row.lastReport.message, 220)}
-                          </div>
+                          <div className="mod-table__lastMsg">{clip(row.lastReport.message, 220)}</div>
                         ) : (
-                          <div style={{ marginTop: 4, fontSize: 13, opacity: 0.6 }}>(no message)</div>
+                          <div className="mod-table__lastMsg mod-table__lastMsg--muted">(no message)</div>
                         )}
 
-                        <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
+                        <div className="mod-table__lastTime">
                           {new Date(row.lastReport.createdAt).toLocaleString()}
                         </div>
                       </div>
                     ) : (
-                      "-"
+                      <span className="mod-table__muted">—</span>
                     )}
                   </td>
 
-                  {/* POST STATUS */}
-                  <td style={{ padding: "10px 6px", verticalAlign: "top" }}>{p?.status ?? "-"}</td>
+                  <td className="mod-table__cell">{p?.status ?? "—"}</td>
 
-                  {/* ACTIONS */}
-                  <td style={{ padding: "10px 6px", verticalAlign: "top" }}>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button onClick={() => onApprove(row)} disabled={!row.lastReport}>Approve</button>
-                      <button onClick={() => onReject(row)} disabled={!row.lastReport}>Reject</button>
-                      <button onClick={() => onHide(row)}>Hide</button>
-                      <button onClick={() => onSoftDelete(row)}>Soft delete</button>
-                      <button onClick={() => onHardDelete(row)}>Hard delete</button>
+                  <td className="mod-table__cell">
+                    <div className="mod-table__actions">
+                      <button className="mod-table__btn" onClick={() => onApprove(row)} disabled={!row.lastReport}>
+                        Approve
+                      </button>
+                      <button className="mod-table__btn" onClick={() => onReject(row)} disabled={!row.lastReport}>
+                        Reject
+                      </button>
+                      <button className="mod-table__btn" onClick={() => onHide(row)}>
+                        Hide
+                      </button>
+                      <button className="mod-table__btn" onClick={() => onSoftDelete(row)}>
+                        Soft delete
+                      </button>
+                      <button className="mod-table__btn mod-table__btn--danger" onClick={() => onHardDelete(row)}>
+                        Hard delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -274,7 +253,7 @@ export default function ModerationTable() {
 
             {!loading && items.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ padding: 16, opacity: 0.8 }}>
+                <td colSpan={5} className="mod-table__empty">
                   No items
                 </td>
               </tr>
@@ -283,15 +262,17 @@ export default function ModerationTable() {
         </table>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 12, alignItems: "center" }}>
-        <button onClick={() => setSkip(Math.max(0, skip - take))} disabled={skip === 0}>
+      <div className="mod-table__pager">
+        <button className="mod-table__btn" onClick={() => setSkip(Math.max(0, skip - take))} disabled={skip === 0}>
           Prev
         </button>
-        <button onClick={() => setSkip(skip + take)} disabled={skip + take >= total}>
+
+        <button className="mod-table__btn" onClick={() => setSkip(skip + take)} disabled={skip + take >= total}>
           Next
         </button>
 
         <select
+          className="mod-table__select"
           value={take}
           onChange={(e) => {
             setSkip(0);
@@ -303,6 +284,7 @@ export default function ModerationTable() {
           <option value={50}>50</option>
         </select>
       </div>
+
       <ModerationPostModal
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
@@ -310,7 +292,6 @@ export default function ModerationTable() {
         status={status}
         post={selected?.post ?? null}
       />
-
     </div>
   );
 }

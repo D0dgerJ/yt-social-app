@@ -1,5 +1,6 @@
 import { Router } from "express";
 import prisma from "../../infrastructure/database/prismaClient.ts";
+import type { Prisma } from "@prisma/client";
 import { Errors } from "../../infrastructure/errors/ApiError.ts";
 
 import { hidePost, softDeletePost, unhidePost } from "../../application/services/moderation/moderatePost.ts";
@@ -9,7 +10,7 @@ import { logModerationAction } from "../../application/services/moderation/logMo
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { requireModerator, requireAdmin } from "../../infrastructure/middleware/requireRole.ts";
 
-import { ModerationActionType, ModerationTargetType, ReportStatus, UserSanctionType  } from "@prisma/client";
+import { ModerationActionType, ModerationTargetType, ReportStatus, UserSanctionType, UserRole } from "@prisma/client";
 
 import { applyUserSanction } from "../../application/services/moderation/applyUserSanction.ts";
 import { liftUserSanction } from "../../application/services/moderation/liftUserSanction.ts";
@@ -48,7 +49,6 @@ async function assertHasApprovedReport(postId: number) {
 }
 
 function getEndsAt(body: any): Date | null | undefined {
-  // ISO string expected
   const raw = typeof body?.endsAt === "string" ? body.endsAt.trim() : "";
   if (!raw) return undefined;
 
@@ -68,7 +68,6 @@ function getSanctionType(body: any): UserSanctionType {
 }
 
 function getEvidence(body: any): any | undefined {
-  // evidence — опциональный Json (мы не валидируем жестко на старте)
   return body?.evidence;
 }
 
@@ -111,7 +110,7 @@ router.post("/posts/:id/unhide", authMiddleware, requireModerator, async (req, r
 /**
  * SOFT DELETE: ADMIN+
  * Только если есть APPROVED report
- * reason (обоснование решения) ОБЯЗАТЕЛЕН
+ * reason ОБЯЗАТЕЛЕН
  */
 router.post("/posts/:id/soft-delete", authMiddleware, requireAdmin, async (req, res, next) => {
   try {
@@ -132,7 +131,7 @@ router.post("/posts/:id/soft-delete", authMiddleware, requireAdmin, async (req, 
 /**
  * HARD DELETE: ADMIN+
  * Только если есть APPROVED report
- * reason (обоснование решения) ОБЯЗАТЕЛЕН
+ * reason ОБЯЗАТЕЛЕН
  */
 router.delete("/posts/:id/hard-delete", authMiddleware, requireAdmin, async (req, res, next) => {
   try {
@@ -152,12 +151,6 @@ router.delete("/posts/:id/hard-delete", authMiddleware, requireAdmin, async (req
 
 // -------------------- post reports (UI table) --------------------
 
-/**
- * ✅ Вариант 2: "каждый пост = строка + count репортов + последняя жалоба"
- *
- * GET /mod/reports/posts?status=PENDING&postId=123&take=20&skip=0
- * MODERATOR+
- */
 router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const statusRaw = typeof req.query.status === "string" ? req.query.status : "PENDING";
@@ -172,7 +165,6 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
     const take = Number.isFinite(takeRaw) ? Math.min(Math.max(takeRaw, 1), 100) : 20;
     const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
 
-    // 1) группируем репорты по postId: count + max(createdAt)
     const groupsRaw = await prisma.postReport.groupBy({
       by: ["postId"],
       where: {
@@ -181,17 +173,13 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
       },
       _count: { _all: true },
       _max: { createdAt: true },
-      orderBy: {
-        _max: { createdAt: "desc" },
-      },
+      orderBy: { _max: { createdAt: "desc" } },
       skip,
       take,
     });
 
-    // ✅ тип-фикс: теперь postId гарантированно number
     const groups = groupsRaw.filter(
-      (g): g is (typeof groupsRaw)[number] & { postId: number } =>
-        typeof g.postId === "number" && Number.isFinite(g.postId)
+      (g): g is (typeof groupsRaw)[number] & { postId: number } => typeof g.postId === "number" && Number.isFinite(g.postId)
     );
 
     const totalRaw = await prisma.postReport.groupBy({
@@ -204,13 +192,11 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
     });
 
     const total = totalRaw.filter(
-      (g): g is (typeof totalRaw)[number] & { postId: number } =>
-        typeof g.postId === "number" && Number.isFinite(g.postId)
+      (g): g is (typeof totalRaw)[number] & { postId: number } => typeof g.postId === "number" && Number.isFinite(g.postId)
     );
 
     const postIds = groups.map((g) => g.postId);
 
-    // 2) последние жалобы (по каждому посту) — distinct(postId) + orderBy createdAt desc
     const lastReports = postIds.length
       ? await prisma.postReport.findMany({
           where: { postId: { in: postIds }, status },
@@ -229,14 +215,10 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
       : [];
 
     const lastByPostId = new Map<number, (typeof lastReports)[number]>();
-      for (const r of lastReports) {
-        // postId у lastReports должен быть number, но Prisma иногда типизирует как number | null
-        if (typeof r.postId === "number") {
-          lastByPostId.set(r.postId, r);
-        }
-      }
+    for (const r of lastReports) {
+      if (typeof r.postId === "number") lastByPostId.set(r.postId, r);
+    }
 
-    // 3) сами посты (для строки таблицы)
     const posts = postIds.length
       ? await prisma.post.findMany({
           where: { id: { in: postIds } },
@@ -259,22 +241,17 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
     const postById = new Map<number, (typeof posts)[number]>();
     for (const p of posts) postById.set(p.id, p);
 
-    // 4) собираем строки в том же порядке, что groups
-    const items = groups.map((g) => {
-      const p = postById.get(g.postId) ?? null;
-
-      return {
-        postId: g.postId,
-        reportCount: g._count._all,
-        lastReport: lastByPostId.get(g.postId) ?? null,
-        post: p,
-      };
-    });
+    const items = groups.map((g) => ({
+      postId: g.postId,
+      reportCount: g._count._all,
+      lastReport: lastByPostId.get(g.postId) ?? null,
+      post: postById.get(g.postId) ?? null,
+    }));
 
     res.status(200).json({
       ok: true,
       status,
-      total: total.length, // количество "постов-строк", а не репортов
+      total: total.length,
       skip,
       take,
       items,
@@ -284,12 +261,6 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
   }
 });
 
-
-
-/**
- * (опционально) список репортов как "items" — если нужно окно деталей
- * GET /mod/reports/posts/items?status=PENDING&postId=123&take=50&skip=0
- */
 router.get("/reports/posts/items", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const statusRaw = typeof req.query.status === "string" ? req.query.status : "PENDING";
@@ -341,10 +312,6 @@ router.get("/reports/posts/items", authMiddleware, requireModerator, async (req,
   }
 });
 
-/**
- * GET /mod/reports/posts/:reportId
- * MODERATOR+
- */
 router.get("/reports/posts/:reportId", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const reportId = parseId(req.params.reportId, "Invalid reportId");
@@ -379,13 +346,6 @@ router.get("/reports/posts/:reportId", authMiddleware, requireModerator, async (
   }
 });
 
-/**
- * POST /mod/reports/posts/:reportId/approve
- * MODERATOR+
- *
- * ВАЖНО: НЕ перезаписываем PostReport.reason/message (это репортёрские поля).
- * reason/message тут — это обоснование решения модератора (идёт в ModerationAction).
- */
 router.post("/reports/posts/:reportId/approve", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const reportId = parseId(req.params.reportId, "Invalid reportId");
@@ -424,12 +384,6 @@ router.post("/reports/posts/:reportId/approve", authMiddleware, requireModerator
   }
 });
 
-/**
- * POST /mod/reports/posts/:reportId/reject
- * MODERATOR+
- *
- * ВАЖНО: НЕ перезаписываем PostReport.reason/message (это репортёрские поля).
- */
 router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const reportId = parseId(req.params.reportId, "Invalid reportId");
@@ -470,20 +424,6 @@ router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator,
 
 // -------------------- user sanctions --------------------
 
-/**
- * POST /mod/users/:userId/sanctions
- * MODERATOR+
- * PERM_BAN — только ADMIN+
- *
- * body:
- * {
- *   type: "WARN" | "RESTRICT" | "TEMP_BAN" | "PERM_BAN",
- *   reason: string,
- *   message?: string,
- *   endsAt?: string (ISO) // required for TEMP_BAN
- *   evidence?: any (Json)
- * }
- */
 router.post("/users/:userId/sanctions", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const userId = parseId(req.params.userId, "Invalid userId");
@@ -496,17 +436,14 @@ router.post("/users/:userId/sanctions", authMiddleware, requireModerator, async 
     const endsAt = getEndsAt(req.body);
     const evidence = getEvidence(req.body);
 
-    // PERM_BAN только ADMIN+
     if (type === UserSanctionType.PERM_BAN) {
-      // requireAdmin уже есть, но у нас сейчас requireModerator.
-      // Делаем ручную проверку: если не ADMIN — forbidden.
       const dbUser = await prisma.user.findUnique({
         where: { id: req.user!.id },
-        select: { role: true, isAdmin: true },
+        select: { role: true },
       });
 
-      const effectiveRole = dbUser?.isAdmin && dbUser.role === "USER" ? "ADMIN" : dbUser?.role; // упрощенно
-      if (effectiveRole !== "ADMIN" && effectiveRole !== "OWNER") {
+      const role = dbUser?.role;
+      if (role !== UserRole.ADMIN && role !== UserRole.OWNER) {
         throw Errors.forbidden("Forbidden: PERM_BAN requires ADMIN");
       }
     }
@@ -527,11 +464,6 @@ router.post("/users/:userId/sanctions", authMiddleware, requireModerator, async 
   }
 });
 
-/**
- * POST /mod/sanctions/:sanctionId/lift
- * MODERATOR+
- * body: { reason: string }
- */
 router.post("/sanctions/:sanctionId/lift", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const sanctionId = parseId(req.params.sanctionId, "Invalid sanctionId");
@@ -550,16 +482,179 @@ router.post("/sanctions/:sanctionId/lift", authMiddleware, requireModerator, asy
   }
 });
 
-/**
- * GET /mod/users/:userId/sanctions
- * MODERATOR+
- */
 router.get("/users/:userId/sanctions", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const userId = parseId(req.params.userId, "Invalid userId");
     const items = await getUserSanctions(userId);
 
     res.status(200).json({ ok: true, items });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// -------------------- moderation actions history (evidence) --------------------
+
+router.get("/actions", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const takeRaw = Number(req.query.take ?? 20);
+    const skipRaw = Number(req.query.skip ?? 0);
+    const take = Number.isFinite(takeRaw) ? Math.min(Math.max(takeRaw, 1), 100) : 20;
+    const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
+
+    const actorId = req.query.actorId ? parseId(req.query.actorId, "Invalid actorId") : undefined;
+
+    const actionTypeRaw = typeof req.query.actionType === "string" ? req.query.actionType : undefined;
+    const targetTypeRaw = typeof req.query.targetType === "string" ? req.query.targetType : undefined;
+
+    const actionType =
+      actionTypeRaw && (Object.values(ModerationActionType) as string[]).includes(actionTypeRaw)
+        ? (actionTypeRaw as ModerationActionType)
+        : undefined;
+
+    const targetType =
+      targetTypeRaw && (Object.values(ModerationTargetType) as string[]).includes(targetTypeRaw)
+        ? (targetTypeRaw as ModerationTargetType)
+        : undefined;
+
+    const targetId =
+      typeof req.query.targetId === "string" && req.query.targetId.trim().length
+        ? req.query.targetId.trim()
+        : undefined;
+
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+
+    const fromRaw = typeof req.query.from === "string" ? new Date(req.query.from) : null;
+    const toRaw = typeof req.query.to === "string" ? new Date(req.query.to) : null;
+
+    const from = fromRaw && !Number.isNaN(fromRaw.getTime()) ? fromRaw : undefined;
+    const to = toRaw && !Number.isNaN(toRaw.getTime()) ? toRaw : undefined;
+
+    const where: Prisma.ModerationActionWhereInput = {
+      ...(actorId ? { actorId } : {}),
+      ...(actionType ? { actionType } : {}),
+      ...(targetType ? { targetType } : {}),
+      ...(targetId ? { targetId } : {}),
+      ...(from || to
+        ? {
+            createdAt: {
+              ...(from ? { gte: from } : {}),
+              ...(to ? { lte: to } : {}),
+            },
+          }
+        : {}),
+      ...(q
+        ? {
+            OR: [
+              { reason: { contains: q, mode: "insensitive" } },
+              { targetId: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await prisma.$transaction([
+      prisma.moderationAction.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+        include: {
+          actor: { select: { id: true, username: true, role: true } },
+        },
+      }),
+      prisma.moderationAction.count({ where }),
+    ]);
+
+    res.status(200).json({ ok: true, total, skip, take, items });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/actions/:id", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const id = parseId(req.params.id, "Invalid action id");
+
+    const action = await prisma.moderationAction.findUnique({
+      where: { id },
+      include: {
+        actor: { select: { id: true, username: true, role: true } },
+      },
+    });
+
+    if (!action) throw Errors.notFound("Action not found");
+
+    res.status(200).json({ ok: true, action });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/actions/:id/evidence", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const id = parseId(req.params.id, "Invalid action id");
+
+    const action = await prisma.moderationAction.findUnique({
+      where: { id },
+      include: {
+        actor: { select: { id: true, username: true, role: true } },
+      },
+    });
+
+    if (!action) throw Errors.notFound("Action not found");
+
+    let targetPost: any = null;
+    let targetUser: any = null;
+
+    const targetIdNum = Number(action.targetId);
+    const targetIdIsNum = Number.isFinite(targetIdNum) && targetIdNum > 0;
+
+    if (action.targetType === ModerationTargetType.POST && targetIdIsNum) {
+      targetPost = await prisma.post.findUnique({
+        where: { id: targetIdNum },
+        select: {
+          id: true,
+          userId: true,
+          desc: true,
+          images: true,
+          videos: true,
+          files: true,
+          tags: true,
+          location: true,
+          status: true,
+          createdAt: true,
+          user: { select: { id: true, username: true } },
+          _count: { select: { likes: true, comments: true } },
+        },
+      });
+    }
+
+    if (action.targetType === ModerationTargetType.USER && targetIdIsNum) {
+      targetUser = await prisma.user.findUnique({
+        where: { id: targetIdNum },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          role: true,
+          isAdmin: true,
+          desc: true,
+          profilePicture: true,
+          coverPicture: true,
+          from: true,
+          city: true,
+          relationship: true,
+        },
+      });
+    }
+
+    res.status(200).json({
+      ok: true,
+      action,
+      targetPost,
+      targetUser,
+    });
   } catch (err) {
     next(err);
   }

@@ -4,6 +4,7 @@ import { AuthContext } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar/Navbar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import ModerationTable from "@/components/Moderation/ModerationTable";
+import styles from "./Moderation.module.scss";
 
 const ALLOWED = new Set(["MODERATOR", "ADMIN", "OWNER"]);
 
@@ -19,9 +20,22 @@ export default function Moderation() {
   return (
     <>
       <Navbar />
-      <div style={{ display: "flex" }}>
+      <div className={styles.container}>
         <Sidebar />
-        <div style={{ flex: 1, padding: 16 }}>
+
+        <div className={styles.main}>
+          <div className={styles.header}>
+            <h2 className={styles.title}>Moderation</h2>
+
+            <button
+              className={styles.historyBtn}
+              type="button"
+              onClick={() => navigate("/moderation/history")}
+            >
+              Open history
+            </button>
+          </div>
+
           <ModerationTable />
         </div>
       </div>

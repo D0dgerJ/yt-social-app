@@ -1,0 +1,214 @@
+.mod-table {
+  width: 100%;
+}
+
+.mod-table__top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mod-table__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mod-table__meta {
+  margin-left: auto;
+  opacity: 0.8;
+  font-size: 13px;
+}
+
+.mod-table__select {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.mod-table__scroll {
+  overflow-x: auto;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mod-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+
+  th {
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    background: #fafafa;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+}
+
+.mod-table__cell {
+  padding: 12px 10px;
+  vertical-align: top;
+  border-top: 1px solid #f0f0f0;
+}
+
+.mod-table__cell--clickable {
+  cursor: pointer;
+
+  &:hover {
+    background: #fbfbfb;
+  }
+}
+
+.mod-table__post {
+  display: flex;
+  gap: 10px;
+}
+
+.mod-table__preview {
+  width: 72px;
+  flex: 0 0 72px;
+}
+
+.mod-table__previewImg {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  display: block;
+}
+
+.mod-table__previewFallback {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.mod-table__previewFallback--muted {
+  opacity: 0.6;
+}
+
+.mod-table__content {
+  min-width: 260px;
+  max-width: 620px;
+}
+
+.mod-table__contentTop {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.mod-table__time {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.mod-table__desc {
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
+.mod-table__desc--muted {
+  opacity: 0.6;
+}
+
+.mod-table__badges {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.mod-table__last {
+  max-width: 420px;
+}
+
+.mod-table__lastTop {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.mod-table__lastBy {
+  opacity: 0.8;
+}
+
+.mod-table__lastMsg {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.mod-table__lastMsg--muted {
+  opacity: 0.6;
+}
+
+.mod-table__lastTime {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 8px;
+}
+
+.mod-table__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mod-table__btn {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+
+  &:hover {
+    background: #f7f7f7;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.mod-table__btn--danger {
+  border-color: #f1c5c5;
+}
+
+.mod-table__empty {
+  padding: 16px;
+  opacity: 0.8;
+}
+
+.mod-table__muted {
+  opacity: 0.7;
+}
+
+.mod-table__pager {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
