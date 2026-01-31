@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  getReportedPostsTable,
-  approveReport,
-  rejectReport,
-  hidePost,
-  softDeletePost,
-  hardDeletePost,
-  type ReportStatus,
-} from "@/utils/api/mod.api";
-import ModerationPostModal from "./ModerationPostModal";
+import { useNavigate } from "react-router-dom";
+import { getReportedPostsTable, type ReportStatus } from "@/utils/api/mod.api";
 import "./ModerationTable.scss";
 
 type Row = {
@@ -54,6 +46,8 @@ function clip(text: string, max = 160) {
 }
 
 export default function ModerationTable() {
+  const navigate = useNavigate();
+
   const [status, setStatus] = useState<ReportStatus>("PENDING");
   const [skip, setSkip] = useState(0);
   const [take, setTake] = useState(20);
@@ -61,7 +55,6 @@ export default function ModerationTable() {
   const [total, setTotal] = useState(0);
   const [items, setItems] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<Row | null>(null);
 
   async function load() {
     setLoading(true);
@@ -81,33 +74,6 @@ export default function ModerationTable() {
 
   const page = useMemo(() => Math.floor(skip / take) + 1, [skip, take]);
   const pages = useMemo(() => Math.max(1, Math.ceil(total / take)), [total, take]);
-
-  const onApprove = async (row: Row) => {
-    if (!row.lastReport) return;
-    await approveReport(row.lastReport.id, { reason: "Approved in UI" });
-    await load();
-  };
-
-  const onReject = async (row: Row) => {
-    if (!row.lastReport) return;
-    await rejectReport(row.lastReport.id, { reason: "Rejected in UI" });
-    await load();
-  };
-
-  const onHide = async (row: Row) => {
-    await hidePost(row.postId, "Hidden in UI");
-    await load();
-  };
-
-  const onSoftDelete = async (row: Row) => {
-    await softDeletePost(row.postId, "Soft-deleted in UI");
-    await load();
-  };
-
-  const onHardDelete = async (row: Row) => {
-    await hardDeletePost(row.postId, "Hard-deleted in UI");
-    await load();
-  };
 
   return (
     <div className="mod-table">
@@ -140,7 +106,6 @@ export default function ModerationTable() {
               <th>Reports</th>
               <th>Last report</th>
               <th>Post status</th>
-              <th>Actions</th>
             </tr>
           </thead>
 
@@ -152,12 +117,13 @@ export default function ModerationTable() {
               const filesCount = p?.files?.length ?? 0;
 
               return (
-                <tr key={row.postId}>
-                  <td
-                    className="mod-table__cell mod-table__cell--clickable"
-                    onClick={() => setSelected(row)}
-                    title="Open details"
-                  >
+                <tr
+                  key={row.postId}
+                  className="mod-table__row"
+                  onClick={() => navigate(`/moderation/posts/${row.postId}`)}
+                  role="button"
+                >
+                  <td className="mod-table__cell mod-table__cell--clickable" title="Open case">
                     <div className="mod-table__post">
                       <div className="mod-table__preview">
                         {img ? (
@@ -227,33 +193,13 @@ export default function ModerationTable() {
                   </td>
 
                   <td className="mod-table__cell">{p?.status ?? "—"}</td>
-
-                  <td className="mod-table__cell">
-                    <div className="mod-table__actions">
-                      <button className="mod-table__btn" onClick={() => onApprove(row)} disabled={!row.lastReport}>
-                        Approve
-                      </button>
-                      <button className="mod-table__btn" onClick={() => onReject(row)} disabled={!row.lastReport}>
-                        Reject
-                      </button>
-                      <button className="mod-table__btn" onClick={() => onHide(row)}>
-                        Hide
-                      </button>
-                      <button className="mod-table__btn" onClick={() => onSoftDelete(row)}>
-                        Soft delete
-                      </button>
-                      <button className="mod-table__btn mod-table__btn--danger" onClick={() => onHardDelete(row)}>
-                        Hard delete
-                      </button>
-                    </div>
-                  </td>
                 </tr>
               );
             })}
 
             {!loading && items.length === 0 && (
               <tr>
-                <td colSpan={5} className="mod-table__empty">
+                <td colSpan={4} className="mod-table__empty">
                   No items
                 </td>
               </tr>
@@ -263,11 +209,19 @@ export default function ModerationTable() {
       </div>
 
       <div className="mod-table__pager">
-        <button className="mod-table__btn" onClick={() => setSkip(Math.max(0, skip - take))} disabled={skip === 0}>
+        <button
+          className="mod-table__btn"
+          onClick={() => setSkip(Math.max(0, skip - take))}
+          disabled={skip === 0}
+        >
           Prev
         </button>
 
-        <button className="mod-table__btn" onClick={() => setSkip(skip + take)} disabled={skip + take >= total}>
+        <button
+          className="mod-table__btn"
+          onClick={() => setSkip(skip + take)}
+          disabled={skip + take >= total}
+        >
           Next
         </button>
 
@@ -284,14 +238,6 @@ export default function ModerationTable() {
           <option value={50}>50</option>
         </select>
       </div>
-
-      <ModerationPostModal
-        open={Boolean(selected)}
-        onClose={() => setSelected(null)}
-        postId={selected?.postId ?? 0}
-        status={status}
-        post={selected?.post ?? null}
-      />
     </div>
   );
 }

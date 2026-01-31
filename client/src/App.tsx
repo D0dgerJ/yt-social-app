@@ -8,6 +8,7 @@ import Shorts from "./pages/Shorts/Shorts";
 import Events from "./pages/Events/Events";
 import Moderation from "./pages/Moderation/Moderation";
 import ModerationHistory from "@/pages/Moderation/ModerationHistory";
+import ModerationPostDetails from "@/pages/Moderation/ModerationPostDetails";
 
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -83,6 +84,10 @@ const AppInner: React.FC = () => {
         <Route
           path="/moderation"
           element={user ? <Moderation /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/moderation/posts/:postId"
+          element={user ? <ModerationPostDetails /> : <Navigate to="/login" />}
         />
         <Route
           path="/moderation/history"
