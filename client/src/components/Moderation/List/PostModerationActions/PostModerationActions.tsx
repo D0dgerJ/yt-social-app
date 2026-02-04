@@ -36,12 +36,12 @@ export default function PostModerationActions({
   const [busy, setBusy] = useState<null | "hide" | "unhide" | "soft" | "hard">(null);
 
   const isHidden = useMemo(
-    () => ((postStatus ?? "").toUpperCase().includes("HIDDEN")),
+    () => (postStatus ?? "").toUpperCase().includes("HIDDEN"),
     [postStatus]
   );
 
   const isDeleted = useMemo(
-    () => ((postStatus ?? "").toUpperCase().includes("DELETED")),
+    () => (postStatus ?? "").toUpperCase().includes("DELETED"),
     [postStatus]
   );
 

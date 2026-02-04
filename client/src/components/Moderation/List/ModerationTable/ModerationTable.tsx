@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getReportedPostsTable, type ReportStatus } from "@/utils/api/mod.api";
-import "./ModerationTable.scss";
+
+import "./ModerationTable.module.scss";
 
 type Row = {
   postId: number;
@@ -178,9 +179,13 @@ export default function ModerationTable() {
                         </div>
 
                         {row.lastReport.message ? (
-                          <div className="mod-table__lastMsg">{clip(row.lastReport.message, 220)}</div>
+                          <div className="mod-table__lastMsg">
+                            {clip(row.lastReport.message, 220)}
+                          </div>
                         ) : (
-                          <div className="mod-table__lastMsg mod-table__lastMsg--muted">(no message)</div>
+                          <div className="mod-table__lastMsg mod-table__lastMsg--muted">
+                            (no message)
+                          </div>
                         )}
 
                         <div className="mod-table__lastTime">

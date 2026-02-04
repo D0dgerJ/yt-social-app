@@ -1,0 +1,186 @@
+.usp {
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.subtitle {
+  font-weight: 600;
+  font-size: 13px;
+  margin: 12px 0 8px;
+}
+
+.muted {
+  color: #777;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.mutedText {
+  opacity: 0.75;
+  font-size: 12px;
+}
+
+.error {
+  background: #fff0f0;
+  border: 1px solid #ffd0d0;
+  color: #a60000;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.create {
+  border: 1px dashed #e3e3e3;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+}
+
+.input,
+.select {
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0 10px;
+  outline: none;
+
+  &:focus {
+    border-color: #b7b7b7;
+  }
+}
+
+.spacer {
+  height: 1px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btnPrimary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.btnDanger {
+  background: #fff;
+  color: #b00020;
+  border-color: #ffc7cf;
+}
+
+.btnGhost {
+  background: transparent;
+}
+
+.list {
+  margin-top: 12px;
+}
+
+.item {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.itemActive {
+  border-color: #111;
+}
+
+.itemTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #ddd;
+  background: #f7f7f7;
+}
+
+.status {
+  font-size: 12px;
+  color: #666;
+  margin-right: auto;
+}
+
+.reason {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.meta {
+  font-size: 12px;
+  color: #555;
+  margin-top: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.note {
+  font-size: 12px;
+  color: #444;
+  margin-top: 8px;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}

@@ -4,9 +4,9 @@ import { getReportItems } from "@/utils/api/mod.api";
 import PostGallery from "@/components/Post/parts/PostGallery";
 import PostVideos from "@/components/Post/parts/PostVideos";
 import PostFiles from "@/components/Post/parts/PostFiles";
-import UserSanctionsPanel from "./UserSanctionsPanel";
-import PostModerationActions from "./PostModerationActions";
-import ReportItemCard from "./ReportItemCard";
+import UserSanctionsPanel from "../../Panels/UserSanctionsPanel/UserSanctionsPanel";
+import PostModerationActions from "../../List/PostModerationActions/PostModerationActions";
+import ReportItemCard from "../../List/ReportItemCard/ReportItemCard";
 
 type ReportItem = {
   id: number;

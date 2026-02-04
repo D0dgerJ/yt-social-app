@@ -1,27 +1,27 @@
-.mod-table {
+:global(.mod-table) {
   width: 100%;
 }
 
-.mod-table__top {
+:global(.mod-table__top) {
   display: flex;
   gap: 12px;
   align-items: center;
   margin-bottom: 12px;
 }
 
-.mod-table__title {
+:global(.mod-table__title) {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
 }
 
-.mod-table__meta {
+:global(.mod-table__meta) {
   margin-left: auto;
   opacity: 0.8;
   font-size: 13px;
 }
 
-.mod-table__select {
+:global(.mod-table__select) {
   height: 34px;
   padding: 0 10px;
   border-radius: 10px;
@@ -29,14 +29,14 @@
   background: #fff;
 }
 
-.mod-table__scroll {
+:global(.mod-table__scroll) {
   overflow-x: auto;
   border: 1px solid #eee;
   border-radius: 12px;
   background: #fff;
 }
 
-.mod-table__table {
+:global(.mod-table__table) {
   width: 100%;
   border-collapse: collapse;
   min-width: 980px;
@@ -56,13 +56,13 @@
   }
 }
 
-.mod-table__cell {
+:global(.mod-table__cell) {
   padding: 12px 10px;
   vertical-align: top;
   border-top: 1px solid #f0f0f0;
 }
 
-.mod-table__cell--clickable {
+:global(.mod-table__cell--clickable) {
   cursor: pointer;
 
   &:hover {
@@ -70,17 +70,17 @@
   }
 }
 
-.mod-table__post {
+:global(.mod-table__post) {
   display: flex;
   gap: 10px;
 }
 
-.mod-table__preview {
+:global(.mod-table__preview) {
   width: 72px;
   flex: 0 0 72px;
 }
 
-.mod-table__previewImg {
+:global(.mod-table__previewImg) {
   width: 72px;
   height: 72px;
   object-fit: cover;
@@ -89,7 +89,7 @@
   display: block;
 }
 
-.mod-table__previewFallback {
+:global(.mod-table__previewFallback) {
   width: 72px;
   height: 72px;
   border-radius: 10px;
@@ -101,36 +101,36 @@
   opacity: 0.85;
 }
 
-.mod-table__previewFallback--muted {
+:global(.mod-table__previewFallback--muted) {
   opacity: 0.6;
 }
 
-.mod-table__content {
+:global(.mod-table__content) {
   min-width: 260px;
   max-width: 620px;
 }
 
-.mod-table__contentTop {
+:global(.mod-table__contentTop) {
   display: flex;
   gap: 8px;
   align-items: baseline;
 }
 
-.mod-table__time {
+:global(.mod-table__time) {
   font-size: 12px;
   opacity: 0.7;
 }
 
-.mod-table__desc {
+:global(.mod-table__desc) {
   margin-top: 6px;
   line-height: 1.35;
 }
 
-.mod-table__desc--muted {
+:global(.mod-table__desc--muted) {
   opacity: 0.6;
 }
 
-.mod-table__badges {
+:global(.mod-table__badges) {
   margin-top: 8px;
   display: flex;
   gap: 10px;
@@ -139,43 +139,43 @@
   opacity: 0.8;
 }
 
-.mod-table__last {
+:global(.mod-table__last) {
   max-width: 420px;
 }
 
-.mod-table__lastTop {
+:global(.mod-table__lastTop) {
   display: flex;
   gap: 8px;
   align-items: baseline;
   flex-wrap: wrap;
 }
 
-.mod-table__lastBy {
+:global(.mod-table__lastBy) {
   opacity: 0.8;
 }
 
-.mod-table__lastMsg {
+:global(.mod-table__lastMsg) {
   margin-top: 6px;
   font-size: 13px;
 }
 
-.mod-table__lastMsg--muted {
+:global(.mod-table__lastMsg--muted) {
   opacity: 0.6;
 }
 
-.mod-table__lastTime {
+:global(.mod-table__lastTime) {
   font-size: 12px;
   opacity: 0.75;
   margin-top: 8px;
 }
 
-.mod-table__actions {
+:global(.mod-table__actions) {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.mod-table__btn {
+:global(.mod-table__btn) {
   height: 32px;
   padding: 0 10px;
   border-radius: 10px;
@@ -193,20 +193,20 @@
   }
 }
 
-.mod-table__btn--danger {
+:global(.mod-table__btn--danger) {
   border-color: #f1c5c5;
 }
 
-.mod-table__empty {
+:global(.mod-table__empty) {
   padding: 16px;
   opacity: 0.8;
 }
 
-.mod-table__muted {
+:global(.mod-table__muted) {
   opacity: 0.7;
 }
 
-.mod-table__pager {
+:global(.mod-table__pager) {
   display: flex;
   gap: 8px;
   margin-top: 12px;
