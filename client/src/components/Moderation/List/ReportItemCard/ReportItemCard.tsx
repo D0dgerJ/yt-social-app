@@ -62,7 +62,9 @@ export default function ReportItemCard({
           <b>{reasonLabel[item.reason] ?? item.reason}</b>{" "}
           <span className="mod-post-modal__muted">@{item.reporter?.username ?? "unknown"}</span>
         </div>
-        <div className="mod-post-modal__muted">{new Date(item.createdAt).toLocaleString()}</div>
+        <div className="mod-post-modal__muted">
+          {new Date(item.createdAt).toLocaleString()}
+        </div>
       </div>
 
       {item.message ? (
@@ -73,11 +75,7 @@ export default function ReportItemCard({
 
       <div className="mod-post-modal__muted">
         Status: <b>{item.status}</b>
-        {item.reviewedBy ? (
-          <>
-            {" · "}Reviewed by @{item.reviewedBy.username}
-          </>
-        ) : null}
+        {item.reviewedBy ? <> · Reviewed by @{item.reviewedBy.username}</> : null}
       </div>
 
       <div className="mod-post-modal__reportActions">

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   createUserSanction,
   getUserSanctions,
@@ -7,7 +7,8 @@ import {
   type UserSanctionItem,
   type UserSanctionType,
 } from "@/utils/api/mod.api";
-import "./UserSanctionsPanel.scss";
+
+import styles from "./UserSanctionsPanel.module.scss";
 
 type Props = {
   userId: number;
@@ -121,14 +122,14 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
   }
 
   return (
-    <div className="usp">
-      <div className="usp__header">
-        <div className="usp__title">
-          Sanctions{username ? <span className="usp__muted"> — @{username}</span> : null}
+    <div className={styles.usp}>
+      <div className={styles.header}>
+        <div className={styles.title}>
+          Sanctions{username ? <span className={styles.muted}> — @{username}</span> : null}
         </div>
 
         <button
-          className="usp__btn usp__btn--ghost"
+          className={`${styles.btn} ${styles.btnGhost}`}
           type="button"
           onClick={load}
           disabled={loading || submitting}
@@ -137,14 +138,14 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
         </button>
       </div>
 
-      {error ? <div className="usp__error">{error}</div> : null}
+      {error ? <div className={styles.error}>{error}</div> : null}
 
-      <div className="usp__create">
-        <div className="usp__row">
-          <label className="usp__label">
+      <div className={styles.create}>
+        <div className={styles.row}>
+          <label className={styles.label}>
             Type
             <select
-              className="usp__select"
+              className={styles.select}
               value={type}
               onChange={(e) => setType(e.target.value as UserSanctionType)}
             >
@@ -157,10 +158,10 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
           </label>
 
           {type === "TEMP_BAN" ? (
-            <label className="usp__label">
+            <label className={styles.label}>
               Duration (hours)
               <input
-                className="usp__input"
+                className={styles.input}
                 type="number"
                 min={1}
                 max={24 * 365}
@@ -169,33 +170,33 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
               />
             </label>
           ) : (
-            <div className="usp__spacer" />
+            <div className={styles.spacer} />
           )}
         </div>
 
-        <label className="usp__label">
+        <label className={styles.label}>
           Reason *
           <input
-            className="usp__input"
+            className={styles.input}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="e.g. spam, harassment, repeated policy violations..."
           />
         </label>
 
-        <label className="usp__label">
+        <label className={styles.label}>
           Message (optional)
           <input
-            className="usp__input"
+            className={styles.input}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Internal note or message to include in metadata"
           />
         </label>
 
-        <div className="usp__actions">
+        <div className={styles.actions}>
           <button
-            className="usp__btn usp__btn--primary"
+            className={`${styles.btn} ${styles.btnPrimary}`}
             type="button"
             onClick={onCreate}
             disabled={submitting || loading}
@@ -205,28 +206,31 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
           </button>
 
           {type === "TEMP_BAN" ? (
-            <div className="usp__hint">
+            <div className={styles.hint}>
               Will set endsAt = now + {tempBanHours}h ({formatDate(buildEndsAt())})
             </div>
           ) : null}
         </div>
       </div>
 
-      <div className="usp__list">
-        <div className="usp__subtitle">History</div>
+      <div className={styles.list}>
+        <div className={styles.subtitle}>History</div>
 
-        {loading ? <div className="usp__muted">Loading...</div> : null}
-        {!loading && items.length === 0 ? <div className="usp__muted">No sanctions</div> : null}
+        {loading ? <div className={styles.mutedText}>Loading...</div> : null}
+        {!loading && items.length === 0 ? <div className={styles.mutedText}>No sanctions</div> : null}
 
         {items.map((s) => (
-          <div key={s.id} className={`usp__item ${s.status === "ACTIVE" ? "usp__item--active" : ""}`}>
-            <div className="usp__itemTop">
-              <div className="usp__badge">{s.type}</div>
-              <div className="usp__status">{s.status}</div>
+          <div
+            key={s.id}
+            className={`${styles.item} ${s.status === "ACTIVE" ? styles.itemActive : ""}`}
+          >
+            <div className={styles.itemTop}>
+              <div className={styles.badge}>{s.type}</div>
+              <div className={styles.status}>{s.status}</div>
 
               {s.status === "ACTIVE" ? (
                 <button
-                  className="usp__btn usp__btn--danger"
+                  className={`${styles.btn} ${styles.btnDanger}`}
                   type="button"
                   onClick={() => onLift(s.id)}
                   disabled={submitting}
@@ -236,9 +240,9 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
               ) : null}
             </div>
 
-            <div className="usp__reason">{s.reason}</div>
+            <div className={styles.reason}>{s.reason}</div>
 
-            <div className="usp__meta">
+            <div className={styles.meta}>
               <div>Starts: {formatDate(s.startsAt)}</div>
               <div>Ends: {formatDate(s.endsAt)}</div>
               <div>
@@ -253,7 +257,7 @@ export default function UserSanctionsPanel({ userId, username, defaultEvidence }
               {s.liftReason ? <div>Lift reason: {s.liftReason}</div> : null}
             </div>
 
-            {s.message ? <div className="usp__note">Note: {s.message}</div> : null}
+            {s.message ? <div className={styles.note}>Note: {s.message}</div> : null}
           </div>
         ))}
       </div>

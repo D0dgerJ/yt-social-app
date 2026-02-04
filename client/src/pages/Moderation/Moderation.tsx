@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar/Navbar";
 import Sidebar from "@/components/Sidebar/Sidebar";
-import ModerationTable from "@/components/Moderation/ModerationTable";
+import ModerationTable from "@/components/Moderation/List/ModerationTable/ModerationTable";
 import styles from "./Moderation.module.scss";
 
 const ALLOWED = new Set(["MODERATOR", "ADMIN", "OWNER"]);

@@ -9,7 +9,7 @@ import {
   type ModerationActionType,
   type ModerationTargetType,
 } from "@/utils/api/mod.api";
-import ModerationActionModal from "@/components/Moderation/ModerationActionModal";
+import ModerationActionModal from "@/components/Moderation/Modals/ModerationActionModal";
 import styles from "./ModerationHistory.module.scss";
 
 const ALLOWED = new Set(["MODERATOR", "ADMIN", "OWNER"]);
