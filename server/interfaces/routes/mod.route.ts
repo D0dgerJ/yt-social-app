@@ -15,6 +15,8 @@ import { ModerationActionType, ModerationTargetType, ReportStatus, UserSanctionT
 import { applyUserSanction } from "../../application/services/moderation/applyUserSanction.ts";
 import { liftUserSanction } from "../../application/services/moderation/liftUserSanction.ts";
 import { getUserSanctions } from "../../application/services/moderation/getUserSanctions.ts";
+import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.ts";
+import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
 
 const router = Router();
 
@@ -417,6 +419,91 @@ router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator,
     });
 
     res.status(200).json({ ok: true, report: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// -------------------- moderation users (UI table) --------------------
+
+/**
+ * GET /api/v1/mod/users
+ * q: поиск по id (точно), username/email (contains)
+ * status: ALL | BANNED | RESTRICTED | SANCTIONED | CLEAN
+ * sortBy: id | username | email | role
+ * order: asc | desc
+ * page: 1..n
+ * limit: 1..100
+ */
+
+function getPage(query: any): number {
+  const raw = Number(query?.page ?? 1);
+  if (!Number.isFinite(raw)) return 1;
+  return Math.max(1, Math.floor(raw));
+}
+
+function getLimit(query: any): number {
+  const raw = Number(query?.limit ?? 20);
+  if (!Number.isFinite(raw)) return 20;
+  return Math.min(100, Math.max(1, Math.floor(raw)));
+}
+
+function getSortBy(query: any): "id" | "username" | "email" | "role" {
+  const raw = typeof query?.sortBy === "string" ? query.sortBy.trim() : "";
+  if (raw === "username" || raw === "email" || raw === "role" || raw === "id") return raw;
+  return "id";
+}
+
+function getOrder(query: any): "asc" | "desc" {
+  const raw = typeof query?.order === "string" ? query.order.trim() : "";
+  if (raw === "asc" || raw === "desc") return raw;
+  return "desc";
+}
+
+function getUsersStatus(query: any): "ALL" | "BANNED" | "RESTRICTED" | "SANCTIONED" | "CLEAN" {
+  const raw = typeof query?.status === "string" ? query.status.trim() : "";
+  if (raw === "ALL" || raw === "BANNED" || raw === "RESTRICTED" || raw === "SANCTIONED" || raw === "CLEAN") return raw;
+  return "ALL";
+}
+
+router.get("/users", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const status = getUsersStatus(req.query);
+    const sortBy = getSortBy(req.query);
+    const order = getOrder(req.query);
+    const page = getPage(req.query);
+    const limit = getLimit(req.query);
+
+    const result = await getModerationUsers({
+      q: q || undefined,
+      status,
+      sortBy,
+      order,
+      page,
+      limit,
+    });
+
+    res.status(200).json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/v1/mod/users/:userId
+ * Детали пользователя для модалки/страницы модерации:
+ * - user (поля профиля)
+ * - activeSanctions + recentSanctions
+ * - sanctionsSummary (isBanned/isRestricted/lastSanctionAt)
+ * - последние moderation actions по этому USER
+ */
+router.get("/users/:userId", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const userId = parseId(req.params.userId, "Invalid userId");
+    const data = await getModerationUserById(userId);
+
+    res.status(200).json({ ok: true, ...data });
   } catch (err) {
     next(err);
   }
