@@ -27,13 +27,23 @@ export default function Moderation() {
           <div className={styles.header}>
             <h2 className={styles.title}>Moderation</h2>
 
-            <button
-              className={styles.historyBtn}
-              type="button"
-              onClick={() => navigate("/moderation/history")}
-            >
-              Open history
-            </button>
+            <div className={styles.actions}>
+              <button
+                className={styles.usersBtn}
+                type="button"
+                onClick={() => navigate("/moderation/users")}
+              >
+                Users
+              </button>
+
+              <button
+                className={styles.historyBtn}
+                type="button"
+                onClick={() => navigate("/moderation/history")}
+              >
+                Open history
+              </button>
+            </div>
           </div>
 
           <ModerationTable />

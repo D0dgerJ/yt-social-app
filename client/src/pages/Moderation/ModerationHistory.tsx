@@ -35,6 +35,14 @@ function clip(text: string, max = 80) {
   return `${t.slice(0, max)}…`;
 }
 
+function toPositiveInt(raw: unknown): number | null {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  const i = Math.floor(n);
+  if (i <= 0) return null;
+  return i;
+}
+
 export default function ModerationHistory() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -180,30 +188,51 @@ export default function ModerationHistory() {
               </thead>
 
               <tbody>
-                {items.map((a) => (
-                  <tr
-                    key={a.id}
-                    className={styles.rowClickable}
-                    onClick={() => setSelectedActionId(a.id)}
-                    title="Open evidence"
-                  >
-                    <td className={styles.nowrap}>{new Date(a.createdAt).toLocaleString()}</td>
+                {items.map((a) => {
+                  const userId = a.targetType === "USER" ? toPositiveInt(a.targetId) : null;
 
-                    <td>{a.actor?.username ? `@${a.actor.username}` : a.actorId ? `#${a.actorId}` : "system"}</td>
+                  return (
+                    <tr
+                      key={a.id}
+                      className={styles.rowClickable}
+                      onClick={() => setSelectedActionId(a.id)}
+                      title="Open evidence"
+                    >
+                      <td className={styles.nowrap}>{new Date(a.createdAt).toLocaleString()}</td>
 
-                    <td>
-                      <b>{a.actionType}</b>
-                    </td>
+                      <td>{a.actor?.username ? `@${a.actor.username}` : a.actorId ? `#${a.actorId}` : "system"}</td>
 
-                    <td>
-                      {a.targetType} #{a.targetId}
-                    </td>
+                      <td>
+                        <b>{a.actionType}</b>
+                      </td>
 
-                    <td className={styles.reason}>
-                      {a.reason ? clip(a.reason, 120) : <span className={styles.muted}>—</span>}
-                    </td>
-                  </tr>
-                ))}
+                      <td>
+                        {userId ? (
+                          <button
+                            type="button"
+                            className={styles.userLink}
+                            title="Open user moderation"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/moderation/users?open=${userId}`);
+                            }}
+                          >
+                            USER #{userId}
+                          </button>
+                        ) : (
+                          <span>
+                            {a.targetType} #{a.targetId}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className={styles.reason}>
+                        {a.reason ? clip(a.reason, 120) : <span className={styles.muted}>—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {!loading && items.length === 0 && (
                   <tr>

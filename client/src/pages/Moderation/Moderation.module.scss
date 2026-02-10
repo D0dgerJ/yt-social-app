@@ -5,7 +5,7 @@
 .main {
   flex: 1;
   padding: 20px;
-  min-width: 0; 
+  min-width: 0;
 }
 
 .header {
@@ -21,8 +21,30 @@
   font-weight: 700;
 }
 
-.historyBtn {
+.actions {
   margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.usersBtn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+
+  &:hover {
+    background: #f7f7f7;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.historyBtn {
   height: 34px;
   padding: 0 12px;
   border-radius: 10px;
