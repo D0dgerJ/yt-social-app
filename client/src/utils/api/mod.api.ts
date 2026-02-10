@@ -1,4 +1,11 @@
 import axios from "./axiosInstance";
+import type {
+  GetModerationUserByIdResponse,
+  GetModerationUsersResponse,
+  ModerationUsersOrder,
+  ModerationUsersSortBy,
+  ModerationUsersStatusFilter,
+} from "@/utils/types/moderation/moderationUsers.types";
 
 export type ReportStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -103,6 +110,35 @@ export const rejectReport = async (
 ) => {
   const response = await axios.post(`/mod/reports/posts/${reportId}/reject`, payload);
   return response.data;
+};
+
+// -------------------- Moderation users (UI table) --------------------
+
+export const getModerationUsers = async (params?: {
+  q?: string;
+  status?: ModerationUsersStatusFilter;
+  sortBy?: ModerationUsersSortBy;
+  order?: ModerationUsersOrder;
+  page?: number;
+  limit?: number;
+}) => {
+  const search = new URLSearchParams();
+
+  if (params?.q) search.set("q", params.q);
+  if (params?.status) search.set("status", params.status);
+  if (params?.sortBy) search.set("sortBy", params.sortBy);
+  if (params?.order) search.set("order", params.order);
+  if (typeof params?.page === "number") search.set("page", String(params.page));
+  if (typeof params?.limit === "number") search.set("limit", String(params.limit));
+
+  const qs = search.toString();
+  const response = await axios.get(`/mod/users${qs ? `?${qs}` : ""}`);
+  return response.data as GetModerationUsersResponse;
+};
+
+export const getModerationUserById = async (userId: number) => {
+  const response = await axios.get(`/mod/users/${userId}`);
+  return response.data as GetModerationUserByIdResponse;
 };
 
 // --- User sanctions ---

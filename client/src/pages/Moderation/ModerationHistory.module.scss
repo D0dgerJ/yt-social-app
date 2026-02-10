@@ -137,3 +137,17 @@
   margin-top: 12px;
   align-items: center;
 }
+
+.userLink {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.9;
+
+  &:hover {
+    opacity: 1;
+  }
+}

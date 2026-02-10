@@ -9,6 +9,7 @@ import Events from "./pages/Events/Events";
 import Moderation from "./pages/Moderation/Moderation";
 import ModerationHistory from "@/pages/Moderation/ModerationHistory";
 import ModerationPostDetails from "@/pages/Moderation/ModerationPostDetails";
+import ModerationUsers from "@/pages/Moderation/ModerationUsers";
 
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -56,43 +57,18 @@ const AppInner: React.FC = () => {
     <>
       <ToastContainer />
       <Routes>
-        <Route
-          path="/"
-          element={user ? <Home /> : <Navigate to="/register" />}
-        />
+        <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
         <Route path="/profile/:username" element={<Profile />} />
-        <Route
-          path="/shorts"
-          element={user ? <Shorts /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/chat"
-          element={user ? <Chat /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/events"
-          element={user ? <Events /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/register"
-          element={user ? <Navigate to="/" /> : <Register />}
-        />
-        <Route
-          path="/login"
-          element={user ? <Navigate to="/" /> : <Login />}
-        />
-        <Route
-          path="/moderation"
-          element={user ? <Moderation /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/moderation/posts/:postId"
-          element={user ? <ModerationPostDetails /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/moderation/history"
-          element={user ? <ModerationHistory /> : <Navigate to="/login" />}
-        />
+        <Route path="/shorts" element={user ? <Shorts /> : <Navigate to="/login" />} />
+        <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
+        <Route path="/events" element={user ? <Events /> : <Navigate to="/login" />} />
+        <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+        <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+
+        <Route path="/moderation" element={user ? <Moderation /> : <Navigate to="/login" />} />
+        <Route path="/moderation/users" element={user ? <ModerationUsers /> : <Navigate to="/login" />} />
+        <Route path="/moderation/posts/:postId" element={user ? <ModerationPostDetails /> : <Navigate to="/login" />} />
+        <Route path="/moderation/history" element={user ? <ModerationHistory /> : <Navigate to="/login" />} />
       </Routes>
 
       <FloatingChatWindow />
