@@ -1,5 +1,5 @@
 import type { Prisma, UserSanctionStatus, UserSanctionType } from "@prisma/client";
-import { UserSanctionStatus as UserSanctionStatusEnum } from "@prisma/client";
+import { UserSanctionStatus as UserSanctionStatusEnum, UserSanctionType as UserSanctionTypeEnum } from "@prisma/client";
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 
 export type ModerationUsersStatusFilter = "ALL" | "BANNED" | "RESTRICTED" | "SANCTIONED" | "CLEAN";
@@ -56,11 +56,12 @@ function normalizeQuery(q?: string): { id?: number; text?: string } {
   return { text: raw };
 }
 
-function buildWhere(params: GetModerationUsersParams): Prisma.UserWhereInput {
-  const now = new Date();
+function buildWhere(params: GetModerationUsersParams, now: Date): Prisma.UserWhereInput {
   const { id, text } = normalizeQuery(params.q);
   const status = params.status ?? "ALL";
 
+  // Единая логика "активной" санкции:
+  // ACTIVE && (endsAt == null || endsAt > now)
   const activeSanctionFilter: Prisma.UserSanctionWhereInput = {
     status: UserSanctionStatusEnum.ACTIVE,
     OR: [{ endsAt: null }, { endsAt: { gt: now } }],
@@ -82,7 +83,7 @@ function buildWhere(params: GetModerationUsersParams): Prisma.UserWhereInput {
     where.sanctions = {
       some: {
         ...activeSanctionFilter,
-        type: { in: ["TEMP_BAN", "PERM_BAN"] },
+        type: { in: [UserSanctionTypeEnum.TEMP_BAN, UserSanctionTypeEnum.PERM_BAN] },
       },
     };
   }
@@ -91,7 +92,7 @@ function buildWhere(params: GetModerationUsersParams): Prisma.UserWhereInput {
     where.sanctions = {
       some: {
         ...activeSanctionFilter,
-        type: "RESTRICT",
+        type: UserSanctionTypeEnum.RESTRICT,
       },
     };
   }
@@ -131,10 +132,12 @@ export async function getModerationUsers(params: GetModerationUsersParams = {}):
 
   const sortBy = params.sortBy ?? "id";
   const order = params.order ?? "desc";
-  const where = buildWhere(params);
-  const orderBy = buildOrderBy(sortBy, order);
 
   const now = new Date();
+
+  const where = buildWhere(params, now);
+  const orderBy = buildOrderBy(sortBy, order);
+
   const activeSanctionsWhere: Prisma.UserSanctionWhereInput = {
     status: UserSanctionStatusEnum.ACTIVE,
     OR: [{ endsAt: null }, { endsAt: { gt: now } }],
@@ -172,8 +175,10 @@ export async function getModerationUsers(params: GetModerationUsersParams = {}):
   const items: ModerationUserListItem[] = itemsRaw.map((u) => {
     const activeSanctions = u.sanctions;
 
-    const isBanned = activeSanctions.some((s) => s.type === "TEMP_BAN" || s.type === "PERM_BAN");
-    const isRestricted = activeSanctions.some((s) => s.type === "RESTRICT");
+    const isBanned = activeSanctions.some(
+      (s) => s.type === UserSanctionTypeEnum.TEMP_BAN || s.type === UserSanctionTypeEnum.PERM_BAN
+    );
+    const isRestricted = activeSanctions.some((s) => s.type === UserSanctionTypeEnum.RESTRICT);
     const lastSanctionAt = activeSanctions.length ? activeSanctions[0].createdAt : null;
 
     return {

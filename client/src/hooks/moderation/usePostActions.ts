@@ -24,6 +24,16 @@ type Params = {
 
 type Fn = "hide" | "unhide" | "soft" | "hard";
 
+function getHttpStatus(e: any): number | null {
+  const s = e?.response?.status;
+  return typeof s === "number" ? s : null;
+}
+
+function includesApprovedHint(msg: string): boolean {
+  const m = msg.toLowerCase();
+  return m.includes("requires approved report") || m.includes("approved report");
+}
+
 export function usePostActions({
   postId,
   activeReportId,
@@ -53,10 +63,7 @@ export function usePostActions({
     const lastHide = sorted.find((a) => a.actionType === "CONTENT_HIDDEN");
     const lastUnhide = sorted.find((a) => a.actionType === "CONTENT_UNHIDDEN");
 
-    if (
-      lastHide &&
-      (!lastUnhide || new Date(lastHide.createdAt) > new Date(lastUnhide.createdAt))
-    ) {
+    if (lastHide && (!lastUnhide || new Date(lastHide.createdAt) > new Date(lastUnhide.createdAt))) {
       return "HIDDEN";
     }
 
@@ -66,10 +73,8 @@ export function usePostActions({
   const canUsePostActions = hasApprovedReport && !isSubmittingAction;
   const canHide = canUsePostActions && lastState === "ACTIVE" && isActionNoteValid;
   const canUnhide = canUsePostActions && lastState === "HIDDEN" && isActionNoteValid;
-  const canSoftDelete =
-    canUsePostActions && lastState !== "DELETED" && isActionNoteValid && isAdminPlus;
-  const canHardDelete =
-    canUsePostActions && lastState !== "DELETED" && isActionNoteValid && isAdminPlus;
+  const canSoftDelete = canUsePostActions && lastState !== "DELETED" && isActionNoteValid && isAdminPlus;
+  const canHardDelete = canUsePostActions && lastState !== "DELETED" && isActionNoteValid && isAdminPlus;
 
   const postActionsHint = !hasApprovedReport
     ? "Post actions доступны только после APPROVED report."
@@ -97,8 +102,9 @@ export function usePostActions({
       }
     } catch (e: any) {
       const parsed = extractApiError(e);
+      const status = getHttpStatus(e);
 
-      if (e?.response?.status === 409 && parsed.details?.already) {
+      if (status === 409 && parsed.details?.already) {
         const a = parsed.details.already;
         setAlreadyHandled({
           actionType: a.actionType ?? "CONFLICT",
@@ -109,8 +115,20 @@ export function usePostActions({
         });
       }
 
-      setActionError(parsed.message);
+      if (status === 403) {
+        if (includesApprovedHint(parsed.message)) {
+          setActionError("Нужно сначала одобрить жалобу (APPROVE report), затем можно выполнять действия с постом.");
+        } else {
+          setActionError(parsed.message || "Forbidden");
+        }
+      } else {
+        setActionError(parsed.message);
+      }
+
       await refreshActions();
+      if (activeReportId !== null) {
+        await reloadActiveReport();
+      }
     } finally {
       setIsSubmittingAction(false);
     }

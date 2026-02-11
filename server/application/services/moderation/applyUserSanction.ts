@@ -17,31 +17,47 @@ function mapActionType(type: UserSanctionType): ModerationActionType {
   if (type === UserSanctionType.RESTRICT) return ModerationActionType.USER_RESTRICTED;
   if (type === UserSanctionType.TEMP_BAN) return ModerationActionType.USER_BANNED;
   if (type === UserSanctionType.PERM_BAN) return ModerationActionType.USER_BANNED;
-  return ModerationActionType.NOTE; 
+  return ModerationActionType.NOTE;
 }
 
 export async function applyUserSanction(input: ApplyUserSanctionInput) {
   const { actorId, userId, type, reason, message, evidence, endsAt } = input;
 
+  const now = new Date();
+
   const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!target) throw Errors.notFound("User not found");
 
+  // Единая логика "активной" санкции:
+  // ACTIVE && (endsAt == null || endsAt > now)
   const existing = await prisma.userSanction.findFirst({
     where: {
       userId,
       status: UserSanctionStatus.ACTIVE,
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
       type: { in: [UserSanctionType.RESTRICT, UserSanctionType.TEMP_BAN, UserSanctionType.PERM_BAN] },
     },
     orderBy: { createdAt: "desc" },
-    select: { id: true, type: true },
+    select: { id: true, type: true, endsAt: true },
   });
 
-  if (existing && (type === UserSanctionType.RESTRICT || type === UserSanctionType.TEMP_BAN || type === UserSanctionType.PERM_BAN)) {
-    throw Errors.conflict("User already has an active sanction", { existingSanctionId: existing.id, existingType: existing.type });
+  if (
+    existing &&
+    (type === UserSanctionType.RESTRICT || type === UserSanctionType.TEMP_BAN || type === UserSanctionType.PERM_BAN)
+  ) {
+    throw Errors.conflict("User already has an active sanction", {
+      existingSanctionId: existing.id,
+      existingType: existing.type,
+      existingEndsAt: existing.endsAt?.toISOString() ?? null,
+    });
   }
 
   if (type === UserSanctionType.TEMP_BAN && !endsAt) {
     throw Errors.validation("endsAt is required for TEMP_BAN");
+  }
+
+  if ((type === UserSanctionType.TEMP_BAN || type === UserSanctionType.RESTRICT) && endsAt && endsAt <= now) {
+    throw Errors.validation("endsAt must be in the future");
   }
 
   const sanction = await prisma.userSanction.create({
