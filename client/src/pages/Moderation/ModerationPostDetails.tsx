@@ -47,8 +47,7 @@ export default function ModerationPostDetails() {
     refreshCase,
   } = useModerationReports(postId);
 
-  const { activeFullReport, isLoadingActive, reloadActiveReport } =
-    useActiveReport(activeReportId);
+  const { activeFullReport, isLoadingActive, reloadActiveReport } = useActiveReport(activeReportId);
 
   const {
     actions: modActions,
@@ -71,8 +70,7 @@ export default function ModerationPostDetails() {
     },
   });
 
-  const post: ModerationPostView | null =
-    activeFullReport?.post ?? activeLite?.post ?? null;
+  const post: ModerationPostView | null = activeFullReport?.post ?? activeLite?.post ?? null;
 
   const images: string[] = post?.images ?? [];
   const videos: string[] = post?.videos ?? [];
@@ -80,7 +78,7 @@ export default function ModerationPostDetails() {
   const tags: string[] = post?.tags ?? [];
   const location: string | null = post?.location ?? null;
 
-  const hasApprovedReport = counts.APPROVED > 0;
+  const hasApprovedReport = (counts?.APPROVED ?? 0) > 0;
 
   const postActions = usePostActions({
     postId,
@@ -113,7 +111,6 @@ export default function ModerationPostDetails() {
           <TopStats counts={counts} styles={styles} />
 
           <div className={styles.grid}>
-            {/* LEFT: Post preview */}
             <PostPreviewCard
               styles={styles}
               isLoading={isLoading}
@@ -127,7 +124,6 @@ export default function ModerationPostDetails() {
               fmt={fmt}
             />
 
-            {/* RIGHT: Reports list + details */}
             <ReportsCard
               styles={styles}
               isLoading={isLoading}
@@ -141,7 +137,6 @@ export default function ModerationPostDetails() {
             />
           </div>
 
-          {/* Block 4 + Block 5 */}
           <div className={styles.nextBlocks}>
             <DecisionDraftCard
               styles={styles}
@@ -183,12 +178,7 @@ export default function ModerationPostDetails() {
             />
           </div>
 
-          <ActionsHistory
-            styles={styles}
-            items={modActions}
-            isLoading={isLoadingActions}
-            fmt={fmt}
-          />
+          <ActionsHistory styles={styles} items={modActions} isLoading={isLoadingActions} fmt={fmt} />
         </div>
       </div>
     </>

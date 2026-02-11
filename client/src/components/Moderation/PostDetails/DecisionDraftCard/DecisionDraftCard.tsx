@@ -61,6 +61,12 @@ export default function DecisionDraftCard({
 
       {decisionError ? <div className={styles.decisionError}>{decisionError}</div> : null}
 
+      {!isPendingActive ? (
+        <div className={styles.hint}>
+          Этот репорт уже рассмотрен. Выберите другой репорт со статусом <b>PENDING</b>.
+        </div>
+      ) : null}
+
       <div className={styles.formRow}>
         <div className={styles.label}>Decision *</div>
         <div className={styles.radioRow}>
@@ -130,11 +136,7 @@ export default function DecisionDraftCard({
           className={`${styles.approveBtn} ${canApprove ? styles.btnActive : ""}`}
           disabled={!canApprove}
           onClick={onApprove}
-          title={
-            canApprove
-              ? "Approve report"
-              : "Fill decision + category + note, and make sure report is PENDING"
-          }
+          title={canApprove ? "Approve report" : "Fill decision + category + note, and make sure report is PENDING"}
         >
           {isSubmittingDecision ? "Working…" : "Approve report"}
         </button>
@@ -144,16 +146,16 @@ export default function DecisionDraftCard({
           className={`${styles.rejectBtn} ${canReject ? styles.btnDangerActive : ""}`}
           disabled={!canReject}
           onClick={onReject}
-          title={
-            canReject ? "Reject report" : "Fill decision + note, and make sure report is PENDING"
-          }
+          title={canReject ? "Reject report" : "Fill decision + note, and make sure report is PENDING"}
         >
           {isSubmittingDecision ? "Working…" : "Reject report"}
         </button>
       </div>
 
       <div className={styles.mutedSmall}>
-        Сначала выбери решение и напиши обоснование — только после этого кнопки станут активны.
+        {isPendingActive
+          ? "Сначала выбери решение и напиши обоснование — только после этого кнопки станут активны."
+          : "Решение по этому репорту уже принято. Для действий выбери другой PENDING репорт."}
       </div>
     </div>
   );

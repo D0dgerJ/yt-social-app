@@ -4,18 +4,30 @@ import type { DraftDecision, ReportItem } from "@/utils/types/moderation/postDet
 
 type Params = {
   activeLite: ReportItem | null;
-  onAfterDecision: () => Promise<void>; // refreshCase + refreshActions снаружи (чтобы не менять логику)
+  onAfterDecision: () => Promise<void>; 
 };
 
+function getHttpStatus(e: any): number | null {
+  const s = e?.response?.status;
+  return typeof s === "number" ? s : null;
+}
+
+function getMessage(e: any, fallback: string): string {
+  const apiMsg =
+    typeof e?.response?.data?.message === "string" ? e.response.data.message : null;
+
+  if (apiMsg && apiMsg.trim()) return apiMsg;
+  if (typeof e?.message === "string" && e.message.trim()) return e.message;
+  return fallback;
+}
+
 export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
-  // --- Decision draft (Block 4) ---
   const [draftDecision, setDraftDecision] = useState<DraftDecision>("");
   const [draftCategory, setDraftCategory] = useState<string>("other");
   const [draftNote, setDraftNote] = useState<string>("");
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false);
   const [decisionError, setDecisionError] = useState<string>("");
 
-  // --- Decision gating ---
   const isPendingActive = activeLite?.status === "PENDING";
 
   const noteTrimmed = draftNote.trim();
@@ -59,7 +71,15 @@ export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
 
       await onAfterDecision();
     } catch (e: any) {
-      setDecisionError(e?.message || "Failed to approve report");
+      const status = getHttpStatus(e);
+
+      if (status === 409) {
+        setDecisionError("Этот репорт уже рассмотрен другим модератором.");
+        await onAfterDecision(); 
+        return;
+      }
+
+      setDecisionError(getMessage(e, "Failed to approve report"));
     } finally {
       setIsSubmittingDecision(false);
     }
@@ -83,14 +103,21 @@ export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
 
       await onAfterDecision();
     } catch (e: any) {
-      setDecisionError(e?.message || "Failed to reject report");
+      const status = getHttpStatus(e);
+
+      if (status === 409) {
+        setDecisionError("Этот репорт уже рассмотрен другим модератором.");
+        await onAfterDecision();
+        return;
+      }
+
+      setDecisionError(getMessage(e, "Failed to reject report"));
     } finally {
       setIsSubmittingDecision(false);
     }
   }
 
   return {
-    // state
     draftDecision,
     setDraftDecision,
     draftCategory,
@@ -101,7 +128,6 @@ export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
     decisionError,
     setDecisionError,
 
-    // derived
     isPendingActive,
     noteTrimmed,
     noteLen: noteTrimmed.length,
@@ -109,7 +135,6 @@ export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
     canReject,
     decisionHint,
 
-    // actions
     onApprove: handleApprove,
     onReject: handleReject,
   };

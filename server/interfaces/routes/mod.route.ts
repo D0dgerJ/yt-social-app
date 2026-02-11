@@ -10,7 +10,13 @@ import { logModerationAction } from "../../application/services/moderation/logMo
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import { requireModerator, requireAdmin } from "../../infrastructure/middleware/requireRole.ts";
 
-import { ModerationActionType, ModerationTargetType, ReportStatus, UserSanctionType, UserRole } from "@prisma/client";
+import {
+  ModerationActionType,
+  ModerationTargetType,
+  ReportStatus,
+  UserSanctionType,
+  UserRole,
+} from "@prisma/client";
 
 import { applyUserSanction } from "../../application/services/moderation/applyUserSanction.ts";
 import { liftUserSanction } from "../../application/services/moderation/liftUserSanction.ts";
@@ -19,6 +25,21 @@ import { getModerationUsers } from "../../application/services/moderation/getMod
 import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
 
 const router = Router();
+
+const ROLE_RANK: Record<UserRole, number> = {
+  USER: 0,
+  MODERATOR: 1,
+  ADMIN: 2,
+  OWNER: 3,
+};
+
+function getEffectiveRole(dbRole: UserRole, isAdmin: boolean): UserRole {
+  if (isAdmin && ROLE_RANK[dbRole] < ROLE_RANK[UserRole.ADMIN]) {
+    return UserRole.ADMIN;
+  }
+
+  return dbRole;
+}
 
 function parseId(raw: unknown, message: string) {
   const n = Number(raw);
@@ -90,6 +111,8 @@ router.post("/posts/:id/hide", authMiddleware, requireModerator, async (req, res
     const postId = parseId(req.params.id, "Invalid post id");
     const reason = getReason(req.body);
 
+    await assertHasApprovedReport(postId);
+
     const post = await hidePost({ actorId: req.user!.id, postId, reason });
     res.status(200).json({ ok: true, post });
   } catch (err) {
@@ -101,6 +124,8 @@ router.post("/posts/:id/unhide", authMiddleware, requireModerator, async (req, r
   try {
     const postId = parseId(req.params.id, "Invalid post id");
     const reason = getReason(req.body);
+
+    await assertHasApprovedReport(postId);
 
     const post = await unhidePost({ actorId: req.user!.id, postId, reason });
     res.status(200).json({ ok: true, post });
@@ -181,7 +206,8 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
     });
 
     const groups = groupsRaw.filter(
-      (g): g is (typeof groupsRaw)[number] & { postId: number } => typeof g.postId === "number" && Number.isFinite(g.postId)
+      (g): g is (typeof groupsRaw)[number] & { postId: number } =>
+        typeof g.postId === "number" && Number.isFinite(g.postId)
     );
 
     const totalRaw = await prisma.postReport.groupBy({
@@ -194,7 +220,8 @@ router.get("/reports/posts", authMiddleware, requireModerator, async (req, res, 
     });
 
     const total = totalRaw.filter(
-      (g): g is (typeof totalRaw)[number] & { postId: number } => typeof g.postId === "number" && Number.isFinite(g.postId)
+      (g): g is (typeof totalRaw)[number] & { postId: number } =>
+        typeof g.postId === "number" && Number.isFinite(g.postId)
     );
 
     const postIds = groups.map((g) => g.postId);
@@ -357,15 +384,28 @@ router.post("/reports/posts/:reportId/approve", authMiddleware, requireModerator
 
     const decisionMessage = getMessage(req.body);
 
-    const updated = await prisma.postReport.update({
-      where: { id: reportId },
+    // Обновляем только если репорт ещё PENDING
+    const result = await prisma.postReport.updateMany({
+      where: { id: reportId, status: ReportStatus.PENDING },
       data: {
         status: ReportStatus.APPROVED,
         reviewedAt: new Date(),
         reviewedById: req.user!.id,
       },
+    });
+
+    if (result.count !== 1) {
+      // либо не найден, либо уже рассмотрен
+      throw Errors.conflict("Report is not pending or does not exist");
+    }
+
+    const updated = await prisma.postReport.findUnique({
+      where: { id: reportId },
       select: { id: true, postId: true, reporterId: true, status: true, reviewedAt: true, reviewedById: true },
     });
+
+    // На всякий случай (хотя count=1 гарантирует, что он есть)
+    if (!updated) throw Errors.notFound("Report not found");
 
     await logModerationAction({
       actorId: req.user!.id,
@@ -395,15 +435,27 @@ router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator,
 
     const decisionMessage = getMessage(req.body);
 
-    const updated = await prisma.postReport.update({
-      where: { id: reportId },
+    // Обновляем только если репорт ещё PENDING
+    const result = await prisma.postReport.updateMany({
+      where: { id: reportId, status: ReportStatus.PENDING },
       data: {
         status: ReportStatus.REJECTED,
         reviewedAt: new Date(),
         reviewedById: req.user!.id,
       },
+    });
+
+    if (result.count !== 1) {
+      // либо не найден, либо уже рассмотрен
+      throw Errors.conflict("Report is not pending or does not exist");
+    }
+
+    const updated = await prisma.postReport.findUnique({
+      where: { id: reportId },
       select: { id: true, postId: true, reporterId: true, status: true, reviewedAt: true, reviewedById: true },
     });
+
+    if (!updated) throw Errors.notFound("Report not found");
 
     await logModerationAction({
       actorId: req.user!.id,
@@ -523,14 +575,32 @@ router.post("/users/:userId/sanctions", authMiddleware, requireModerator, async 
     const endsAt = getEndsAt(req.body);
     const evidence = getEvidence(req.body);
 
-    if (type === UserSanctionType.PERM_BAN) {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: req.user!.id },
-        select: { role: true },
-      });
+    if (userId === req.user!.id) {
+      throw Errors.forbidden("Forbidden: cannot sanction yourself");
+    }
 
-      const role = dbUser?.role;
-      if (role !== UserRole.ADMIN && role !== UserRole.OWNER) {
+    const [actorDb, targetDb] = await prisma.$transaction([
+      prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: { role: true, isAdmin: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true, isAdmin: true },
+      }),
+    ]);
+
+    if (!targetDb) throw Errors.notFound("User not found");
+
+    const actorRole = actorDb ? getEffectiveRole(actorDb.role, actorDb.isAdmin) : (req.user!.role as UserRole);
+    const targetRole = getEffectiveRole(targetDb.role, targetDb.isAdmin);
+
+    if (ROLE_RANK[targetRole] >= ROLE_RANK[actorRole]) {
+      throw Errors.forbidden("Forbidden: cannot sanction user with equal/higher role");
+    }
+
+    if (type === UserSanctionType.PERM_BAN) {
+      if (actorRole !== UserRole.ADMIN && actorRole !== UserRole.OWNER) {
         throw Errors.forbidden("Forbidden: PERM_BAN requires ADMIN");
       }
     }

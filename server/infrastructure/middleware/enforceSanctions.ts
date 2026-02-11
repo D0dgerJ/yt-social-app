@@ -15,11 +15,25 @@ export const enforceSanctions = async (req: Request, _res: Response, next: NextF
     }
 
     const now = new Date();
-    
+
+    // Единая экспирация: протухаем ЛЮБУЮ санкцию, у которой endsAt <= now
+    // (а не только TEMP_BAN)
+    await prisma.userSanction.updateMany({
+      where: {
+        userId: req.user.id,
+        status: UserSanctionStatus.ACTIVE,
+        endsAt: { lte: now },
+      },
+      data: { status: UserSanctionStatus.EXPIRED },
+    });
+
+    // Единая логика активности:
+    // ACTIVE && (endsAt == null || endsAt > now)
     const active = await prisma.userSanction.findFirst({
       where: {
         userId: req.user.id,
         status: UserSanctionStatus.ACTIVE,
+        OR: [{ endsAt: null }, { endsAt: { gt: now } }],
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -32,16 +46,6 @@ export const enforceSanctions = async (req: Request, _res: Response, next: NextF
     });
 
     if (!active) {
-      next();
-      return;
-    }
-
-    if (active.type === UserSanctionType.TEMP_BAN && active.endsAt && active.endsAt <= now) {
-      await prisma.userSanction.update({
-        where: { id: active.id },
-        data: { status: UserSanctionStatus.EXPIRED },
-      });
-
       next();
       return;
     }

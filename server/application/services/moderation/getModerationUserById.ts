@@ -1,4 +1,5 @@
-import { ModerationTargetType, UserSanctionStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { ModerationTargetType, UserSanctionStatus, UserSanctionType } from "@prisma/client";
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
@@ -59,12 +60,6 @@ export type ModerationUserDetails = {
   }>;
 };
 
-function isActiveSanction(s: { status: UserSanctionStatus; endsAt: Date | null }, now: Date): boolean {
-  if (s.status !== UserSanctionStatus.ACTIVE) return false;
-  if (!s.endsAt) return true;
-  return s.endsAt.getTime() > now.getTime();
-}
-
 export async function getModerationUserById(userId: number): Promise<ModerationUserDetails> {
   const now = new Date();
 
@@ -87,7 +82,31 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
 
   if (!user) throw Errors.notFound("User not found");
 
-  const [recentSanctions, sanctionsTotal, recentActions] = await prisma.$transaction([
+  // Единая логика активных санкций:
+  // ACTIVE && (endsAt == null || endsAt > now)
+  const activeWhere: Prisma.UserSanctionWhereInput = {
+    userId,
+    status: UserSanctionStatus.ACTIVE,
+    OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+  };
+
+  const [activeSanctions, recentSanctions, sanctionsTotal, recentActions] = await prisma.$transaction([
+    prisma.userSanction.findMany({
+      where: activeWhere,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        type: true,
+        status: true,
+        reason: true,
+        message: true,
+        startsAt: true,
+        endsAt: true,
+        createdAt: true,
+        createdById: true,
+      },
+    }),
+
     prisma.userSanction.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -107,7 +126,9 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
         liftReason: true,
       },
     }),
+
     prisma.userSanction.count({ where: { userId } }),
+
     prisma.moderationAction.findMany({
       where: {
         targetType: ModerationTargetType.USER,
@@ -121,10 +142,11 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
     }),
   ]);
 
-  const activeSanctions = recentSanctions.filter((s) => isActiveSanction({ status: s.status, endsAt: s.endsAt }, now));
+  const isBanned = activeSanctions.some(
+    (s) => s.type === UserSanctionType.TEMP_BAN || s.type === UserSanctionType.PERM_BAN,
+  );
+  const isRestricted = activeSanctions.some((s) => s.type === UserSanctionType.RESTRICT);
 
-  const isBanned = activeSanctions.some((s) => s.type === "TEMP_BAN" || s.type === "PERM_BAN");
-  const isRestricted = activeSanctions.some((s) => s.type === "RESTRICT");
   const lastSanctionAt = recentSanctions.length ? recentSanctions[0].createdAt : null;
 
   return {
@@ -181,11 +203,7 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
       reason: a.reason ?? null,
       createdAt: a.createdAt,
       actor: a.actor
-        ? {
-            id: a.actor.id,
-            username: a.actor.username,
-            role: String(a.actor.role),
-          }
+        ? { id: a.actor.id, username: a.actor.username, role: String(a.actor.role) }
         : null,
     })),
   };
