@@ -10,7 +10,6 @@ export interface User {
   followings?: number[];
   profilePicture?: string;
   coverPicture?: string;
-  isAdmin: boolean;
   from?: string;
   city?: string;
   relationship?: number;

@@ -29,7 +29,6 @@ export const loginUser = async ({ email, password }: LoginInput) => {
     username: user.username,
     email: user.email,
     token,
-    isAdmin: user.isAdmin,
     role: user.role,
   };
 };

@@ -33,14 +33,6 @@ const ROLE_RANK: Record<UserRole, number> = {
   OWNER: 3,
 };
 
-function getEffectiveRole(dbRole: UserRole, isAdmin: boolean): UserRole {
-  if (isAdmin && ROLE_RANK[dbRole] < ROLE_RANK[UserRole.ADMIN]) {
-    return UserRole.ADMIN;
-  }
-
-  return dbRole;
-}
-
 function parseId(raw: unknown, message: string) {
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) throw Errors.validation(message);
@@ -582,18 +574,18 @@ router.post("/users/:userId/sanctions", authMiddleware, requireModerator, async 
     const [actorDb, targetDb] = await prisma.$transaction([
       prisma.user.findUnique({
         where: { id: req.user!.id },
-        select: { role: true, isAdmin: true },
+        select: { role: true },
       }),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true, isAdmin: true },
+        select: { role: true },
       }),
     ]);
 
     if (!targetDb) throw Errors.notFound("User not found");
 
-    const actorRole = actorDb ? getEffectiveRole(actorDb.role, actorDb.isAdmin) : (req.user!.role as UserRole);
-    const targetRole = getEffectiveRole(targetDb.role, targetDb.isAdmin);
+    const actorRole = actorDb ? actorDb.role : (req.user!.role as UserRole);
+    const targetRole = targetDb.role;
 
     if (ROLE_RANK[targetRole] >= ROLE_RANK[actorRole]) {
       throw Errors.forbidden("Forbidden: cannot sanction user with equal/higher role");
@@ -795,7 +787,6 @@ router.get("/actions/:id/evidence", authMiddleware, requireModerator, async (req
           username: true,
           email: true,
           role: true,
-          isAdmin: true,
           desc: true,
           profilePicture: true,
           coverPicture: true,

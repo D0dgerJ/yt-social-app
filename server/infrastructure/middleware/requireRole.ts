@@ -10,11 +10,6 @@ const ROLE_RANK: Record<UserRole, number> = {
   OWNER: 3,
 };
 
-function getEffectiveRole(dbRole: UserRole, isAdmin: boolean): UserRole {
-  if (isAdmin && ROLE_RANK[dbRole] < ROLE_RANK.ADMIN) return UserRole.ADMIN;
-  return dbRole;
-}
-
 export const requireRole =
   (minRole: UserRole) =>
   async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
@@ -27,7 +22,7 @@ export const requireRole =
       if (!req.user.role) {
         const dbUser = await prisma.user.findUnique({
           where: { id: req.user.id },
-          select: { role: true, isAdmin: true },
+          select: { role: true },
         });
 
         if (!dbUser) {
@@ -35,7 +30,7 @@ export const requireRole =
           return;
         }
 
-        req.user.role = getEffectiveRole(dbUser.role, dbUser.isAdmin);
+        req.user.role = dbUser.role;
       }
 
       const userRank = ROLE_RANK[req.user.role];

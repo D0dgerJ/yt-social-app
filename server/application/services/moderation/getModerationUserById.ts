@@ -9,7 +9,6 @@ export type ModerationUserDetails = {
     username: string;
     email: string;
     role: string;
-    isAdmin: boolean | null;
     desc: string | null;
     profilePicture: string | null;
     coverPicture: string | null;
@@ -70,7 +69,6 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
       username: true,
       email: true,
       role: true,
-      isAdmin: true,
       desc: true,
       profilePicture: true,
       coverPicture: true,
@@ -82,7 +80,6 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
 
   if (!user) throw Errors.notFound("User not found");
 
-  // Единая логика активных санкций:
   // ACTIVE && (endsAt == null || endsAt > now)
   const activeWhere: Prisma.UserSanctionWhereInput = {
     userId,
@@ -155,7 +152,6 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
       username: user.username,
       email: user.email,
       role: String(user.role),
-      isAdmin: user.isAdmin ?? null,
       desc: user.desc ?? null,
       profilePicture: user.profilePicture ?? null,
       coverPicture: user.coverPicture ?? null,

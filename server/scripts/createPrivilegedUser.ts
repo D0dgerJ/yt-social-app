@@ -21,8 +21,6 @@ const role = (() => {
   return roleRaw as UserRole;
 })();
 
-const shouldSetIsAdmin = role === UserRole.ADMIN || role === UserRole.OWNER;
-
 async function main() {
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -39,12 +37,11 @@ async function main() {
         username,
         password: passwordHash,
         role,
-        isAdmin: shouldSetIsAdmin ? true : existing.isAdmin, // не сбрасываем старый isAdmin случайно
       },
     });
 
     console.log(
-      `[seed:user] Updated user id=${existing.id} email=${email} username=${username} role=${role} isAdmin=${shouldSetIsAdmin}`
+      `[seed:user] Updated user id=${existing.id} email=${email} username=${username} role=${role}`
     );
     return;
   }
@@ -55,12 +52,11 @@ async function main() {
       username,
       password: passwordHash,
       role,
-      isAdmin: shouldSetIsAdmin,
     },
   });
 
   console.log(
-    `[seed:user] Created user id=${created.id} email=${email} username=${username} role=${role} isAdmin=${created.isAdmin}`
+    `[seed:user] Created user id=${created.id} email=${email} username=${username} role=${role}`
   );
 }
 
