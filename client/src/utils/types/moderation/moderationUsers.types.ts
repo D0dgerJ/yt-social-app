@@ -49,7 +49,6 @@ export type ModerationUserDetails = {
     username: string;
     email: string;
     role: string;
-    isAdmin: boolean | null;
 
     desc: string | null;
     profilePicture: string | null;
