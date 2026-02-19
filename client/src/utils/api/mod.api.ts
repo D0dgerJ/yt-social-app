@@ -316,7 +316,127 @@ export const getReportedCommentsTable = async (params?: {
   };
 };
 
+// -------------------- comment reports (case page) --------------------
+
+export type CommentReportReason =
+  | "spam"
+  | "abuse"
+  | "harassment"
+  | "hate"
+  | "violence"
+  | "nudity"
+  | "scam"
+  | "other"
+  | string;
+
+export type ModerationCommentReportItem = {
+  id: number;
+  commentId: number;
+  reporterId: number;
+  reason: CommentReportReason;
+  details?: string | null;
+
+  status: ReportStatus;
+
+  createdAt: string;
+  reviewedAt?: string | null;
+  reviewedById?: number | null;
+
+  reporter?: { id: number; username: string } | null;
+  reviewedBy?: { id: number; username: string } | null;
+
+  comment?: {
+    id: number;
+    postId: number;
+    userId: number;
+    content: string;
+    status: string;
+    createdAt: string;
+  } | null;
+};
+
+export type ModerationCommentReportView = {
+  id: number;
+  commentId: number;
+  reporterId: number;
+  reason: CommentReportReason;
+  details?: string | null;
+
+  status: ReportStatus;
+
+  createdAt: string;
+  reviewedAt?: string | null;
+  reviewedById?: number | null;
+
+  reporter?: { id: number; username: string } | null;
+  reviewedBy?: { id: number; username: string } | null;
+
+  comment: {
+    id: number;
+    postId: number;
+    userId: number;
+    content: string;
+    images: string[];
+    videos: string[];
+    files: string[];
+    status: string;
+    createdAt: string;
+    user?: { id: number; username: string } | null;
+  };
+};
+
+export const getCommentReportItems = async (params: {
+  status?: ReportStatus;
+  commentId?: number;
+  take?: number;
+  skip?: number;
+}) => {
+  const search = new URLSearchParams();
+
+  if (params.status) search.set("status", params.status);
+  if (params.commentId) search.set("commentId", String(params.commentId));
+  if (params.take) search.set("take", String(params.take));
+  if (params.skip) search.set("skip", String(params.skip));
+
+  const response = await axios.get(`/mod/reports/comments/items?${search.toString()}`);
+  return response.data as {
+    ok: boolean;
+    total: number;
+    skip: number;
+    take: number;
+    items: ModerationCommentReportItem[];
+  };
+};
+
 export const getCommentReportById = async (reportId: number) => {
-  const res = await axios.get(`/mod/reports/comments/${reportId}`);
-  return res.data;
+  const response = await axios.get(`/mod/reports/comments/${reportId}`);
+  return response.data as { ok: boolean; report: ModerationCommentReportView };
+};
+
+export const approveCommentReport = async (
+  reportId: number,
+  payload: { reason: string; message?: string }
+) => {
+  const response = await axios.post(`/mod/reports/comments/${reportId}/approve`, payload);
+  return response.data as { ok: boolean; report: any };
+};
+
+export const rejectCommentReport = async (
+  reportId: number,
+  payload: { reason: string; message?: string }
+) => {
+  const response = await axios.post(`/mod/reports/comments/${reportId}/reject`, payload);
+  return response.data as { ok: boolean; report: any };
+};
+
+// -------------------- comment moderation actions --------------------
+
+export const hideComment = async (commentId: number, reason?: string) => {
+  const response = await axios.post(`/mod/comments/${commentId}/hide`, { reason });
+  return response.data as { ok: boolean; comment: any };
+};
+
+export const unhideComment = async (commentId: number, reason?: string) => {
+  const response = await axios.post(`/mod/comments/${commentId}/unhide`, { reason });
+  return response.data as { ok: boolean; comment: any };
 };
