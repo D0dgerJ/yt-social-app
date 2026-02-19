@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import moment from "moment";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { IoMdSend } from "react-icons/io";
-import { Comment } from "./types";
+import type { Comment } from "./types";
+import { reportComment } from "../../utils/api/comment.api"; 
 
 interface Props {
   comment: Comment;
@@ -13,19 +14,39 @@ interface Props {
   onUpdate: (commentId: number, newContent: string) => void;
 }
 
-const CommentItem: React.FC<Props> = ({
-  comment,
-  currentUserId,
-  onReply,
-  onLike,
-  onDelete,
-  onUpdate,
-}) => {
+const REPORT_REASONS = [
+  { value: "SPAM", label: "Spam" },
+  { value: "HARASSMENT", label: "Harassment / bullying" },
+  { value: "HATE", label: "Hate speech" },
+  { value: "VIOLENCE", label: "Violence / threats" },
+  { value: "NUDITY", label: "Nudity / sexual content" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
+const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike, onDelete, onUpdate }) => {
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const [showReplies, setShowReplies] = useState(false);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // report modal
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<(typeof REPORT_REASONS)[number]["value"]>("SPAM");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [reportSuccess, setReportSuccess] = useState<string | null>(null);
+
+  const isOwnComment = currentUserId === comment.userId;
+
+  const canReport = useMemo(() => {
+    // нельзя репортить свой комментарий
+    // (на бэке тоже запрещено, но в UI лучше скрыть/задизейблить)
+    return !isOwnComment;
+  }, [isOwnComment]);
 
   const handleReply = () => {
     if (!replyText.trim()) return;
@@ -59,26 +80,78 @@ const CommentItem: React.FC<Props> = ({
       return part + " ";
     });
 
+  const openReportModal = () => {
+    setMenuOpen(false);
+    setReportError(null);
+    setReportSuccess(null);
+    setReportReason("SPAM");
+    setReportDetails("");
+    setReportOpen(true);
+  };
+
+  const submitReport = async () => {
+    setReportLoading(true);
+    setReportError(null);
+    setReportSuccess(null);
+
+    try {
+      await reportComment(comment.id, {
+        reason: reportReason,
+        details: reportDetails.trim() ? reportDetails.trim() : undefined,
+      });
+
+      setReportSuccess("Report submitted");
+      setTimeout(() => {
+        setReportOpen(false);
+        setReportSuccess(null);
+      }, 600);
+    } catch (err: any) {
+      // пытаемся достать читаемое сообщение из твоего ApiError
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Failed to submit report";
+      setReportError(msg);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   return (
     <div className={`comment-item ${comment.parentId ? "reply-item" : ""}`}>
-      <img
-        src={comment.user.profilePicture || "/default-avatar.png"}
-        alt="user"
-        className="avatar"
-      />
+      <img src={comment.user.profilePicture || "/default-avatar.png"} alt="user" className="avatar" />
+
       <div className="comment-content">
         <div className="comment-header">
           <span className="username">{comment.user.username}</span>
+
           {editing ? (
-            <input
-              type="text"
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-            />
+            <input type="text" value={editedContent} onChange={(e) => setEditedContent(e.target.value)} />
           ) : (
             <span className="text">{formatContent(comment.content)}</span>
           )}
-          <FiMoreHorizontal className="more-icon" />
+
+          <div className="comment-menu">
+            <FiMoreHorizontal className="more-icon" onClick={() => setMenuOpen((v) => !v)} />
+
+            {menuOpen && (
+              <div className="comment-menu-dropdown">
+                {!isOwnComment && (
+                  <button disabled={!canReport} onClick={openReportModal}>
+                    Report
+                  </button>
+                )}
+
+                {isOwnComment && (
+                  <>
+                    <button onClick={() => setEditing((v) => !v)}>{editing ? "Cancel edit" : "Edit"}</button>
+                    <button onClick={() => onDelete(comment.id)}>Delete</button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {comment.images?.length ? (
@@ -91,20 +164,25 @@ const CommentItem: React.FC<Props> = ({
 
         <div className="comment-meta">
           <span className="time">{moment(comment.createdAt).fromNow()}</span>
+
           <span className="like-btn" onClick={() => onLike(comment.id)}>
             ❤️ {comment._count?.likes || 0}
           </span>
 
-          {currentUserId === comment.userId && (
+          {isOwnComment && (
             <div className="comment-actions">
-              <button onClick={() => setEditing(!editing)}>
-                {editing ? "Cancel" : "Edit"}
-              </button>
+              <button onClick={() => setEditing(!editing)}>{editing ? "Cancel" : "Edit"}</button>
               <button onClick={() => onDelete(comment.id)}>Delete</button>
             </div>
           )}
 
           <button onClick={() => setReplying(!replying)}>Reply</button>
+
+          {!isOwnComment && (
+            <button className="report-btn" onClick={openReportModal}>
+              Report
+            </button>
+          )}
         </div>
 
         {editing && (
@@ -130,13 +208,10 @@ const CommentItem: React.FC<Props> = ({
           </div>
         )}
 
-       {comment.replies?.length ? (
+        {comment.replies?.length ? (
           <>
             {!showReplies && (
-              <button
-                className="view-replies"
-                onClick={() => setShowReplies(true)}
-              >
+              <button className="view-replies" onClick={() => setShowReplies(true)}>
                 View replies ({comment.replies.length})
               </button>
             )}
@@ -156,6 +231,7 @@ const CommentItem: React.FC<Props> = ({
                     />
                   ))}
                 </div>
+
                 <button className="hide-replies" onClick={() => setShowReplies(false)}>
                   Hide replies
                 </button>
@@ -164,6 +240,55 @@ const CommentItem: React.FC<Props> = ({
           </>
         ) : null}
       </div>
+
+      {/* -------- Report Modal -------- */}
+      {reportOpen && (
+        <div className="modal-overlay" onClick={() => !reportLoading && setReportOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Report comment</h3>
+              <button className="modal-close" disabled={reportLoading} onClick={() => setReportOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <label>
+                Reason
+                <select value={reportReason} onChange={(e) => setReportReason(e.target.value as any)}>
+                  {REPORT_REASONS.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Details (optional)
+                <textarea
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Add any additional details…"
+                  maxLength={500}
+                />
+              </label>
+
+              {reportError && <div className="modal-error">{reportError}</div>}
+              {reportSuccess && <div className="modal-success">{reportSuccess}</div>}
+            </div>
+
+            <div className="modal-footer">
+              <button disabled={reportLoading} onClick={() => setReportOpen(false)}>
+                Cancel
+              </button>
+              <button disabled={reportLoading} onClick={submitReport}>
+                {reportLoading ? "Sending..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

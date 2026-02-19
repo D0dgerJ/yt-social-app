@@ -13,6 +13,8 @@ router.post("/", authMiddleware, enforceSanctions, requireNotRestricted, control
 // Получение комментариев к посту
 router.get("/post/:postId", controller.getComments);
 
+router.post("/:commentId/report", authMiddleware, enforceSanctions, requireNotRestricted, controller.report);
+
 // Получение ответов на конкретный комментарий (ДОЛЖНО БЫТЬ ДО "/:commentId")
 router.get("/replies/:commentId", controller.getReplies);
 

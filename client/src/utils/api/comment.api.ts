@@ -60,7 +60,7 @@ export const getCommentReplies = async (commentId: number) => {
 };
 
 export const createReply = async (data: CreateReplyInput) => {
-  const response = await axios.post('/comments/reply', data);
+  const response = await axios.post('/comments', data);
   return response.data;
 };
 
@@ -75,7 +75,19 @@ export const deleteReply = async (commentId: number) => {
 };
 
 // ===== Получение количества ответов для нескольких комментариев =====
-export const getRepliesCountForMany = async (commentIds: number[]) => {
-  const response = await axios.post(`/comments/replies-count`, { commentIds });
+export const getRepliesCountForMany = async (ids: number[]) => {
+  const response = await axios.post(`/comments/replies-count`, { ids });
   return response.data;
 };
+
+// ===== Репорты (Moderation) =====
+export interface ReportCommentInput {
+  reason: string;
+  details?: string;
+}
+
+export const reportComment = async (commentId: number, data: ReportCommentInput) => {
+  const response = await axios.post(`/comments/${commentId}/report`, data);
+  return response.data;
+};
+  

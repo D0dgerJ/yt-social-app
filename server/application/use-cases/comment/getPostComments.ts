@@ -1,6 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { CommentStatus } from "@prisma/client";
 
 export const getPostComments = async (postId: number) => {
   if (!postId || postId <= 0) {
@@ -10,12 +11,13 @@ export const getPostComments = async (postId: number) => {
   await assertPostActionAllowed(postId);
 
   return prisma.comment.findMany({
-    where: { postId, parentId: null },
+    where: { postId, parentId: null, status: CommentStatus.ACTIVE },
     include: {
       user: {
         select: { id: true, username: true, profilePicture: true },
       },
       replies: {
+        where: { status: CommentStatus.ACTIVE },
         include: {
           user: {
             select: { id: true, username: true, profilePicture: true },

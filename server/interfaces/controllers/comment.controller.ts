@@ -11,6 +11,8 @@ import { getCommentById } from "../../application/use-cases/comment/getCommentBy
 import { getRepliesCountForMany } from "../../application/use-cases/comment/getRepliesCountForMany.ts";
 import { getUserByUsername } from "../../application/use-cases/user/getUserByUsername.ts";
 import { Errors } from "../../infrastructure/errors/ApiError.ts";
+import { reportComment } from "../../application/use-cases/comment/reportComment.ts";
+import { reportCommentSchema } from "../../validation/commentSchemas.ts";
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -153,6 +155,27 @@ export const getProfileByUsername = async (req: Request, res: Response, next: Ne
 
     const userProfile = await getUserByUsername(username, currentUserId);
     res.status(200).json(userProfile);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const report = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const actorId = req.user!.id;
+
+    const commentId = Number(req.params.commentId);
+    if (!Number.isFinite(commentId) || commentId <= 0) throw Errors.validation("Invalid commentId");
+
+    const dto = reportCommentSchema.parse(req.body);
+
+    const created = await reportComment({
+      actorId,
+      commentId,
+      dto,
+    });
+
+    res.status(201).json({ message: "Report submitted", report: created });
   } catch (err) {
     next(err);
   }

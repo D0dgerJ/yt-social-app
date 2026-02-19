@@ -10,6 +10,7 @@ import Moderation from "./pages/Moderation/Moderation";
 import ModerationHistory from "@/pages/Moderation/ModerationHistory";
 import ModerationPostDetails from "@/pages/Moderation/ModerationPostDetails";
 import ModerationUsers from "@/pages/Moderation/ModerationUsers";
+import ModerationComments from "./pages/Moderation/ModerationComments";
 
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -69,6 +70,7 @@ const AppInner: React.FC = () => {
         <Route path="/moderation/users" element={user ? <ModerationUsers /> : <Navigate to="/login" />} />
         <Route path="/moderation/posts/:postId" element={user ? <ModerationPostDetails /> : <Navigate to="/login" />} />
         <Route path="/moderation/history" element={user ? <ModerationHistory /> : <Navigate to="/login" />} />
+        <Route path="/moderation/comments" element={user ? <ModerationComments /> : <Navigate to="/login" />} />
       </Routes>
 
       <FloatingChatWindow />

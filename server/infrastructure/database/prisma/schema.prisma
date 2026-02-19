@@ -72,6 +72,12 @@ model User {
   sanctions          UserSanction[] @relation("UserSanctions")
   sanctionsCreated   UserSanction[] @relation("SanctionCreatedBy")
   sanctionsLifted    UserSanction[] @relation("SanctionLiftedBy")
+
+  commentReportsCreated  CommentReport[] @relation("CommentReportReporter")
+  commentReportsReviewed CommentReport[] @relation("CommentReportReviewedBy")
+
+  commentsHidden  Comment[] @relation("CommentHiddenBy")
+  commentsDeleted Comment[] @relation("CommentDeletedBy")
 }
 
 model FriendRequest {
@@ -142,18 +148,30 @@ model Comment {
   files     String[] @default([])
   createdAt DateTime @default(now())
 
-  // 💬 Replies
   parentId Int?
   parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies  Comment[] @relation("CommentReplies")
 
-  // 🔗 Relations
   post  Post          @relation(fields: [postId], references: [id])
   user  User          @relation(fields: [userId], references: [id])
   likes CommentLike[]
 
-  // track who was mentioned
-  // mentions   User[] @relation("CommentMentions", references: [id])
+  status       CommentStatus @default(ACTIVE)
+
+  hiddenAt     DateTime?
+  hiddenReason String?
+  hiddenById   Int?
+  hiddenBy     User?         @relation("CommentHiddenBy", fields: [hiddenById], references: [id])
+
+  deletedAt     DateTime?
+  deletedReason String?
+  deletedById   Int?
+  deletedBy     User?         @relation("CommentDeletedBy", fields: [deletedById], references: [id])
+
+  reports CommentReport[]
+
+  @@index([status])
+  @@index([postId, status])
 }
 
 model CommentLike {
@@ -613,3 +631,34 @@ model UserSanction {
   @@index([userId, status])
   @@index([status, endsAt])
 }
+
+enum CommentStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
+
+model CommentReport {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  commentId Int
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  reporterId Int
+  reporter   User     @relation("CommentReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reason  String
+  details String?
+
+  status       ReportStatus @default(PENDING)
+  reviewedById Int?
+  reviewedBy   User?        @relation("CommentReportReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+
+  @@unique([commentId, reporterId])
+  @@index([commentId, status])
+  @@index([reporterId, createdAt])
+}
+
