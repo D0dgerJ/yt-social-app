@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  getModerationActions,
-  type ModerationActionItem,
-} from "@/utils/api/mod.api";
+import { getModerationActions, type ModerationActionItem } from "@/utils/api/mod.api";
 
 export type AlreadyHandled = {
   actionType: string;
@@ -30,17 +27,23 @@ function deriveAlreadyHandled(items: ModerationActionItem[]): AlreadyHandled {
   };
 }
 
-export function useModerationActions(postId: number) {
+/**
+ * По умолчанию работает как раньше для POST.
+ * Для комментариев: useModerationActions(commentId, "COMMENT")
+ */
+export function useModerationActions(targetId: number, targetType: "POST" | "COMMENT" = "POST") {
   const [actions, setActions] = useState<ModerationActionItem[]>([]);
   const [alreadyHandled, setAlreadyHandled] = useState<AlreadyHandled>(null);
   const [isLoadingActions, setIsLoadingActions] = useState(false);
 
   const refreshActions = useCallback(async () => {
+    if (!Number.isFinite(targetId) || targetId <= 0) return;
+
     setIsLoadingActions(true);
     try {
       const res = await getModerationActions({
-        targetType: "POST",
-        targetId: String(postId),
+        targetType,
+        targetId: String(targetId),
         take: 50,
         skip: 0,
       });
@@ -51,10 +54,10 @@ export function useModerationActions(postId: number) {
     } finally {
       setIsLoadingActions(false);
     }
-  }, [postId]);
+  }, [targetId, targetType]);
 
   useEffect(() => {
-    if (!Number.isFinite(postId) || postId <= 0) return;
+    if (!Number.isFinite(targetId) || targetId <= 0) return;
 
     let cancelled = false;
 
@@ -62,8 +65,8 @@ export function useModerationActions(postId: number) {
       setIsLoadingActions(true);
       try {
         const res = await getModerationActions({
-          targetType: "POST",
-          targetId: String(postId),
+          targetType,
+          targetId: String(targetId),
           take: 50,
           skip: 0,
         });
@@ -85,7 +88,7 @@ export function useModerationActions(postId: number) {
     return () => {
       cancelled = true;
     };
-  }, [postId]);
+  }, [targetId, targetType]);
 
   return {
     actions,
