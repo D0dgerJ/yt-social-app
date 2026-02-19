@@ -262,3 +262,61 @@ export const getModerationActionEvidence = async (id: number) => {
   const response = await axios.get(`/mod/actions/${id}/evidence`);
   return response.data;
 };
+
+// -------------------- comment reports (UI table) --------------------
+
+export interface ModerationCommentsTableItem {
+  commentId: number;
+  reportCount: number;
+  lastReport: {
+    id: number;
+    reason: string;
+    details: string | null;
+    createdAt: string;
+    reporter: {
+      id: number;
+      username: string;
+    };
+  } | null;
+  comment: {
+    id: number;
+    postId: number;
+    userId: number;
+    content: string;
+    status: string;
+    createdAt: string;
+    user: {
+      id: number;
+      username: string;
+    };
+  } | null;
+}
+
+export const getReportedCommentsTable = async (params?: {
+  status?: ReportStatus;
+  commentId?: number;
+  take?: number;
+  skip?: number;
+}) => {
+  const search = new URLSearchParams();
+
+  if (params?.status) search.set("status", params.status);
+  if (params?.commentId) search.set("commentId", String(params.commentId));
+  if (params?.take) search.set("take", String(params.take));
+  if (params?.skip) search.set("skip", String(params.skip));
+
+  const response = await axios.get(`/mod/reports/comments?${search.toString()}`);
+  return response.data as {
+    ok: boolean;
+    status: ReportStatus;
+    total: number;
+    skip: number;
+    take: number;
+    items: ModerationCommentsTableItem[];
+  };
+};
+
+export const getCommentReportById = async (reportId: number) => {
+  const res = await axios.get(`/mod/reports/comments/${reportId}`);
+  return res.data;
+};

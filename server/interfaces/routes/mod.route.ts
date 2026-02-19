@@ -24,6 +24,9 @@ import { getUserSanctions } from "../../application/services/moderation/getUserS
 import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.ts";
 import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
 
+import { hideComment, unhideComment } from "../../application/services/moderation/moderateCommentVisibility.ts";
+import { assertApprovedCommentReport } from "../../application/services/moderation/assertApprovedReport.ts";
+
 const router = Router();
 
 const ROLE_RANK: Record<UserRole, number> = {
@@ -51,6 +54,10 @@ function getReason(body: any): string | undefined {
 function getMessage(body: any): string | undefined {
   const message = typeof body?.message === "string" ? body.message.trim() : "";
   return message.length ? message : undefined;
+}
+
+async function assertHasApprovedCommentReport(commentId: number) {
+  await assertApprovedCommentReport(commentId);
 }
 
 async function assertHasApprovedReport(postId: number) {
@@ -163,6 +170,46 @@ router.delete("/posts/:id/hard-delete", authMiddleware, requireAdmin, async (req
 
     const result = await hardDeletePost({ actorId: req.user!.id, postId, reason });
     res.status(200).json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// -------------------- comment moderation actions --------------------
+
+router.post("/comments/:id/hide", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const commentId = parseId(req.params.id, "Invalid comment id");
+    const reason = getReason(req.body);
+
+    await assertHasApprovedCommentReport(commentId);
+
+    const comment = await hideComment({
+      actorId: req.user!.id,
+      commentId,
+      reason: reason ?? "Hidden by moderation",
+    });
+
+    res.status(200).json({ ok: true, comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/comments/:id/unhide", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const commentId = parseId(req.params.id, "Invalid comment id");
+    const reason = getReason(req.body);
+
+    await assertHasApprovedCommentReport(commentId);
+
+    const comment = await unhideComment({
+      actorId: req.user!.id,
+      commentId,
+      reason: reason ?? "Unhidden by moderation",
+    });
+
+    res.status(200).json({ ok: true, comment });
   } catch (err) {
     next(err);
   }
@@ -454,6 +501,285 @@ router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator,
       actionType: ModerationActionType.NOTE,
       targetType: ModerationTargetType.POST,
       targetId: String(updated.postId),
+      reason: decisionReason,
+      metadata: {
+        reportId: updated.id,
+        decision: "REJECTED",
+        message: decisionMessage || undefined,
+      },
+    });
+
+    res.status(200).json({ ok: true, report: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// -------------------- comment reports (UI table) --------------------
+
+router.get("/reports/comments", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const statusRaw = typeof req.query.status === "string" ? req.query.status : "PENDING";
+    const status = (Object.values(ReportStatus) as string[]).includes(statusRaw)
+      ? (statusRaw as ReportStatus)
+      : ReportStatus.PENDING;
+
+    const commentId = req.query.commentId ? parseId(req.query.commentId, "Invalid commentId") : undefined;
+
+    const takeRaw = Number(req.query.take ?? 20);
+    const skipRaw = Number(req.query.skip ?? 0);
+    const take = Number.isFinite(takeRaw) ? Math.min(Math.max(takeRaw, 1), 100) : 20;
+    const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
+
+    const groups = await prisma.commentReport.groupBy({
+      by: ["commentId"],
+      where: {
+        status,
+        ...(commentId ? { commentId } : {}),
+      },
+      _count: { _all: true },
+      _max: { createdAt: true },
+      orderBy: { _max: { createdAt: "desc" } },
+      skip,
+      take,
+    });
+
+    const totalRaw = await prisma.commentReport.groupBy({
+      by: ["commentId"],
+      where: {
+        status,
+        ...(commentId ? { commentId } : {}),
+      },
+      _count: { _all: true },
+    });
+
+    const commentIds = groups.map((g) => g.commentId);
+
+    const lastReports = commentIds.length
+      ? await prisma.commentReport.findMany({
+          where: { commentId: { in: commentIds }, status },
+          orderBy: { createdAt: "desc" },
+          distinct: ["commentId"],
+          select: {
+            id: true,
+            commentId: true,
+            reporterId: true,
+            reason: true,
+            details: true,
+            createdAt: true,
+            reporter: { select: { id: true, username: true } },
+          },
+        })
+      : [];
+
+    const lastByCommentId = new Map<number, (typeof lastReports)[number]>();
+    for (const r of lastReports) lastByCommentId.set(r.commentId, r);
+
+    const comments = commentIds.length
+      ? await prisma.comment.findMany({
+          where: { id: { in: commentIds } },
+          select: {
+            id: true,
+            postId: true,
+            userId: true,
+            content: true,
+            status: true,
+            createdAt: true,
+            user: { select: { id: true, username: true } },
+          },
+        })
+      : [];
+
+    const commentById = new Map<number, (typeof comments)[number]>();
+    for (const c of comments) commentById.set(c.id, c);
+
+    const items = groups.map((g) => ({
+      commentId: g.commentId,
+      reportCount: g._count._all,
+      lastReport: lastByCommentId.get(g.commentId) ?? null,
+      comment: commentById.get(g.commentId) ?? null,
+    }));
+
+    res.status(200).json({
+      ok: true,
+      status,
+      total: totalRaw.length,
+      skip,
+      take,
+      items,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/reports/comments/items", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const statusRaw = typeof req.query.status === "string" ? req.query.status : "PENDING";
+    const status = (Object.values(ReportStatus) as string[]).includes(statusRaw)
+      ? (statusRaw as ReportStatus)
+      : ReportStatus.PENDING;
+
+    const commentId = req.query.commentId ? parseId(req.query.commentId, "Invalid commentId") : undefined;
+
+    const takeRaw = Number(req.query.take ?? 50);
+    const skipRaw = Number(req.query.skip ?? 0);
+    const take = Number.isFinite(takeRaw) ? Math.min(Math.max(takeRaw, 1), 200) : 50;
+    const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
+
+    const [items, total] = await prisma.$transaction([
+      prisma.commentReport.findMany({
+        where: {
+          status,
+          ...(commentId ? { commentId } : {}),
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+        include: {
+          reporter: { select: { id: true, username: true } },
+          reviewedBy: { select: { id: true, username: true } },
+          comment: {
+            select: {
+              id: true,
+              postId: true,
+              userId: true,
+              content: true,
+              status: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+      prisma.commentReport.count({
+        where: {
+          status,
+          ...(commentId ? { commentId } : {}),
+        },
+      }),
+    ]);
+
+    res.status(200).json({ ok: true, total, skip, take, items });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/reports/comments/:reportId", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const reportId = parseId(req.params.reportId, "Invalid reportId");
+
+    const report = await prisma.commentReport.findUnique({
+      where: { id: reportId },
+      include: {
+        reporter: { select: { id: true, username: true } },
+        reviewedBy: { select: { id: true, username: true } },
+        comment: {
+          select: {
+            id: true,
+            postId: true,
+            userId: true,
+            content: true,
+            images: true,
+            videos: true,
+            files: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!report) throw Errors.notFound("Report not found");
+
+    res.status(200).json({ ok: true, report });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/reports/comments/:reportId/approve", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const reportId = parseId(req.params.reportId, "Invalid reportId");
+
+    const decisionReason = getReason(req.body);
+    if (!decisionReason) throw Errors.validation("Reason is required");
+
+    const decisionMessage = getMessage(req.body);
+
+    const result = await prisma.commentReport.updateMany({
+      where: { id: reportId, status: ReportStatus.PENDING },
+      data: {
+        status: ReportStatus.APPROVED,
+        reviewedAt: new Date(),
+        reviewedById: req.user!.id,
+      },
+    });
+
+    if (result.count !== 1) {
+      throw Errors.conflict("Report is not pending or does not exist");
+    }
+
+    const updated = await prisma.commentReport.findUnique({
+      where: { id: reportId },
+      select: { id: true, commentId: true, reporterId: true, status: true, reviewedAt: true, reviewedById: true },
+    });
+
+    if (!updated) throw Errors.notFound("Report not found");
+
+    await logModerationAction({
+      actorId: req.user!.id,
+      actionType: ModerationActionType.NOTE,
+      targetType: ModerationTargetType.COMMENT,
+      targetId: String(updated.commentId),
+      reason: decisionReason,
+      metadata: {
+        reportId: updated.id,
+        decision: "APPROVED",
+        message: decisionMessage || undefined,
+      },
+    });
+
+    res.status(200).json({ ok: true, report: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/reports/comments/:reportId/reject", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const reportId = parseId(req.params.reportId, "Invalid reportId");
+
+    const decisionReason = getReason(req.body);
+    if (!decisionReason) throw Errors.validation("Reason is required");
+
+    const decisionMessage = getMessage(req.body);
+
+    const result = await prisma.commentReport.updateMany({
+      where: { id: reportId, status: ReportStatus.PENDING },
+      data: {
+        status: ReportStatus.REJECTED,
+        reviewedAt: new Date(),
+        reviewedById: req.user!.id,
+      },
+    });
+
+    if (result.count !== 1) {
+      throw Errors.conflict("Report is not pending or does not exist");
+    }
+
+    const updated = await prisma.commentReport.findUnique({
+      where: { id: reportId },
+      select: { id: true, commentId: true, reporterId: true, status: true, reviewedAt: true, reviewedById: true },
+    });
+
+    if (!updated) throw Errors.notFound("Report not found");
+
+    await logModerationAction({
+      actorId: req.user!.id,
+      actionType: ModerationActionType.NOTE,
+      targetType: ModerationTargetType.COMMENT,
+      targetId: String(updated.commentId),
       reason: decisionReason,
       metadata: {
         reportId: updated.id,

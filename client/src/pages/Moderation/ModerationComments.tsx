@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar/Navbar";
 import Sidebar from "@/components/Sidebar/Sidebar";
-import ModerationTable from "@/components/Moderation/List/ModerationTable/ModerationTable";
+import ModerationCommentsTable from "@/components/Moderation/List/ModerationCommentsTable/ModerationCommentsTable";
 import styles from "./Moderation.module.scss";
 
 const ALLOWED = new Set(["MODERATOR", "ADMIN", "OWNER"]);
 
-export default function Moderation() {
+export default function ModerationComments() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -31,9 +31,9 @@ export default function Moderation() {
               <button
                 className={styles.usersBtn}
                 type="button"
-                onClick={() => navigate("/moderation/comments")}
+                onClick={() => navigate("/moderation")}
               >
-                Comments
+                Posts
               </button>
 
               <button
@@ -54,7 +54,7 @@ export default function Moderation() {
             </div>
           </div>
 
-          <ModerationTable />
+          <ModerationCommentsTable />
         </div>
       </div>
     </>

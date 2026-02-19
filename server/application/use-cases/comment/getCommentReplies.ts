@@ -1,10 +1,11 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { ContentStatus } from "@prisma/client";
+import { ContentStatus, CommentStatus } from "@prisma/client";
 
 export const getCommentReplies = async (commentId: number) => {
   return prisma.comment.findMany({
     where: {
       parentId: commentId,
+      status: CommentStatus.ACTIVE,
       post: { status: ContentStatus.ACTIVE },
     },
     orderBy: { createdAt: "asc" },
