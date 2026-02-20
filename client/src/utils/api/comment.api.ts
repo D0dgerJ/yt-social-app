@@ -39,8 +39,8 @@ export const updateComment = async (data: UpdateCommentInput) => {
 };
 
 export const deleteComment = async (commentId: number) => {
-  const response = await axios.delete(`/comments/${commentId}`);
-  return response.data;
+  await axios.delete(`/comments/${commentId}`);
+  return { ok: true };
 };
 
 export const getPostComments = async (postId: number) => {
@@ -70,8 +70,8 @@ export const updateReply = async (data: UpdateCommentInput) => {
 };
 
 export const deleteReply = async (commentId: number) => {
-  const response = await axios.delete(`/comments/${commentId}`);
-  return response.data;
+  await axios.delete(`/comments/${commentId}`);
+  return { ok: true };
 };
 
 // ===== Получение количества ответов для нескольких комментариев =====

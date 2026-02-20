@@ -15,8 +15,10 @@ export function CommentActionsCard(props: {
 
   canHide: boolean;
   canUnhide: boolean;
+  canDelete: boolean;
+  canRestore: boolean;
 
-  onCommentAction: (kind: "HIDE" | "UNHIDE") => void;
+  onCommentAction: (kind: "HIDE" | "UNHIDE" | "DELETE" | "RESTORE") => void;
   onRefreshActions: () => void;
 }) {
   const {
@@ -31,6 +33,8 @@ export function CommentActionsCard(props: {
     commentActionsHint,
     canHide,
     canUnhide,
+    canDelete,
+    canRestore,
     onCommentAction,
     onRefreshActions,
   } = props;
@@ -50,9 +54,7 @@ export function CommentActionsCard(props: {
           onChange={(e) => setActionNote(e.target.value)}
           placeholder="Explain why you apply this action. Required."
         />
-        <div className={styles.hint}>
-          Min 10 characters. Current: {actionNoteLen}
-        </div>
+        <div className={styles.hint}>Min 10 characters. Current: {actionNoteLen}</div>
 
         {!hasApprovedReport ? (
           <div className={styles.hintMuted}>Actions available only after APPROVED report.</div>
@@ -79,6 +81,24 @@ export function CommentActionsCard(props: {
           onClick={() => onCommentAction("UNHIDE")}
         >
           Unhide
+        </button>
+
+        <button
+          className={styles.btn}
+          type="button"
+          disabled={!canDelete}
+          onClick={() => onCommentAction("DELETE")}
+        >
+          Delete
+        </button>
+
+        <button
+          className={styles.btn}
+          type="button"
+          disabled={!canRestore}
+          onClick={() => onCommentAction("RESTORE")}
+        >
+          Restore
         </button>
       </div>
 

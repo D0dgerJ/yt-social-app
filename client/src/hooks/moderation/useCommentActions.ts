@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
-import { hideComment, unhideComment } from "@/utils/api/mod.api";
+import {
+  hideComment,
+  unhideComment,
+  softDeleteComment,
+  restoreDeletedComment,
+} from "@/utils/api/mod.api";
 import type { ModerationCommentView } from "@/utils/types/moderation/commentDetails.types";
 
 export function useCommentActions(params: {
@@ -24,27 +29,34 @@ export function useCommentActions(params: {
     return null;
   }, [hasApprovedReport, actionNoteLen]);
 
-  const canHide = Boolean(
-    hasApprovedReport && comment?.status === "ACTIVE" && actionNoteLen >= 10 && !isSubmittingAction
-  );
+  const baseAllowed = Boolean(hasApprovedReport && actionNoteLen >= 10 && !isSubmittingAction);
 
-  const canUnhide = Boolean(
-    hasApprovedReport && comment?.status === "HIDDEN" && actionNoteLen >= 10 && !isSubmittingAction
-  );
+  const canHide = Boolean(baseAllowed && comment?.status === "ACTIVE");
+  const canUnhide = Boolean(baseAllowed && comment?.status === "HIDDEN");
+  const canDelete = Boolean(baseAllowed && comment?.status !== "DELETED");
+  const canRestore = Boolean(baseAllowed && comment?.status === "DELETED");
 
-  async function onCommentAction(kind: "HIDE" | "UNHIDE") {
+  async function onCommentAction(kind: "HIDE" | "UNHIDE" | "DELETE" | "RESTORE") {
     setActionError(null);
     setIsSubmittingAction(true);
+
     try {
       const note = actionNote.trim();
 
       if (kind === "HIDE") await hideComment(commentId, note);
       if (kind === "UNHIDE") await unhideComment(commentId, note);
+      if (kind === "DELETE") await softDeleteComment(commentId, note);
+      if (kind === "RESTORE") await restoreDeletedComment(commentId, note);
 
       setActionNote("");
       await onAfterAction();
     } catch (e: any) {
-      setActionError(e?.message ?? "Failed to apply action");
+      // axios обычно кладёт текст в response.data.message
+      const msg =
+        e?.response?.data?.message ??
+        e?.message ??
+        "Failed to apply action";
+      setActionError(msg);
     } finally {
       setIsSubmittingAction(false);
     }
@@ -62,6 +74,8 @@ export function useCommentActions(params: {
     commentActionsHint,
     canHide,
     canUnhide,
+    canDelete,
+    canRestore,
 
     onCommentAction,
   };

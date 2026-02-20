@@ -1,11 +1,26 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus, CommentStatus } from "@prisma/client";
 
+function sanitizeDeletedComment<T extends { status: CommentStatus; content?: string; images?: string[]; videos?: string[]; files?: string[] }>(
+  c: T
+): T {
+  if (c.status !== CommentStatus.DELETED) return c;
+
+  return {
+    ...c,
+    content: "(deleted)",
+    images: [],
+    videos: [],
+    files: [],
+  };
+}
+
 export const getCommentReplies = async (commentId: number) => {
-  return prisma.comment.findMany({
+  const replies = await prisma.comment.findMany({
     where: {
       parentId: commentId,
-      status: CommentStatus.ACTIVE,
+      // Показываем ACTIVE и DELETED, но НЕ HIDDEN
+      status: { in: [CommentStatus.ACTIVE, CommentStatus.DELETED] },
       post: { status: ContentStatus.ACTIVE },
     },
     orderBy: { createdAt: "asc" },
@@ -17,4 +32,6 @@ export const getCommentReplies = async (commentId: number) => {
       likes: { select: { userId: true } },
     },
   });
+
+  return replies.map((r) => sanitizeDeletedComment(r as any));
 };
