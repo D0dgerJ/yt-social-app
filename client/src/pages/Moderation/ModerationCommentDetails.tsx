@@ -157,6 +157,8 @@ export default function ModerationCommentDetails() {
               commentActionsHint={commentActions.commentActionsHint}
               canHide={commentActions.canHide}
               canUnhide={commentActions.canUnhide}
+              canDelete={commentActions.canDelete}
+              canRestore={commentActions.canRestore}
               onCommentAction={(k) => void commentActions.onCommentAction(k)}
               onRefreshActions={() => void refreshActions()}
             />

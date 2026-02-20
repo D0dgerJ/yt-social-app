@@ -2,7 +2,9 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { createNotification } from "../notification/createNotification.ts";
 import { notifyMentions } from "../notification/notifyMentions.ts";
 import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
+import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { CommentStatus } from "@prisma/client";
 
 interface CreateCommentParams {
   postId: number;
@@ -38,6 +40,39 @@ export const createComment = async ({
     throw Errors.notFound("Post not found");
   }
 
+  // ✅ Если это reply — проверяем parent ДО создания
+  let parentComment: { id: number; userId: number; postId: number } | null = null;
+
+  if (typeof parentId === "number") {
+    if (!Number.isFinite(parentId) || parentId <= 0) {
+      throw Errors.validation("Invalid parentId");
+    }
+
+    // auto-lock: запрещаем reply/like/update/delete в ветке, если root не ACTIVE
+    await assertCommentThreadActionAllowed({ commentId: parentId });
+
+    parentComment = await prisma.comment.findFirst({
+      where: {
+        id: parentId,
+        status: CommentStatus.ACTIVE,
+      },
+      select: { id: true, userId: true, postId: true },
+    });
+
+    if (!parentComment) {
+      throw Errors.validation("Cannot reply to this comment");
+    }
+
+    if (parentComment.postId !== postId) {
+      throw Errors.validation("Invalid parentId for this post");
+    }
+  }
+
+  const trimmed = content?.trim() ?? "";
+  if (!trimmed.length) {
+    throw Errors.validation("Content is required");
+  }
+
   const comment = await prisma.comment.create({
     data: {
       postId,
@@ -55,17 +90,12 @@ export const createComment = async ({
     },
   });
 
-  const trimmed = content.trim();
   const snippet = trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
 
+  // уведомления/mentions — можно глотать ошибки, но НЕ валидацию
   try {
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
-        select: { id: true, userId: true, postId: true },
-      });
-
-      if (parentComment && parentComment.userId !== userId) {
+    if (parentComment) {
+      if (parentComment.userId !== userId) {
         await createNotification({
           fromUserId: userId,
           toUserId: parentComment.userId,

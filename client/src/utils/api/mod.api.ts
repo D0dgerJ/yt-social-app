@@ -440,3 +440,17 @@ export const unhideComment = async (commentId: number, reason?: string) => {
   const response = await axios.post(`/mod/comments/${commentId}/unhide`, { reason });
   return response.data as { ok: boolean; comment: any };
 };
+
+export const softDeleteComment = async (commentId: number, reason: string) => {
+  const response = await axios.post(`/mod/comments/${commentId}/soft-delete`, {
+    reason,
+  });
+  return response.data as { ok: boolean; comment: any };
+};
+
+export const restoreDeletedComment = async (commentId: number, reason: string) => {
+  const response = await axios.post(`/mod/comments/${commentId}/restore`, {
+    reason,
+  });
+  return response.data as { ok: boolean; comment: any };
+};

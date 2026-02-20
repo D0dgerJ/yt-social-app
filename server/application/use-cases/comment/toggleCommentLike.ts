@@ -1,6 +1,8 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { ContentStatus } from "@prisma/client";
+import { ContentStatus, CommentStatus } from "@prisma/client";
 import { createNotification } from "../notification/createNotification.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 
 interface ToggleLikeParams {
   commentId: number;
@@ -8,6 +10,13 @@ interface ToggleLikeParams {
 }
 
 export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams) => {
+  if (!Number.isFinite(commentId) || commentId <= 0) {
+    throw Errors.validation("Invalid commentId");
+  }
+
+  // ✅ thread auto-lock: если root не ACTIVE — лайки запрещены в ветке
+  await assertCommentThreadActionAllowed({ commentId });
+
   const existingLike = await prisma.commentLike.findUnique({
     where: { userId_commentId: { userId, commentId } },
     select: { id: true },
@@ -18,10 +27,11 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
     return { liked: false };
   }
 
-  // ✅ одним запросом проверяем и comment, и что post ACTIVE
+  // ✅ лайкать можно только ACTIVE (не HIDDEN/DELETED) + пост ACTIVE
   const comment = await prisma.comment.findFirst({
     where: {
       id: commentId,
+      status: CommentStatus.ACTIVE,
       post: { status: ContentStatus.ACTIVE },
     },
     select: {
@@ -34,8 +44,7 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
   });
 
   if (!comment) {
-    // не палим пользователю, что пост скрыт — просто "не найдено/нельзя"
-    throw new Error("Comment does not exist.");
+    throw Errors.notFound("Comment does not exist.");
   }
 
   await prisma.commentLike.create({

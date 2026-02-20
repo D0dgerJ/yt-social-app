@@ -53,7 +53,12 @@ export const remove = async (req: Request, res: Response, next: NextFunction) =>
     const commentId = Number(req.params.commentId);
     if (!Number.isFinite(commentId) || commentId <= 0) throw Errors.validation("Invalid commentId");
 
-    await deleteComment(commentId);
+    await deleteComment({
+      commentId,
+      actorId: req.user!.id,
+      reason: typeof req.body?.reason === "string" ? req.body.reason.trim() : undefined,
+    });
+
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -115,7 +120,7 @@ export const removeReply = async (req: Request, res: Response, next: NextFunctio
     const replyId = Number(req.params.replyId);
     if (!Number.isFinite(replyId) || replyId <= 0) throw Errors.validation("Invalid replyId");
 
-    await deleteCommentReply(replyId);
+    await deleteCommentReply({ commentId: replyId, actorId: req.user!.id });
     res.status(204).send();
   } catch (err) {
     next(err);

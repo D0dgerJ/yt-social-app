@@ -24,7 +24,7 @@ import { getUserSanctions } from "../../application/services/moderation/getUserS
 import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.ts";
 import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
 
-import { hideComment, unhideComment } from "../../application/services/moderation/moderateCommentVisibility.ts";
+import { hideComment, unhideComment, softDeleteComment, restoreDeletedComment } from "../../application/services/moderation/moderateCommentVisibility.ts";
 import { assertApprovedCommentReport } from "../../application/services/moderation/assertApprovedReport.ts";
 
 const router = Router();
@@ -207,6 +207,56 @@ router.post("/comments/:id/unhide", authMiddleware, requireModerator, async (req
       actorId: req.user!.id,
       commentId,
       reason: reason ?? "Unhidden by moderation",
+    });
+
+    res.status(200).json({ ok: true, comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * SOFT DELETE COMMENT: MODERATOR+
+ * Только если есть APPROVED report
+ * reason ОБЯЗАТЕЛЕН
+ */
+router.post("/comments/:id/soft-delete", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const commentId = parseId(req.params.id, "Invalid comment id");
+
+    const reason = getReason(req.body);
+    if (!reason) throw Errors.validation("Reason is required");
+
+    await assertHasApprovedCommentReport(commentId);
+
+    const comment = await softDeleteComment({
+      actorId: req.user!.id,
+      commentId,
+      reason,
+    });
+
+    res.status(200).json({ ok: true, comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * RESTORE DELETED COMMENT: MODERATOR+
+ * Возвращает DELETED -> ACTIVE
+ * reason ОБЯЗАТЕЛЕН
+ */
+router.post("/comments/:id/restore", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const commentId = parseId(req.params.id, "Invalid comment id");
+
+    const reason = getReason(req.body);
+    if (!reason) throw Errors.validation("Reason is required");
+
+    const comment = await restoreDeletedComment({
+      actorId: req.user!.id,
+      commentId,
+      reason,
     });
 
     res.status(200).json({ ok: true, comment });
@@ -1081,6 +1131,7 @@ router.get("/actions/:id/evidence", authMiddleware, requireModerator, async (req
 
     let targetPost: any = null;
     let targetUser: any = null;
+    let targetComment: any = null;
 
     const targetIdNum = Number(action.targetId);
     const targetIdIsNum = Number.isFinite(targetIdNum) && targetIdNum > 0;
@@ -1123,15 +1174,44 @@ router.get("/actions/:id/evidence", authMiddleware, requireModerator, async (req
       });
     }
 
+    if (action.targetType === ModerationTargetType.COMMENT && targetIdIsNum) {
+      targetComment = await prisma.comment.findUnique({
+        where: { id: targetIdNum },
+        select: {
+          id: true,
+          postId: true,
+          userId: true,
+          parentId: true,
+          content: true,
+          images: true,
+          videos: true,
+          files: true,
+          status: true,
+          hiddenAt: true,
+          hiddenReason: true,
+          hiddenById: true,
+          deletedAt: true,
+          deletedReason: true,
+          deletedById: true,
+          createdAt: true,
+          user: { select: { id: true, username: true } },
+          post: { select: { id: true, userId: true } },
+          _count: { select: { likes: true, replies: true, reports: true } },
+        },
+      });
+    }
+
     res.status(200).json({
       ok: true,
       action,
       targetPost,
       targetUser,
+      targetComment,
     });
   } catch (err) {
     next(err);
   }
 });
+
 
 export default router;
