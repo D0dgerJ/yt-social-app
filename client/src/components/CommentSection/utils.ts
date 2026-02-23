@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getPostComments,
   createComment,
@@ -7,6 +7,10 @@ import {
   updateComment,
 } from "../../utils/api/comment.api";
 import { Comment } from "./types";
+
+function isNestedResponse(res: any): res is Comment[] {
+  return Array.isArray(res) && (res.length === 0 || Array.isArray(res[0]?.replies));
+}
 
 export const useComments = (postId: number) => {
   const [comments, setComments] = useState<Comment[]>([]);
@@ -19,12 +23,21 @@ export const useComments = (postId: number) => {
       setError(null);
 
       const res = await getPostComments(postId);
-      const topLevel = res.filter((c: Comment) => c.parentId === null);
-      const replies = res.filter((c: Comment) => c.parentId !== null);
 
-      const commentsWithReplies = topLevel.map((parent: Comment) => ({
+      // ✅ Новый формат: сервер уже возвращает корневые с вложенными replies
+      if (isNestedResponse(res)) {
+        setComments(res);
+        return;
+      }
+
+      // ✅ Старый формат: плоский список — собираем replies вручную
+      const flat = res as Comment[];
+      const topLevel = flat.filter((c) => c.parentId === null);
+      const replies = flat.filter((c) => c.parentId !== null);
+
+      const commentsWithReplies = topLevel.map((parent) => ({
         ...parent,
-        replies: replies.filter((r: Comment) => r.parentId === parent.id),
+        replies: replies.filter((r) => r.parentId === parent.id),
       }));
 
       setComments(commentsWithReplies);

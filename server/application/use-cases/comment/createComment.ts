@@ -5,6 +5,7 @@ import { assertPostActionAllowed } from "../../services/post/assertPostActionAll
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { CommentStatus } from "@prisma/client";
+import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.ts";
 
 interface CreateCommentParams {
   postId: number;
@@ -49,7 +50,15 @@ export const createComment = async ({
     }
 
     // auto-lock: запрещаем reply/like/update/delete в ветке, если root не ACTIVE
-    await assertCommentThreadActionAllowed({ commentId: parentId });
+    const thread = await assertCommentThreadActionAllowed({ commentId: parentId });
+
+    // ✅ rate limit replies (только replies)
+    await rateLimitConsume({ key: `rl:reply:user:${userId}`, limit: 10, windowSec: 60 });
+    await rateLimitConsume({
+      key: `rl:reply:thread:${userId}:${thread.rootId}`,
+      limit: 4,
+      windowSec: 20,
+    });
 
     parentComment = await prisma.comment.findFirst({
       where: {
@@ -77,7 +86,7 @@ export const createComment = async ({
     data: {
       postId,
       userId,
-      content,
+      content: trimmed,
       parentId: parentId ?? null,
       images,
       videos,
@@ -120,7 +129,7 @@ export const createComment = async ({
     }
 
     await notifyMentions({
-      content,
+      content: trimmed,
       fromUserId: userId,
       postId,
       commentId: comment.id,
