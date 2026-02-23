@@ -4,14 +4,15 @@ export type ApiErrorCode =
   | "UNAUTHORIZED"
   | "VALIDATION"
   | "CONFLICT"
+  | "TOO_MANY_REQUESTS"
   | "POST_HIDDEN"
   | "POST_DELETED"
   | "INTERNAL";
 
 export class ApiError extends Error {
-  public status: number;
-  public code: ApiErrorCode;
-  public details?: unknown;
+  status: number;
+  code: ApiErrorCode;
+  details?: unknown;
 
   constructor(status: number, code: ApiErrorCode, message: string, details?: unknown) {
     super(message);
@@ -37,9 +38,20 @@ export const Errors = {
   conflict: (message = "Conflict", details?: unknown) =>
     new ApiError(409, "CONFLICT", message, details),
 
-  postHidden: () => new ApiError(423, "POST_HIDDEN", "Post is hidden"),
-  postDeleted: () => new ApiError(410, "POST_DELETED", "Post is deleted"),
+  tooManyRequests: (message = "Too many requests", retryAfterSec?: number) =>
+    new ApiError(
+      429,
+      "TOO_MANY_REQUESTS",
+      message,
+      typeof retryAfterSec === "number" ? { retryAfterSec } : undefined
+    ),
 
-  internal: (message = "Internal server error", details?: unknown) =>
+  postHidden: (message = "Post is hidden", details?: unknown) =>
+    new ApiError(403, "POST_HIDDEN", message, details),
+
+  postDeleted: (message = "Post is deleted", details?: unknown) =>
+    new ApiError(403, "POST_DELETED", message, details),
+
+  internal: (message = "Internal error", details?: unknown) =>
     new ApiError(500, "INTERNAL", message, details),
 };

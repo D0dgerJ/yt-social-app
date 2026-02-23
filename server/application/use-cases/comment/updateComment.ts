@@ -3,7 +3,7 @@ import { ContentStatus, CommentStatus } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 
-interface UpdateReplyInput {
+interface UpdateCommentInput {
   commentId: number;
   content?: string;
   images?: string[];
@@ -11,13 +11,13 @@ interface UpdateReplyInput {
   files?: string[];
 }
 
-export const updateCommentReply = async ({
+export const updateComment = async ({
   commentId,
   content,
   images,
   videos,
   files,
-}: UpdateReplyInput) => {
+}: UpdateCommentInput) => {
   if (!Number.isFinite(commentId) || commentId <= 0) {
     throw Errors.validation("Invalid commentId");
   }
@@ -25,17 +25,18 @@ export const updateCommentReply = async ({
   // ✅ thread auto-lock (если root не ACTIVE — нельзя)
   await assertCommentThreadActionAllowed({ commentId });
 
-  const reply = await prisma.comment.findFirst({
+  // ✅ обновлять можно только корневой коммент и только ACTIVE
+  const comment = await prisma.comment.findFirst({
     where: {
       id: commentId,
-      parentId: { not: null },
-      status: CommentStatus.ACTIVE, // ✅ нельзя обновлять DELETED/HIDDEN
+      parentId: null,
+      status: CommentStatus.ACTIVE,
       post: { status: ContentStatus.ACTIVE },
     },
     select: { id: true },
   });
 
-  if (!reply) {
+  if (!comment) {
     throw Errors.notFound("Comment does not exist.");
   }
 
