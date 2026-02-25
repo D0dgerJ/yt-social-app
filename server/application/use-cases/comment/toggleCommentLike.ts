@@ -1,5 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { ContentStatus, CommentStatus } from "@prisma/client";
+import { ContentStatus, CommentStatus, CommentVisibility } from "@prisma/client";
 import { createNotification } from "../notification/createNotification.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
@@ -15,7 +15,7 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
   }
 
   // ✅ thread auto-lock: если root не ACTIVE — лайки запрещены в ветке
-  await assertCommentThreadActionAllowed({ commentId });
+  await assertCommentThreadActionAllowed({ commentId, actorId: userId });
 
   const existingLike = await prisma.commentLike.findUnique({
     where: { userId_commentId: { userId, commentId } },
@@ -33,6 +33,12 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
       id: commentId,
       status: CommentStatus.ACTIVE,
       post: { status: ContentStatus.ACTIVE },
+
+      // shadow moderation:
+      OR: [
+        { visibility: CommentVisibility.PUBLIC },
+        { visibility: CommentVisibility.SHADOW_HIDDEN, userId }, // автор может лайкать своё
+      ],
     },
     select: {
       id: true,

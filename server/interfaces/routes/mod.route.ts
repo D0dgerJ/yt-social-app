@@ -24,7 +24,7 @@ import { getUserSanctions } from "../../application/services/moderation/getUserS
 import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.ts";
 import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
 
-import { hideComment, unhideComment, softDeleteComment, restoreDeletedComment } from "../../application/services/moderation/moderateCommentVisibility.ts";
+import { hideComment, unhideComment, softDeleteComment, restoreDeletedComment, shadowHideComment, shadowUnhideComment, } from "../../application/services/moderation/moderateCommentVisibility.ts";
 import { assertApprovedCommentReport } from "../../application/services/moderation/assertApprovedReport.ts";
 
 const router = Router();
@@ -207,6 +207,44 @@ router.post("/comments/:id/unhide", authMiddleware, requireModerator, async (req
       actorId: req.user!.id,
       commentId,
       reason: reason ?? "Unhidden by moderation",
+    });
+
+    res.status(200).json({ ok: true, comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/comments/:id/shadow-hide", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const commentId = parseId(req.params.id, "Invalid comment id");
+    const reason = getReason(req.body);
+
+    await assertHasApprovedCommentReport(commentId);
+
+    const comment = await shadowHideComment({
+      actorId: req.user!.id,
+      commentId,
+      reason: reason ?? "Shadow hidden by moderation",
+    });
+
+    res.status(200).json({ ok: true, comment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/comments/:id/shadow-unhide", authMiddleware, requireModerator, async (req, res, next) => {
+  try {
+    const commentId = parseId(req.params.id, "Invalid comment id");
+    const reason = getReason(req.body);
+
+    await assertHasApprovedCommentReport(commentId);
+
+    const comment = await shadowUnhideComment({
+      actorId: req.user!.id,
+      commentId,
+      reason: reason ?? "Shadow unhidden by moderation",
     });
 
     res.status(200).json({ ok: true, comment });
@@ -1186,7 +1224,14 @@ router.get("/actions/:id/evidence", authMiddleware, requireModerator, async (req
           images: true,
           videos: true,
           files: true,
+
           status: true,
+          visibility: true,
+          shadowHiddenAt: true,
+          shadowHiddenReason: true,
+          shadowHiddenById: true,
+          shadowHiddenBy: { select: { id: true, username: true } },
+
           hiddenAt: true,
           hiddenReason: true,
           hiddenById: true,
@@ -1212,6 +1257,5 @@ router.get("/actions/:id/evidence", authMiddleware, requireModerator, async (req
     next(err);
   }
 });
-
 
 export default router;

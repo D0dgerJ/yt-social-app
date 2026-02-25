@@ -3,19 +3,15 @@ import { CommentStatus, ContentStatus } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 
-export const deleteCommentReply = async (params: {
-  commentId: number;
-  actorId: number;
-  reason?: string;
-}) => {
+export const deleteCommentReply = async (params: { commentId: number; actorId: number; reason?: string }) => {
   const { commentId, actorId, reason } = params;
 
   if (!Number.isFinite(commentId) || commentId <= 0) {
     throw Errors.validation("Invalid commentId");
   }
 
-  // ✅ thread auto-lock (если root не ACTIVE — нельзя)
-  await assertCommentThreadActionAllowed({ commentId });
+  // ✅ thread auto-lock + shadow rules
+  await assertCommentThreadActionAllowed({ commentId, actorId });
 
   const reply = await prisma.comment.findFirst({
     where: {
@@ -28,10 +24,8 @@ export const deleteCommentReply = async (params: {
 
   if (!reply) throw Errors.notFound("Comment does not exist.");
 
-  // идемпотентность
   if (reply.status === CommentStatus.DELETED) return { ok: true };
 
-  // ✅ пользователь не должен “удалять” HIDDEN (скрыто модерацией) — иначе он обходит модерацию
   if (reply.status !== CommentStatus.ACTIVE) {
     throw Errors.validation("Cannot delete non-active reply");
   }
@@ -47,6 +41,11 @@ export const deleteCommentReply = async (params: {
       hiddenAt: null,
       hiddenById: null,
       hiddenReason: null,
+
+      visibility: "PUBLIC",
+      shadowHiddenAt: null,
+      shadowHiddenById: null,
+      shadowHiddenReason: null,
     },
     select: { id: true },
   });
