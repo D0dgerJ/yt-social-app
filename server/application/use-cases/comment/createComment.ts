@@ -50,7 +50,7 @@ export const createComment = async ({
     }
 
     // auto-lock: запрещаем reply/like/update/delete в ветке, если root не ACTIVE
-    const thread = await assertCommentThreadActionAllowed({ commentId: parentId });
+    const thread = await assertCommentThreadActionAllowed({ commentId: parentId, actorId: userId });
 
     // ✅ rate limit replies (только replies)
     await rateLimitConsume({ key: `rl:reply:user:${userId}`, limit: 10, windowSec: 60 });

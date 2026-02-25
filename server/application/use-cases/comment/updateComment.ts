@@ -1,37 +1,37 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { ContentStatus, CommentStatus } from "@prisma/client";
+import { ContentStatus, CommentStatus, CommentVisibility } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 
 interface UpdateCommentInput {
   commentId: number;
+  actorId: number;
   content?: string;
   images?: string[];
   videos?: string[];
   files?: string[];
 }
 
-export const updateComment = async ({
-  commentId,
-  content,
-  images,
-  videos,
-  files,
-}: UpdateCommentInput) => {
+export const updateComment = async ({ commentId, actorId, content, images, videos, files }: UpdateCommentInput) => {
   if (!Number.isFinite(commentId) || commentId <= 0) {
     throw Errors.validation("Invalid commentId");
   }
 
-  // ✅ thread auto-lock (если root не ACTIVE — нельзя)
-  await assertCommentThreadActionAllowed({ commentId });
+  // ✅ thread auto-lock + shadow rules
+  await assertCommentThreadActionAllowed({ commentId, actorId });
 
   // ✅ обновлять можно только корневой коммент и только ACTIVE
+  // + shadow: актор должен иметь право "видеть" этот коммент (PUBLIC или свой SHADOW_HIDDEN)
   const comment = await prisma.comment.findFirst({
     where: {
       id: commentId,
       parentId: null,
       status: CommentStatus.ACTIVE,
       post: { status: ContentStatus.ACTIVE },
+      OR: [
+        { visibility: CommentVisibility.PUBLIC },
+        { visibility: CommentVisibility.SHADOW_HIDDEN, userId: actorId },
+      ],
     },
     select: { id: true },
   });

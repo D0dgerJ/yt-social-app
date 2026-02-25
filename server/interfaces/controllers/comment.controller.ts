@@ -41,7 +41,7 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
     if (!Number.isFinite(commentId) || commentId <= 0) throw Errors.validation("Invalid commentId");
 
     const { content } = req.body;
-    const updated = await updateComment({ commentId, content });
+    const updated = await updateComment({ commentId, content, actorId: req.user!.id });
     res.status(200).json(updated);
   } catch (err) {
     next(err);
@@ -70,7 +70,7 @@ export const getComments = async (req: Request, res: Response, next: NextFunctio
     const postId = Number(req.params.postId);
     if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
 
-    const comments = await getPostComments(postId);
+    const comments = await getPostComments(postId, req.user ? { id: req.user.id, role: req.user.role } : undefined);
     res.status(200).json(comments);
   } catch (err) {
     next(err);
@@ -95,7 +95,7 @@ export const getReplies = async (req: Request, res: Response, next: NextFunction
     const commentId = Number(req.params.commentId);
     if (!Number.isFinite(commentId) || commentId <= 0) throw Errors.validation("Invalid commentId");
 
-    const replies = await getCommentReplies(commentId);
+    const replies = await getCommentReplies(commentId, req.user ? { id: req.user.id, role: req.user.role } : undefined);
     res.status(200).json(replies);
   } catch (err) {
     next(err);
@@ -108,7 +108,7 @@ export const updateReply = async (req: Request, res: Response, next: NextFunctio
     if (!Number.isFinite(replyId) || replyId <= 0) throw Errors.validation("Invalid replyId");
 
     const { content } = req.body;
-    const updated = await updateCommentReply({ commentId: replyId, content });
+    const updated = await updateCommentReply({ commentId: replyId, content, actorId: req.user!.id });
     res.status(200).json(updated);
   } catch (err) {
     next(err);
@@ -132,7 +132,7 @@ export const getById = async (req: Request, res: Response, next: NextFunction) =
     const id = Number(req.params.commentId);
     if (!Number.isFinite(id) || id <= 0) throw Errors.validation("Invalid commentId");
 
-    const comment = await getCommentById(id);
+    const comment = await getCommentById(id, req.user ? { id: req.user.id, role: req.user.role } : undefined);
     if (!comment) throw Errors.notFound("Comment not found");
 
     res.status(200).json(comment);

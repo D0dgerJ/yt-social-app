@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import {
   CommentStatus,
+  CommentVisibility,
   ModerationActionType,
   ModerationTargetType,
 } from "@prisma/client";
@@ -20,10 +21,8 @@ export const hideComment = async (params: {
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
-  if (comment.status === CommentStatus.DELETED)
-    throw Errors.validation("Comment is deleted");
-  if (comment.status === CommentStatus.HIDDEN)
-    throw Errors.validation("Comment is already hidden");
+  if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is deleted");
+  if (comment.status === CommentStatus.HIDDEN) throw Errors.validation("Comment is already hidden");
 
   await assertApprovedCommentReport(commentId);
 
@@ -34,6 +33,11 @@ export const hideComment = async (params: {
       hiddenAt: new Date(),
       hiddenById: actorId,
       hiddenReason: reason,
+
+      visibility: CommentVisibility.PUBLIC,
+      shadowHiddenAt: null,
+      shadowHiddenById: null,
+      shadowHiddenReason: null,
     },
     select: { id: true, status: true, hiddenAt: true },
   });
@@ -64,10 +68,8 @@ export const unhideComment = async (params: {
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
-  if (comment.status === CommentStatus.DELETED)
-    throw Errors.validation("Comment is deleted");
-  if (comment.status !== CommentStatus.HIDDEN)
-    throw Errors.validation("Comment is not hidden");
+  if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is deleted");
+  if (comment.status !== CommentStatus.HIDDEN) throw Errors.validation("Comment is not hidden");
 
   const updated = await prisma.comment.update({
     where: { id: commentId },
@@ -76,6 +78,11 @@ export const unhideComment = async (params: {
       hiddenAt: null,
       hiddenById: null,
       hiddenReason: null,
+
+      visibility: CommentVisibility.PUBLIC,
+      shadowHiddenAt: null,
+      shadowHiddenById: null,
+      shadowHiddenReason: null,
     },
     select: { id: true, status: true },
   });
@@ -84,6 +91,100 @@ export const unhideComment = async (params: {
     data: {
       actorId,
       actionType: ModerationActionType.CONTENT_UNHIDDEN,
+      targetType: ModerationTargetType.COMMENT,
+      targetId: String(commentId),
+      reason,
+    },
+  });
+
+  return updated;
+};
+
+export const shadowHideComment = async (params: {
+  actorId: number;
+  commentId: number;
+  reason: string;
+}) => {
+  const { actorId, commentId, reason } = params;
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { id: true, status: true, visibility: true },
+  });
+
+  if (!comment) throw Errors.notFound("Comment not found");
+  if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is deleted");
+  if (comment.visibility === CommentVisibility.SHADOW_HIDDEN)
+    throw Errors.validation("Comment is already shadow hidden");
+
+  await assertApprovedCommentReport(commentId);
+
+  const updated = await prisma.comment.update({
+    where: { id: commentId },
+    data: {
+      visibility: CommentVisibility.SHADOW_HIDDEN,
+      shadowHiddenAt: new Date(),
+      shadowHiddenById: actorId,
+      shadowHiddenReason: reason,
+
+      hiddenAt: null,
+      hiddenById: null,
+      hiddenReason: null,
+    },
+    select: { id: true, status: true, visibility: true, shadowHiddenAt: true },
+  });
+
+  await prisma.moderationAction.create({
+    data: {
+      actorId,
+      actionType: ModerationActionType.CONTENT_SHADOW_HIDDEN,
+      targetType: ModerationTargetType.COMMENT,
+      targetId: String(commentId),
+      reason,
+    },
+  });
+
+  return updated;
+};
+
+export const shadowUnhideComment = async (params: {
+  actorId: number;
+  commentId: number;
+  reason: string;
+}) => {
+  const { actorId, commentId, reason } = params;
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { id: true, status: true, visibility: true },
+  });
+
+  if (!comment) throw Errors.notFound("Comment not found");
+  if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is deleted");
+  if (comment.visibility !== CommentVisibility.SHADOW_HIDDEN)
+    throw Errors.validation("Comment is not shadow hidden");
+
+  await assertApprovedCommentReport(commentId);
+
+  const updated = await prisma.comment.update({
+    where: { id: commentId },
+    data: {
+      visibility: CommentVisibility.PUBLIC,
+      shadowHiddenAt: null,
+      shadowHiddenById: null,
+      shadowHiddenReason: null,
+
+      hiddenAt: null,
+      hiddenById: null,
+      hiddenReason: null,
+    },
+    select: { id: true, status: true, visibility: true },
+  });
+
+  await prisma.moderationAction.create({
+    data: {
+      actorId,
+      actionType: ModerationActionType.CONTENT_SHADOW_UNHIDDEN,
       targetType: ModerationTargetType.COMMENT,
       targetId: String(commentId),
       reason,
@@ -110,8 +211,7 @@ export const softDeleteComment = async (params: {
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
-  if (comment.status === CommentStatus.DELETED)
-    throw Errors.validation("Comment is already deleted");
+  if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is already deleted");
 
   await assertApprovedCommentReport(commentId);
 
@@ -123,10 +223,14 @@ export const softDeleteComment = async (params: {
       deletedById: actorId,
       deletedReason: reason,
 
-      // Если было HIDDEN — очищаем hidden-поля, чтобы статус был однозначным
       hiddenAt: null,
       hiddenById: null,
       hiddenReason: null,
+
+      visibility: CommentVisibility.PUBLIC,
+      shadowHiddenAt: null,
+      shadowHiddenById: null,
+      shadowHiddenReason: null,
     },
     select: { id: true, status: true, deletedAt: true },
   });
@@ -160,8 +264,7 @@ export const restoreDeletedComment = async (params: {
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
-  if (comment.status !== CommentStatus.DELETED)
-    throw Errors.validation("Comment is not deleted");
+  if (comment.status !== CommentStatus.DELETED) throw Errors.validation("Comment is not deleted");
 
   const updated = await prisma.comment.update({
     where: { id: commentId },

@@ -69,15 +69,16 @@ model User {
   postReportsSent     PostReport[] @relation("PostReportReporter")
   postReportsReviewed PostReport[] @relation("PostReportReviewedBy")
 
-  sanctions          UserSanction[] @relation("UserSanctions")
-  sanctionsCreated   UserSanction[] @relation("SanctionCreatedBy")
-  sanctionsLifted    UserSanction[] @relation("SanctionLiftedBy")
+  sanctions        UserSanction[] @relation("UserSanctions")
+  sanctionsCreated UserSanction[] @relation("SanctionCreatedBy")
+  sanctionsLifted  UserSanction[] @relation("SanctionLiftedBy")
 
   commentReportsCreated  CommentReport[] @relation("CommentReportReporter")
   commentReportsReviewed CommentReport[] @relation("CommentReportReviewedBy")
 
-  commentsHidden  Comment[] @relation("CommentHiddenBy")
-  commentsDeleted Comment[] @relation("CommentDeletedBy")
+  commentsHidden       Comment[] @relation("CommentHiddenBy")
+  commentsDeleted      Comment[] @relation("CommentDeletedBy")
+  commentsShadowHidden Comment[] @relation("CommentShadowHiddenBy")
 }
 
 model FriendRequest {
@@ -156,22 +157,33 @@ model Comment {
   user  User          @relation(fields: [userId], references: [id])
   likes CommentLike[]
 
-  status       CommentStatus @default(ACTIVE)
+  status CommentStatus @default(ACTIVE)
+
+  visibility CommentVisibility @default(PUBLIC)
+
+  shadowHiddenAt     DateTime?
+  shadowHiddenReason String?
+  shadowHiddenById   Int?
+  shadowHiddenBy     User?     @relation("CommentShadowHiddenBy", fields: [shadowHiddenById], references: [id], onDelete: SetNull)
 
   hiddenAt     DateTime?
   hiddenReason String?
   hiddenById   Int?
-  hiddenBy     User?         @relation("CommentHiddenBy", fields: [hiddenById], references: [id])
+  hiddenBy     User?     @relation("CommentHiddenBy", fields: [hiddenById], references: [id], onDelete: SetNull)
 
   deletedAt     DateTime?
   deletedReason String?
   deletedById   Int?
-  deletedBy     User?         @relation("CommentDeletedBy", fields: [deletedById], references: [id])
+  deletedBy     User?     @relation("CommentDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
 
   reports CommentReport[]
 
   @@index([status])
+  @@index([visibility])
   @@index([postId, status])
+  @@index([postId, visibility])
+  @@index([parentId, status])
+  @@index([parentId, visibility])
 }
 
 model CommentLike {
@@ -486,6 +498,8 @@ enum ModerationActionType {
   REPORT_CREATED
   CONTENT_HIDDEN
   CONTENT_UNHIDDEN
+  CONTENT_SHADOW_HIDDEN
+  CONTENT_SHADOW_UNHIDDEN
   CONTENT_DELETED
   USER_RESTRICTED
   USER_UNRESTRICTED
@@ -604,17 +618,17 @@ enum UserSanctionStatus {
 }
 
 model UserSanction {
-  id        Int               @id @default(autoincrement())
-  userId    Int
-  type      UserSanctionType
-  status    UserSanctionStatus @default(ACTIVE)
+  id     Int                @id @default(autoincrement())
+  userId Int
+  type   UserSanctionType
+  status UserSanctionStatus @default(ACTIVE)
 
-  reason    String
-  message   String?
-  evidence  Json?             // { postIds: number[], reportIds: number[], links: string[] ... }
+  reason   String
+  message  String?
+  evidence Json? // { postIds: number[], reportIds: number[], links: string[] ... }
 
-  startsAt  DateTime          @default(now())
-  endsAt    DateTime?         // null для PERM_BAN / WARN / RESTRICT
+  startsAt DateTime  @default(now())
+  endsAt   DateTime? // null для PERM_BAN / WARN / RESTRICT
 
   createdById Int
   liftedById  Int?
@@ -624,12 +638,17 @@ model UserSanction {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User @relation("UserSanctions", fields: [userId], references: [id], onDelete: Cascade)
-  createdBy User @relation("SanctionCreatedBy", fields: [createdById], references: [id])
+  user      User  @relation("UserSanctions", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("SanctionCreatedBy", fields: [createdById], references: [id])
   liftedBy  User? @relation("SanctionLiftedBy", fields: [liftedById], references: [id])
 
   @@index([userId, status])
   @@index([status, endsAt])
+}
+
+enum CommentVisibility {
+  PUBLIC
+  SHADOW_HIDDEN
 }
 
 enum CommentStatus {
@@ -644,10 +663,10 @@ model CommentReport {
   updatedAt DateTime @updatedAt
 
   commentId Int
-  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   reporterId Int
-  reporter   User     @relation("CommentReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporter   User @relation("CommentReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
 
   reason  String
   details String?
@@ -661,4 +680,3 @@ model CommentReport {
   @@index([commentId, status])
   @@index([reporterId, createdAt])
 }
-

@@ -5,24 +5,25 @@ import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.t
 import prisma from "../../infrastructure/database/prismaClient.ts";
 
 import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
+import { optionalAuthMiddleware } from "../../infrastructure/middleware/optionalAuthMiddleware.ts";
 
 const router = express.Router();
 
 router.post("/", authMiddleware, enforceSanctions, requireNotRestricted, controller.create);
 
 // Получение комментариев к посту
-router.get("/post/:postId", controller.getComments);
+router.get("/post/:postId", optionalAuthMiddleware, controller.getComments);
 
 router.post("/:commentId/report", authMiddleware, enforceSanctions, requireNotRestricted, controller.report);
 
 // Получение ответов на конкретный комментарий (ДОЛЖНО БЫТЬ ДО "/:commentId")
-router.get("/replies/:commentId", controller.getReplies);
+router.get("/replies/:commentId", optionalAuthMiddleware, controller.getReplies);
 
 // 📊 Получение количества ответов к нескольким комментариям
 router.post("/replies-count", controller.getRepliesCountForManyHandler);
 
 // Получение одного комментария по ID (ПОСЛЕ более конкретных маршрутов)
-router.get("/:commentId", controller.getById);
+router.get("/:commentId", optionalAuthMiddleware, controller.getById);
 
 // Лайк/анлайк комментария
 router.put("/:commentId/like", authMiddleware, enforceSanctions, requireNotRestricted, controller.likeComment);

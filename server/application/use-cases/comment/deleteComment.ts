@@ -46,6 +46,11 @@ export const deleteComment = async (params: {
         hiddenAt: null,
         hiddenById: null,
         hiddenReason: null,
+
+        visibility: "PUBLIC",
+        shadowHiddenAt: null,
+        shadowHiddenById: null,
+        shadowHiddenReason: null,
       },
     });
 
@@ -61,6 +66,11 @@ export const deleteComment = async (params: {
         hiddenAt: null,
         hiddenById: null,
         hiddenReason: null,
+
+        visibility: "PUBLIC",
+        shadowHiddenAt: null,
+        shadowHiddenById: null,
+        shadowHiddenReason: null,
       },
       select: { id: true },
     });
