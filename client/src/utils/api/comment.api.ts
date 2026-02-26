@@ -1,4 +1,4 @@
-import axios from './axiosInstance';
+import axios from "./axiosInstance";
 
 // ===== Типы =====
 interface CreateCommentInput {
@@ -18,18 +18,9 @@ interface UpdateCommentInput {
   files?: string[];
 }
 
-interface CreateReplyInput {
-  postId: number;
-  parentId: number;
-  content: string;
-  images?: string[];
-  videos?: string[];
-  files?: string[];
-}
-
 // ===== Комментарии =====
 export const createComment = async (data: CreateCommentInput) => {
-  const response = await axios.post('/comments', data);
+  const response = await axios.post("/comments", data);
   return response.data;
 };
 
@@ -59,8 +50,8 @@ export const getCommentReplies = async (commentId: number) => {
   return response.data;
 };
 
-export const createReply = async (data: CreateReplyInput) => {
-  const response = await axios.post('/comments', data);
+export const createReply = async (data: CreateCommentInput) => {
+  const response = await axios.post("/comments", data);
   return response.data;
 };
 
@@ -90,4 +81,3 @@ export const reportComment = async (commentId: number, data: ReportCommentInput)
   const response = await axios.post(`/comments/${commentId}/report`, data);
   return response.data;
 };
-  

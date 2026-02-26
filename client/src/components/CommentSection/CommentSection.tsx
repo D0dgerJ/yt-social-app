@@ -9,24 +9,17 @@ import "./CommentSection.scss";
 
 const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   const { user: currentUser } = useContext(AuthContext);
+  const currentUserId = currentUser?.id ?? null;
+
   const [newComment, setNewComment] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
   const emojiRef = useRef<HTMLDivElement>(null);
 
-  const {
-    comments,
-    addComment,
-    addReply,
-    likeComment,
-    deleteCommentById,
-    updateCommentById,
-  } = useComments(postId);
-
-  // 🔒 Блокируем компонент, если пользователь не авторизован
-  if (!currentUser?.id) return null;
+  const { comments, addComment, addReply, likeComment, deleteCommentById, updateCommentById } = useComments(postId);
 
   const handleCommentSubmit = async () => {
+    if (!currentUserId) return;
     if (!newComment.trim()) return;
     await addComment(newComment, imageFile);
     setNewComment("");
@@ -49,7 +42,7 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
         <CommentItem
           key={comment.id}
           comment={comment}
-          currentUserId={currentUser.id}
+          currentUserId={currentUserId}
           onReply={addReply}
           onLike={likeComment}
           onDelete={deleteCommentById}
@@ -57,23 +50,26 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
         />
       ))}
 
-      <div className="comment-input">
-        <input
-          type="text"
-          value={newComment}
-          placeholder="Add a comment..."
-          onChange={(e) => setNewComment(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
-        />
-        <div ref={emojiRef} className="emoji-wrapper">
-          <BsEmojiSmile onClick={() => setShowEmoji(!showEmoji)} size={20} />
-          {showEmoji && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+      {/* Инпут только для авторизованных */}
+      {!!currentUserId && (
+        <div className="comment-input">
+          <input
+            type="text"
+            value={newComment}
+            placeholder="Add a comment..."
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
+          />
+          <div ref={emojiRef} className="emoji-wrapper">
+            <BsEmojiSmile onClick={() => setShowEmoji(!showEmoji)} size={20} />
+            {showEmoji && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+          </div>
+          <input type="file" accept="image/*" onChange={handleImageUpload} />
+          <button onClick={handleCommentSubmit}>
+            <IoMdSend size={20} />
+          </button>
         </div>
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
-        <button onClick={handleCommentSubmit}>
-          <IoMdSend size={20} />
-        </button>
-      </div>
+      )}
     </div>
   );
 };

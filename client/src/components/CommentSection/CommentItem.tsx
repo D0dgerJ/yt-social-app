@@ -3,11 +3,12 @@ import moment from "moment";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { IoMdSend } from "react-icons/io";
 import type { Comment } from "./types";
-import { reportComment } from "../../utils/api/comment.api"; 
+import { reportComment } from "../../utils/api/comment.api";
 
 interface Props {
   comment: Comment;
-  currentUserId: number;
+  currentUserId?: number | null;
+
   onReply: (parentId: number, content: string) => void;
   onLike: (commentId: number) => void;
   onDelete: (commentId: number) => void;
@@ -32,7 +33,6 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // report modal
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<(typeof REPORT_REASONS)[number]["value"]>("SPAM");
   const [reportDetails, setReportDetails] = useState("");
@@ -40,15 +40,32 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
   const [reportError, setReportError] = useState<string | null>(null);
   const [reportSuccess, setReportSuccess] = useState<string | null>(null);
 
-  const isOwnComment = currentUserId === comment.userId;
+  const isAuthed = !!currentUserId;
+  const isOwnComment = !!currentUserId && currentUserId === comment.userId;
+
+  // если бэк вернул status — используем, иначе фоллбек по контенту
+  const isDeleted = comment.status === "DELETED" || comment.content === "(deleted)";
+  const isHidden = comment.status === "HIDDEN";
+  const isActive = !isDeleted && !isHidden && (comment.status ? comment.status === "ACTIVE" : true);
+
+  const likedByMe = useMemo(() => {
+    if (!currentUserId) return false;
+    return (comment.likes ?? []).some((l) => l.userId === currentUserId);
+  }, [comment.likes, currentUserId]);
+
+  const canInteract = isAuthed && isActive;
+  const canEdit = canInteract && isOwnComment;
+  const canDelete = isAuthed && isOwnComment;
+  const canReply = canInteract;
+  const canLike = canInteract;
 
   const canReport = useMemo(() => {
-    // нельзя репортить свой комментарий
-    // (на бэке тоже запрещено, но в UI лучше скрыть/задизейблить)
-    return !isOwnComment;
-  }, [isOwnComment]);
+    // нельзя репортить свой коммент + нужно быть залогиненым
+    return isAuthed && !isOwnComment;
+  }, [isAuthed, isOwnComment]);
 
   const handleReply = () => {
+    if (!canReply) return;
     if (!replyText.trim()) return;
     onReply(comment.id, replyText.trim());
     setReplyText("");
@@ -56,6 +73,7 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
   };
 
   const handleUpdate = () => {
+    if (!canEdit) return;
     if (!editedContent.trim()) return;
     onUpdate(comment.id, editedContent.trim());
     setEditing(false);
@@ -81,6 +99,7 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
     });
 
   const openReportModal = () => {
+    if (!canReport) return;
     setMenuOpen(false);
     setReportError(null);
     setReportSuccess(null);
@@ -90,6 +109,8 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
   };
 
   const submitReport = async () => {
+    if (!canReport) return;
+
     setReportLoading(true);
     setReportError(null);
     setReportSuccess(null);
@@ -106,7 +127,6 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
         setReportSuccess(null);
       }, 600);
     } catch (err: any) {
-      // пытаемся достать читаемое сообщение из твоего ApiError
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -119,7 +139,11 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
   };
 
   return (
-    <div className={`comment-item ${comment.parentId ? "reply-item" : ""}`}>
+    <div
+      className={`comment-item
+        ${comment.parentId ? "reply-item" : ""}
+        ${comment.status === "DELETED" ? "deleted" : ""}
+        ${comment.status === "HIDDEN" ? "hidden" : ""} `}>
       <img src={comment.user.profilePicture || "/default-avatar.png"} alt="user" className="avatar" />
 
       <div className="comment-content">
@@ -127,7 +151,12 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
           <span className="username">{comment.user.username}</span>
 
           {editing ? (
-            <input type="text" value={editedContent} onChange={(e) => setEditedContent(e.target.value)} />
+            <input
+              type="text"
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              disabled={!canEdit}
+            />
           ) : (
             <span className="text">{formatContent(comment.content)}</span>
           )}
@@ -145,8 +174,12 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
 
                 {isOwnComment && (
                   <>
-                    <button onClick={() => setEditing((v) => !v)}>{editing ? "Cancel edit" : "Edit"}</button>
-                    <button onClick={() => onDelete(comment.id)}>Delete</button>
+                    <button disabled={!canEdit} onClick={() => setEditing((v) => !v)}>
+                      {editing ? "Cancel edit" : "Edit"}
+                    </button>
+                    <button disabled={!canDelete} onClick={() => onDelete(comment.id)}>
+                      Delete
+                    </button>
                   </>
                 )}
               </div>
@@ -165,29 +198,28 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
         <div className="comment-meta">
           <span className="time">{moment(comment.createdAt).fromNow()}</span>
 
-          <span className="like-btn" onClick={() => onLike(comment.id)}>
+          <span
+            className={`like-btn ${likedByMe ? "liked" : ""} ${!canLike ? "disabled" : ""}`}
+            onClick={() => canLike && onLike(comment.id)}
+            title={!isAuthed ? "Login to like" : !isActive ? "Unavailable" : ""}
+          >
             ❤️ {comment._count?.likes || 0}
           </span>
 
-          {isOwnComment && (
-            <div className="comment-actions">
-              <button onClick={() => setEditing(!editing)}>{editing ? "Cancel" : "Edit"}</button>
-              <button onClick={() => onDelete(comment.id)}>Delete</button>
-            </div>
-          )}
-
-          <button onClick={() => setReplying(!replying)}>Reply</button>
-
-          {!isOwnComment && (
-            <button className="report-btn" onClick={openReportModal}>
-              Report
+          {canReply && (
+            <button onClick={() => setReplying(!replying)} disabled={!canReply}>
+              Reply
             </button>
           )}
+
+          {!canReply && <button disabled>Reply</button>}
         </div>
 
         {editing && (
           <div className="edit-box">
-            <button onClick={handleUpdate}>Save</button>
+            <button disabled={!canEdit} onClick={handleUpdate}>
+              Save
+            </button>
           </div>
         )}
 
@@ -195,14 +227,15 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
           <div className="reply-box">
             <input
               type="text"
-              placeholder="Write a reply..."
+              placeholder={isAuthed ? "Write a reply..." : "Login to reply"}
               value={replyText}
+              disabled={!canReply}
               onChange={(e) => setReplyText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleReply();
               }}
             />
-            <button onClick={handleReply}>
+            <button onClick={handleReply} disabled={!canReply}>
               <IoMdSend size={18} />
             </button>
           </div>
