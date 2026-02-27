@@ -4,8 +4,12 @@ import {
   unhideComment,
   softDeleteComment,
   restoreDeletedComment,
+  shadowHideComment,
+  shadowUnhideComment,
 } from "@/utils/api/mod.api";
 import type { ModerationCommentView } from "@/utils/types/moderation/commentDetails.types";
+
+type CommentVisibility = "PUBLIC" | "SHADOW_HIDDEN" | string;
 
 export function useCommentActions(params: {
   commentId: number;
@@ -22,6 +26,7 @@ export function useCommentActions(params: {
   const actionNoteLen = actionNote.trim().length;
 
   const state = comment?.status ?? "—";
+  const visibility = (comment as any)?.visibility as CommentVisibility | undefined;
 
   const commentActionsHint = useMemo(() => {
     if (!hasApprovedReport) return "Действия доступны только после APPROVED report.";
@@ -31,12 +36,20 @@ export function useCommentActions(params: {
 
   const baseAllowed = Boolean(hasApprovedReport && actionNoteLen >= 10 && !isSubmittingAction);
 
+  // ===== NORMAL moderation =====
   const canHide = Boolean(baseAllowed && comment?.status === "ACTIVE");
   const canUnhide = Boolean(baseAllowed && comment?.status === "HIDDEN");
   const canDelete = Boolean(baseAllowed && comment?.status !== "DELETED");
   const canRestore = Boolean(baseAllowed && comment?.status === "DELETED");
 
-  async function onCommentAction(kind: "HIDE" | "UNHIDE" | "DELETE" | "RESTORE") {
+  // ===== SHADOW moderation =====
+  // (не имеет смысла для DELETED; для HIDDEN тоже обычно не нужно, но мы можем оставить только ACTIVE)
+  const canShadowHide = Boolean(baseAllowed && comment?.status === "ACTIVE" && visibility !== "SHADOW_HIDDEN");
+  const canShadowUnhide = Boolean(baseAllowed && comment?.status === "ACTIVE" && visibility === "SHADOW_HIDDEN");
+
+  async function onCommentAction(
+    kind: "HIDE" | "UNHIDE" | "DELETE" | "RESTORE" | "SHADOW_HIDE" | "SHADOW_UNHIDE"
+  ) {
     setActionError(null);
     setIsSubmittingAction(true);
 
@@ -48,14 +61,13 @@ export function useCommentActions(params: {
       if (kind === "DELETE") await softDeleteComment(commentId, note);
       if (kind === "RESTORE") await restoreDeletedComment(commentId, note);
 
+      if (kind === "SHADOW_HIDE") await shadowHideComment(commentId, note);
+      if (kind === "SHADOW_UNHIDE") await shadowUnhideComment(commentId, note);
+
       setActionNote("");
       await onAfterAction();
     } catch (e: any) {
-      // axios обычно кладёт текст в response.data.message
-      const msg =
-        e?.response?.data?.message ??
-        e?.message ??
-        "Failed to apply action";
+      const msg = e?.response?.data?.message ?? e?.message ?? "Failed to apply action";
       setActionError(msg);
     } finally {
       setIsSubmittingAction(false);
@@ -64,6 +76,7 @@ export function useCommentActions(params: {
 
   return {
     state,
+    visibility: visibility ?? "—",
 
     actionError,
     actionNote,
@@ -72,10 +85,14 @@ export function useCommentActions(params: {
     actionNoteLen,
 
     commentActionsHint,
+
     canHide,
     canUnhide,
     canDelete,
     canRestore,
+
+    canShadowHide,
+    canShadowUnhide,
 
     onCommentAction,
   };

@@ -734,6 +734,12 @@ router.get("/reports/comments/items", authMiddleware, requireModerator, async (r
               userId: true,
               content: true,
               status: true,
+
+              visibility: true,
+              shadowHiddenAt: true,
+              shadowHiddenReason: true,
+              shadowHiddenById: true,
+
               createdAt: true,
             },
           },
@@ -772,6 +778,13 @@ router.get("/reports/comments/:reportId", authMiddleware, requireModerator, asyn
             videos: true,
             files: true,
             status: true,
+
+            visibility: true,
+            shadowHiddenAt: true,
+            shadowHiddenReason: true,
+            shadowHiddenById: true,
+            shadowHiddenBy: { select: { id: true, username: true } },
+
             createdAt: true,
           },
         },
