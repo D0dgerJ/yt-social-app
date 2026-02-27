@@ -13,7 +13,11 @@ import {
   ActionsHistory,
 } from "@/components/Moderation/PostDetails";
 
-import { CommentPreviewCard, CommentReportsCard, CommentActionsCard } from "@/components/Moderation/CommentDetails";
+import {
+  CommentPreviewCard,
+  CommentReportsCard,
+  CommentActionsCard,
+} from "@/components/Moderation/CommentDetails";
 
 import { ALLOWED, reasonLabel } from "@/utils/moderation/commentDetails.constants";
 import { fmt, clip } from "@/utils/moderation/postDetails.utils";
@@ -51,7 +55,8 @@ export default function ModerationCommentDetails() {
     refreshCase,
   } = useModerationCommentReports(commentId);
 
-  const { activeFullReport, isLoadingActive, reloadActiveReport } = useActiveCommentReport(activeReportId);
+  const { activeFullReport, isLoadingActive, reloadActiveReport } =
+    useActiveCommentReport(activeReportId);
 
   const {
     actions: modActions,
@@ -81,7 +86,6 @@ export default function ModerationCommentDetails() {
     onAfterAction: async () => {
       await refreshActions();
       await reloadActiveReport();
-      // обновим кейс, чтобы status на карточке/в таблице подтянулся
       await refreshCase();
       setAlreadyHandled(null);
     },
@@ -149,6 +153,7 @@ export default function ModerationCommentDetails() {
               styles={styles}
               hasApprovedReport={hasApprovedReport}
               state={commentActions.state}
+              visibility={commentActions.visibility}
               actionError={commentActions.actionError}
               actionNote={commentActions.actionNote}
               setActionNote={commentActions.setActionNote}
@@ -159,12 +164,19 @@ export default function ModerationCommentDetails() {
               canUnhide={commentActions.canUnhide}
               canDelete={commentActions.canDelete}
               canRestore={commentActions.canRestore}
+              canShadowHide={commentActions.canShadowHide}
+              canShadowUnhide={commentActions.canShadowUnhide}
               onCommentAction={(k) => void commentActions.onCommentAction(k)}
               onRefreshActions={() => void refreshActions()}
             />
           </div>
 
-          <ActionsHistory styles={styles} items={modActions as any} isLoading={isLoadingActions} fmt={fmt} />
+          <ActionsHistory
+            styles={styles}
+            items={modActions as any}
+            isLoading={isLoadingActions}
+            fmt={fmt}
+          />
         </div>
       </div>
     </>

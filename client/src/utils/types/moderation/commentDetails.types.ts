@@ -13,6 +13,13 @@ export type ModerationCommentView = {
   files: string[];
 
   status: "ACTIVE" | "HIDDEN" | "DELETED" | string;
+
+  visibility?: "PUBLIC" | "SHADOW_HIDDEN" | string;
+  shadowHiddenAt?: string | null;
+  shadowHiddenReason?: string | null;
+  shadowHiddenById?: number | null;
+  shadowHiddenBy?: ModerationUserRef | null;
+
   createdAt: string;
 
   user?: ModerationUserRef | null;

@@ -442,15 +442,22 @@ export const unhideComment = async (commentId: number, reason?: string) => {
 };
 
 export const softDeleteComment = async (commentId: number, reason: string) => {
-  const response = await axios.post(`/mod/comments/${commentId}/soft-delete`, {
-    reason,
-  });
+  const response = await axios.post(`/mod/comments/${commentId}/soft-delete`, { reason });
   return response.data as { ok: boolean; comment: any };
 };
 
 export const restoreDeletedComment = async (commentId: number, reason: string) => {
-  const response = await axios.post(`/mod/comments/${commentId}/restore`, {
-    reason,
-  });
+  const response = await axios.post(`/mod/comments/${commentId}/restore`, { reason });
+  return response.data as { ok: boolean; comment: any };
+};
+
+// ✅ Shadow moderation
+export const shadowHideComment = async (commentId: number, reason?: string) => {
+  const response = await axios.post(`/mod/comments/${commentId}/shadow-hide`, { reason });
+  return response.data as { ok: boolean; comment: any };
+};
+
+export const shadowUnhideComment = async (commentId: number, reason?: string) => {
+  const response = await axios.post(`/mod/comments/${commentId}/shadow-unhide`, { reason });
   return response.data as { ok: boolean; comment: any };
 };

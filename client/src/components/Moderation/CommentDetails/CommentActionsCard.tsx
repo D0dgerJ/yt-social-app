@@ -3,6 +3,7 @@ export function CommentActionsCard(props: {
   hasApprovedReport: boolean;
 
   state: string;
+  visibility?: string;
 
   actionError: string | null;
   actionNote: string;
@@ -18,23 +19,33 @@ export function CommentActionsCard(props: {
   canDelete: boolean;
   canRestore: boolean;
 
-  onCommentAction: (kind: "HIDE" | "UNHIDE" | "DELETE" | "RESTORE") => void;
+  canShadowHide: boolean;
+  canShadowUnhide: boolean;
+
+  onCommentAction: (kind: "HIDE" | "UNHIDE" | "DELETE" | "RESTORE" | "SHADOW_HIDE" | "SHADOW_UNHIDE") => void;
   onRefreshActions: () => void;
 }) {
   const {
     styles,
     hasApprovedReport,
     state,
+    visibility,
+
     actionError,
     actionNote,
     setActionNote,
     isSubmittingAction,
     actionNoteLen,
     commentActionsHint,
+
     canHide,
     canUnhide,
     canDelete,
     canRestore,
+
+    canShadowHide,
+    canShadowUnhide,
+
     onCommentAction,
     onRefreshActions,
   } = props;
@@ -43,7 +54,10 @@ export function CommentActionsCard(props: {
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <b>Comment actions</b>
-        <span className={styles.muted}>State: {state}</span>
+        <span className={styles.muted}>
+          State: {state}
+          {typeof visibility === "string" ? ` · Visibility: ${visibility}` : ""}
+        </span>
       </div>
 
       <div className={styles.block}>
@@ -64,50 +78,54 @@ export function CommentActionsCard(props: {
         {actionError ? <div className={styles.error}>{actionError}</div> : null}
       </div>
 
+      {/* ===== NORMAL moderation ===== */}
       <div className={styles.actionsRow}>
-        <button
-          className={styles.btn}
-          type="button"
-          disabled={!canHide}
-          onClick={() => onCommentAction("HIDE")}
-        >
+        <button className={styles.btn} type="button" disabled={!canHide} onClick={() => onCommentAction("HIDE")}>
           Hide
         </button>
 
-        <button
-          className={styles.btn}
-          type="button"
-          disabled={!canUnhide}
-          onClick={() => onCommentAction("UNHIDE")}
-        >
+        <button className={styles.btn} type="button" disabled={!canUnhide} onClick={() => onCommentAction("UNHIDE")}>
           Unhide
         </button>
 
-        <button
-          className={styles.btn}
-          type="button"
-          disabled={!canDelete}
-          onClick={() => onCommentAction("DELETE")}
-        >
+        <button className={styles.btn} type="button" disabled={!canDelete} onClick={() => onCommentAction("DELETE")}>
           Delete
         </button>
 
-        <button
-          className={styles.btn}
-          type="button"
-          disabled={!canRestore}
-          onClick={() => onCommentAction("RESTORE")}
-        >
+        <button className={styles.btn} type="button" disabled={!canRestore} onClick={() => onCommentAction("RESTORE")}>
           Restore
         </button>
       </div>
 
-      <button
-        className={styles.btnWide}
-        type="button"
-        disabled={isSubmittingAction}
-        onClick={onRefreshActions}
-      >
+      {/* ===== SHADOW moderation ===== */}
+      <div className={styles.block} style={{ marginTop: 12 }}>
+        <div className={styles.k}>Shadow moderation</div>
+        <div className={styles.hintMuted}>
+          Shadow hide: скрыто для всех, кроме автора и модерации. (Не меняет статус.)
+        </div>
+      </div>
+
+      <div className={styles.actionsRow}>
+        <button
+          className={styles.btn}
+          type="button"
+          disabled={!canShadowHide}
+          onClick={() => onCommentAction("SHADOW_HIDE")}
+        >
+          Shadow hide
+        </button>
+
+        <button
+          className={styles.btn}
+          type="button"
+          disabled={!canShadowUnhide}
+          onClick={() => onCommentAction("SHADOW_UNHIDE")}
+        >
+          Shadow unhide
+        </button>
+      </div>
+
+      <button className={styles.btnWide} type="button" disabled={isSubmittingAction} onClick={onRefreshActions}>
         Refresh actions
       </button>
     </div>
