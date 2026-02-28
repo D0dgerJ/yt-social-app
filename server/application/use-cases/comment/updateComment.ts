@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus, CommentStatus, CommentVisibility } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface UpdateCommentInput {
   commentId: number;
@@ -17,6 +18,7 @@ export const updateComment = async ({ commentId, actorId, content, images, video
     throw Errors.validation("Invalid commentId");
   }
 
+  await assertUserActionAllowed({ userId: actorId, forbidRestricted: true });
   // ✅ thread auto-lock + shadow rules
   await assertCommentThreadActionAllowed({ commentId, actorId });
 

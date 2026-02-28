@@ -1,5 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface UnsavePostInput {
   userId: number;
@@ -9,6 +10,8 @@ interface UnsavePostInput {
 export const unsavePost = async ({ userId, postId }: UnsavePostInput) => {
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
+
+  await assertUserActionAllowed({ userId, forbidRestricted: true });
 
   try {
     const deleted = await prisma.savedPost.delete({

@@ -1,5 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts"
 
 interface SavePostInput {
   userId: number;
@@ -7,6 +9,10 @@ interface SavePostInput {
 }
 
 export const savePost = async ({ userId, postId }: SavePostInput) => {
+  if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+  if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
+
+  await assertUserActionAllowed({ userId, forbidRestricted: true });
   await assertPostActionAllowed(postId);
 
   try {

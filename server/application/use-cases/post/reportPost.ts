@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { ContentStatus, ModerationActionType, ModerationTargetType, ReportStatus } from "@prisma/client";
 import { logModerationAction } from "../../services/moderation/logModerationAction.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 type ReportPostInput = {
   postId: number;
@@ -24,6 +25,9 @@ const ALLOWED_REASONS = new Set([
 export async function reportPost({ postId, reporterId, reason, message }: ReportPostInput) {
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
   if (!Number.isFinite(reporterId) || reporterId <= 0) throw Errors.validation("Invalid reporterId");
+
+  // banned блокируем, restricted разрешаем репортить
+  await assertUserActionAllowed({ userId: reporterId, forbidRestricted: false });
 
   const cleanReason = String(reason ?? "").trim().toLowerCase();
   if (!cleanReason) throw Errors.validation("Reason is required");

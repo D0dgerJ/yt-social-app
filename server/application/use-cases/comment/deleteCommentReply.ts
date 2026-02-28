@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { CommentStatus, ContentStatus } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 export const deleteCommentReply = async (params: { commentId: number; actorId: number; reason?: string }) => {
   const { commentId, actorId, reason } = params;
@@ -9,6 +10,8 @@ export const deleteCommentReply = async (params: { commentId: number; actorId: n
   if (!Number.isFinite(commentId) || commentId <= 0) {
     throw Errors.validation("Invalid commentId");
   }
+
+  await assertUserActionAllowed({ userId: actorId, forbidRestricted: true });
 
   // ✅ thread auto-lock + shadow rules
   await assertCommentThreadActionAllowed({ commentId, actorId });

@@ -1,6 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { CommentStatus, ContentStatus } from "@prisma/client";
+import { CommentStatus, ContentStatus, UserRole } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 export const deleteComment = async (params: {
   commentId: number;
@@ -9,13 +10,23 @@ export const deleteComment = async (params: {
 }) => {
   const { commentId, actorId, reason } = params;
 
+  if (!Number.isFinite(commentId) || commentId <= 0) {
+    throw Errors.validation("Invalid commentId");
+  }
+  if (!Number.isFinite(actorId) || actorId <= 0) {
+    throw Errors.validation("Invalid actorId");
+  }
+
+  // ban/restrict enforcement в домене
+  await assertUserActionAllowed({ userId: actorId, forbidRestricted: true });
+
   const comment = await prisma.comment.findFirst({
     where: {
       id: commentId,
-      parentId: null,
+      parentId: null, // удаляем только root (как и было)
       post: { status: ContentStatus.ACTIVE },
     },
-    select: { id: true, status: true },
+    select: { id: true, status: true, userId: true },
   });
 
   if (!comment) {
@@ -27,11 +38,32 @@ export const deleteComment = async (params: {
     return { ok: true };
   }
 
+  // Проверка прав:
+  // - владелец может удалить свой комментарий
+  // - staff (MODERATOR/ADMIN/OWNER) может удалить любой (через админ-модерацию)
+  if (comment.userId !== actorId) {
+    const actor = await prisma.user.findUnique({
+      where: { id: actorId },
+      select: { role: true },
+    });
+
+    if (!actor) throw Errors.unauthorized("Unauthorized");
+
+    const isStaff =
+      actor.role === UserRole.MODERATOR ||
+      actor.role === UserRole.ADMIN ||
+      actor.role === UserRole.OWNER;
+
+    if (!isStaff) {
+      throw Errors.forbidden("You cannot delete this comment");
+    }
+  }
+
   const now = new Date();
-  const deleteReason = reason ?? "Deleted by user";
+  const deleteReason = reason ?? "Deleted";
 
   await prisma.$transaction(async (tx) => {
-    // 1️⃣ soft delete replies
+    // 1) soft delete replies
     await tx.comment.updateMany({
       where: {
         parentId: commentId,
@@ -54,7 +86,7 @@ export const deleteComment = async (params: {
       },
     });
 
-    // 2️⃣ soft delete root comment
+    // 2) soft delete root comment
     await tx.comment.update({
       where: { id: commentId },
       data: {

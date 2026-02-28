@@ -1,5 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface AddReactionInput {
   userId: number;
@@ -9,6 +10,7 @@ interface AddReactionInput {
 
 export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReactionInput) => {
   try {
+    await assertUserActionAllowed({ userId, forbidRestricted: true });
     const message = await prisma.message.findUnique({
       where: { id: messageId },
       select: { id: true, isDeleted: true, conversationId: true },
