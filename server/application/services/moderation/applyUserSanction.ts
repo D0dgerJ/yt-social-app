@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { logModerationAction } from "./logModerationAction.ts";
 import { ModerationActionType, ModerationTargetType, UserSanctionStatus, UserSanctionType } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertActorCanModerateUser } from "./assertActorCanModerateUser.ts";
 
 type ApplyUserSanctionInput = {
   actorId: number;
@@ -28,6 +29,8 @@ export async function applyUserSanction(input: ApplyUserSanctionInput) {
   const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!target) throw Errors.notFound("User not found");
 
+  // Separation of power: actor должен быть строго выше target; self-moderation запрещена
+  await assertActorCanModerateUser({ actorId, targetUserId: userId });
   // Единая логика "активной" санкции:
   // ACTIVE && (endsAt == null || endsAt > now)
   const existing = await prisma.userSanction.findFirst({

@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { logModerationAction } from "./logModerationAction.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { ModerationActionType, ModerationTargetType, UserSanctionStatus, UserSanctionType } from "@prisma/client";
+import { assertActorCanModerateUser } from "./assertActorCanModerateUser.ts";
 
 type LiftUserSanctionInput = {
   actorId: number;
@@ -24,6 +25,9 @@ export async function liftUserSanction({ actorId, sanctionId, liftReason }: Lift
 
   if (!sanction) throw Errors.notFound("Sanction not found");
   if (sanction.status !== UserSanctionStatus.ACTIVE) throw Errors.conflict("Sanction is not active");
+
+  // Separation of power: actor должен быть строго выше владельца санкции; self-moderation запрещена
+  await assertActorCanModerateUser({ actorId, targetUserId: sanction.userId });
 
   const updated = await prisma.userSanction.update({
     where: { id: sanctionId },
