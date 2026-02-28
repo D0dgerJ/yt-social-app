@@ -1,4 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface SendFriendRequestInput {
   senderId: number;
@@ -6,24 +8,27 @@ interface SendFriendRequestInput {
 }
 
 export const sendFriendRequest = async ({ senderId, receiverId }: SendFriendRequestInput) => {
-  if (senderId === receiverId) {
-    throw new Error("Нельзя отправить запрос самому себе.");
-  }
+  if (!Number.isFinite(senderId) || senderId <= 0) throw Errors.validation("Invalid senderId");
+  if (!Number.isFinite(receiverId) || receiverId <= 0) throw Errors.validation("Invalid receiverId");
+  if (senderId === receiverId) throw Errors.validation("You cannot send a friend request to yourself");
+
+  await assertUserActionAllowed({ userId: senderId, forbidRestricted: true });
 
   const existing = await prisma.friendRequest.findFirst({
     where: {
       OR: [
         { senderId, receiverId },
-        { senderId: receiverId, receiverId: senderId }
+        { senderId: receiverId, receiverId: senderId },
       ],
     },
+    select: { id: true },
   });
 
   if (existing) {
-    throw new Error("Запрос в друзья уже существует.");
+    throw Errors.conflict("Friend request already exists");
   }
 
-  return await prisma.friendRequest.create({
+  return prisma.friendRequest.create({
     data: {
       senderId,
       receiverId,

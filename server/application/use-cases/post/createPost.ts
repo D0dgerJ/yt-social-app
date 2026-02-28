@@ -1,5 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface CreatePostInput {
   userId: number;
@@ -21,7 +22,7 @@ export const createPost = async ({
   location,
 }: CreatePostInput) => {
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
-
+  await assertUserActionAllowed({ userId, forbidRestricted: true });
   const cleanLocation =
     typeof location === "string" ? location.trim() : undefined;
 

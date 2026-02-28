@@ -3,6 +3,7 @@ import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
 import type { NotificationType } from "../notification/notificationTypes.ts";
 import { extractMentions } from "../notification/extractMentions.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 type MediaKind = "image" | "video" | "file" | "gif" | "audio";
 
@@ -44,6 +45,7 @@ interface SendMessageInput {
 export const sendMessage = async (rawInput: SendMessageInput) => {
   try {
     const data = sendMessageSchema.parse(rawInput);
+    await assertUserActionAllowed({ userId: data.senderId, forbidRestricted: true });
 
     const {
       conversationId,

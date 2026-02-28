@@ -1,6 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 type DeletePostInput = {
   postId: number;
@@ -11,6 +12,8 @@ type DeletePostInput = {
 export const deletePost = async ({ postId, userId, reason }: DeletePostInput) => {
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+  
+  await assertUserActionAllowed({ userId, forbidRestricted: true });
 
   const post = await prisma.post.findFirst({
     where: {

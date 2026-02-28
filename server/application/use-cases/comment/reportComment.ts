@@ -2,6 +2,7 @@ import { CommentStatus, ModerationActionType, ModerationTargetType } from "@pris
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import type { ReportCommentDto } from "../../../validation/commentSchemas.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 type Params = {
   actorId: number;
@@ -10,6 +11,12 @@ type Params = {
 };
 
 export const reportComment = async ({ actorId, commentId, dto }: Params) => {
+  if (!Number.isFinite(actorId) || actorId <= 0) throw Errors.validation("Invalid actorId");
+  if (!Number.isFinite(commentId) || commentId <= 0) throw Errors.validation("Invalid commentId");
+
+  // banned блокируем, restricted разрешаем репортить
+  await assertUserActionAllowed({ userId: actorId, forbidRestricted: false });
+
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
     select: { id: true, userId: true, status: true, postId: true },
@@ -59,11 +66,9 @@ export const reportComment = async ({ actorId, commentId, dto }: Params) => {
 
     return created;
   } catch (err: any) {
-    // unique violation
     if (err?.code === "P2002") {
       throw Errors.conflict("You have already reported this comment");
     }
-
     throw err;
   }
 };

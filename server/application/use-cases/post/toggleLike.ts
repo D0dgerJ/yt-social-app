@@ -2,6 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
 import { likePost } from "./likePost.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface ToggleLikeInput {
   userId: number;
@@ -11,6 +12,8 @@ interface ToggleLikeInput {
 export const toggleLike = async ({ userId, postId }: ToggleLikeInput) => {
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
+
+  await assertUserActionAllowed({ userId, forbidRestricted: true });
 
   await assertPostActionAllowed(postId);
 

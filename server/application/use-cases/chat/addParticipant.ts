@@ -1,6 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
 import { createNotification } from "../notification/createNotification.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface AddParticipantInput {
   conversationId: number;
@@ -16,6 +17,7 @@ export const addParticipant = async ({
   role = "member",
 }: AddParticipantInput) => {
   try {
+    await assertUserActionAllowed({ userId: addedById, forbidRestricted: true });
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { participants: true },

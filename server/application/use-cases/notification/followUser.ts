@@ -1,5 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { createNotification } from "./createNotification.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 
 interface FollowUserInput {
   followerId: number;
@@ -10,6 +12,13 @@ export const followUser = async ({
   followerId,
   followingId,
 }: FollowUserInput) => {
+  if (!Number.isFinite(followerId) || followerId <= 0) throw Errors.validation("Invalid followerId");
+  if (!Number.isFinite(followingId) || followingId <= 0) throw Errors.validation("Invalid followingId");
+  if (followerId === followingId) throw Errors.validation("You cannot follow yourself");
+
+  // если решаем запрещать restricted:
+  await assertUserActionAllowed({ userId: followerId, forbidRestricted: true });
+  // если решишь разрешить restricted — поменяешь на false
   const existingFollow = await prisma.follow.findUnique({
     where: {
       followerId_followingId: {

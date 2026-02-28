@@ -6,6 +6,7 @@ import { assertCommentThreadActionAllowed } from "../../services/comment/assertC
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { CommentStatus } from "@prisma/client";
 import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.ts";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface CreateCommentParams {
   postId: number;
@@ -30,6 +31,8 @@ export const createComment = async ({
     throw Errors.validation("Invalid post ID");
   }
 
+  // ban/restrict enforcement в домене
+  await assertUserActionAllowed({ userId, forbidRestricted: true });
   await assertPostActionAllowed(postId);
 
   const post = await prisma.post.findUnique({

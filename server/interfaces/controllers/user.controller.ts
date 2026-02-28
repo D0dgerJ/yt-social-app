@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import {
   deleteUser,
   followUser,
@@ -12,206 +12,210 @@ import {
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
   cancelFriendRequest,
-  getUserFollowing
-} from '../../application/use-cases/user/index.ts';
-import {
+  getUserFollowing,
   sendFriendRequest as sendFriendRequestUseCase,
   acceptFriendRequest as acceptFriendRequestUseCase,
   rejectFriendRequest as rejectFriendRequestUseCase,
-} from '../../application/use-cases/user/index.ts';
+} from "../../application/use-cases/user/index.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
+import { Errors } from "../../infrastructure/errors/ApiError.ts";
 
+function parseId(raw: unknown, message: string) {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) throw Errors.validation(message);
+  return n;
+}
 
-export const getById = async (req: Request, res: Response) => {
+export const getById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseId(req.params.id, "Invalid userId");
     const user = await getUserById(id);
     res.status(200).json(user);
-  } catch (error: any) {
-    res.status(404).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const remove = async (req: Request, res: Response) => {
+export const remove = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.user!.id;
-    await deleteUser(id);
+    const actorId = req.user!.id;
+    await deleteUser({ actorId, userId: actorId });
     res.status(204).end();
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const update = async (req: Request, res: Response) => {
+export const update = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.user!.id;
+    const userId = req.user!.id;
     const data = req.body;
-    const updatedUser = await updateUser({ id, ...data });
+
+    const updatedUser = await updateUser({ userId, data });
+
     res.status(200).json(updatedUser);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const updateAvatar = async (req: Request, res: Response) => {
+export const updateAvatar = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.user!.id;
     const { profilePicture } = req.body;
+
     const updatedUser = await updateProfilePicture({ userId: id, profilePicture });
     res.status(200).json(updatedUser);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const follow = async (req: Request, res: Response) => {
+export const follow = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const followerId = req.user!.id;
-    const followingId = Number(req.params.id);
+    const followingId = parseId(req.params.id, "Invalid followingId");
+
     await followUser({ followerId, followingId });
     res.status(200).json({ message: "Followed successfully" });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const unfollow = async (req: Request, res: Response) => {
+export const unfollow = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const followerId = req.user!.id;
-    const followingId = Number(req.params.id);
+    const followingId = parseId(req.params.id, "Invalid followingId");
+
     await unfollowUser({ followerId, followingId });
     res.status(200).json({ message: "Unfollowed successfully" });
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const profile = async (req: Request, res: Response) => {
+export const profile = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.user!.id;
-    const profile = await getUserProfile(id);
-    res.status(200).json(profile);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    const profileData = await getUserProfile(id);
+    res.status(200).json(profileData);
+  } catch (err) {
+    next(err);
   }
 };
 
-export const friends = async (req: Request, res: Response) => {
+export const friends = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseId(req.params.id, "Invalid userId");
     const friends = await getUserFriends(id);
     res.status(200).json(friends);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-
-export const getByUsername = async (req: Request, res: Response) => {
+export const getByUsername = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { username } = req.params;
+    if (!username || typeof username !== "string") throw Errors.validation("Invalid username");
+
     const user = await getUserByUsername(username);
     res.status(200).json(user);
-  } catch (error: any) {
-    res.status(404).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
-}
+};
 
-export const sendFriendRequest = async (req: Request, res: Response) => {
+export const sendFriendRequest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const senderId = req.user!.id;
-    const receiverId = Number(req.params.id);
+    const receiverId = parseId(req.params.id, "Invalid receiverId");
 
     const request = await sendFriendRequestUseCase({ senderId, receiverId });
-
     res.status(201).json(request);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const acceptFriendRequest = async (req: Request, res: Response) => {
+export const acceptFriendRequest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const currentUserId = req.user!.id;
-    const requestId = Number(req.params.id);
+    const requestId = parseId(req.params.id, "Invalid requestId");
 
     const updated = await acceptFriendRequestUseCase({ requestId, currentUserId });
-
     res.status(200).json(updated);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const rejectFriendRequest = async (req: Request, res: Response) => {
+export const rejectFriendRequest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const currentUserId = req.user!.id;
-    const requestId = Number(req.params.id);
+    const requestId = parseId(req.params.id, "Invalid requestId");
 
     const updated = await rejectFriendRequestUseCase({ requestId, currentUserId });
-
     res.status(200).json(updated);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getIncomingRequests = async (req: Request, res: Response) => {
+export const getIncomingRequests = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-
     const requests = await getIncomingFriendRequests({ userId });
-
     res.status(200).json(requests);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getOutgoingRequests = async (req: Request, res: Response) => {
+export const getOutgoingRequests = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
-
     const requests = await getOutgoingFriendRequests({ userId });
-
     res.status(200).json(requests);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const cancelRequest = async (req: Request, res: Response) => {
+export const cancelRequest = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const senderId = req.user!.id;
-    const receiverId = Number(req.params.id);
+    const receiverId = parseId(req.params.id, "Invalid receiverId");
 
     const result = await cancelFriendRequest({ senderId, receiverId });
-
     res.status(200).json(result);
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getFollowing = async (req: Request, res: Response) => {
+export const getFollowing = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseId(req.params.id, "Invalid userId");
     const following = await getUserFollowing(id);
-    res.status(200).json(following.map(f => f.following));
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(200).json(following.map((f: any) => f.following));
+  } catch (err) {
+    next(err);
   }
 };
 
-export const getFollowers = async (req: Request, res: Response) => {
+export const getFollowers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = Number(req.params.id);
+    const id = parseId(req.params.id, "Invalid userId");
+
     const followers = await prisma.follow.findMany({
       where: { followingId: id },
       include: { follower: true },
     });
-    res.status(200).json(followers.map(f => f.follower));
-  } catch (error: any) {
-    res.status(400).json({ message: error.message });
+
+    res.status(200).json(followers.map((f) => f.follower));
+  } catch (err) {
+    next(err);
   }
 };

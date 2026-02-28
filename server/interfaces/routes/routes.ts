@@ -14,6 +14,7 @@ import eventRoutes from "./eventRoutes.ts";
 import modRoute from "./mod.route.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
 
 const router = express.Router();
 
@@ -24,9 +25,9 @@ router.use("/stories", storyRoutes);
 router.use("/comments", commentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/chat", chatRoutes);
-router.use("/events", authMiddleware, eventRoutes);
+router.use("/events", authMiddleware, enforceSanctions, requireNotRestricted, eventRoutes);
 
-router.use("/upload", authMiddleware, uploadRoutes);
+router.use("/upload", authMiddleware, enforceSanctions, requireNotRestricted, uploadRoutes);
 router.use("/download", downloadRoutes);
 
 router.use(mediaRoutes);
