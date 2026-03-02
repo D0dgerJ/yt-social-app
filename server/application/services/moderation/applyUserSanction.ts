@@ -1,6 +1,11 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { logModerationAction } from "./logModerationAction.ts";
-import { ModerationActionType, ModerationTargetType, UserSanctionStatus, UserSanctionType } from "@prisma/client";
+import {
+  ModerationActionType,
+  ModerationTargetType,
+  UserSanctionStatus,
+  UserSanctionType,
+} from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertActorCanModerateUser } from "./assertActorCanModerateUser.ts";
 
@@ -18,7 +23,7 @@ function mapActionType(type: UserSanctionType): ModerationActionType {
   if (type === UserSanctionType.RESTRICT) return ModerationActionType.USER_RESTRICTED;
   if (type === UserSanctionType.TEMP_BAN) return ModerationActionType.USER_BANNED;
   if (type === UserSanctionType.PERM_BAN) return ModerationActionType.USER_BANNED;
-  return ModerationActionType.NOTE;
+  return ModerationActionType.NOTE; // WARN и прочее
 }
 
 export async function applyUserSanction(input: ApplyUserSanctionInput) {
@@ -31,6 +36,7 @@ export async function applyUserSanction(input: ApplyUserSanctionInput) {
 
   // Separation of power: actor должен быть строго выше target; self-moderation запрещена
   await assertActorCanModerateUser({ actorId, targetUserId: userId });
+
   // Единая логика "активной" санкции:
   // ACTIVE && (endsAt == null || endsAt > now)
   const existing = await prisma.userSanction.findFirst({
@@ -46,7 +52,9 @@ export async function applyUserSanction(input: ApplyUserSanctionInput) {
 
   if (
     existing &&
-    (type === UserSanctionType.RESTRICT || type === UserSanctionType.TEMP_BAN || type === UserSanctionType.PERM_BAN)
+    (type === UserSanctionType.RESTRICT ||
+      type === UserSanctionType.TEMP_BAN ||
+      type === UserSanctionType.PERM_BAN)
   ) {
     throw Errors.conflict("User already has an active sanction", {
       existingSanctionId: existing.id,
@@ -94,6 +102,9 @@ export async function applyUserSanction(input: ApplyUserSanctionInput) {
     actionType: mapActionType(type),
     targetType: ModerationTargetType.USER,
     targetId: String(userId),
+
+    subjectUserId: userId,
+
     reason,
     metadata: {
       sanctionId: sanction.id,

@@ -11,7 +11,7 @@ export type GetModerationUsersParams = {
   status?: ModerationUsersStatusFilter;
   sortBy?: ModerationUsersSortBy;
   order?: ModerationUsersOrder;
-  page?: number; // 1-based
+  page?: number;
   limit?: number;
 };
 
@@ -32,6 +32,8 @@ export type ModerationUserListItem = {
   isBanned: boolean;
   isRestricted: boolean;
   lastSanctionAt: Date | null;
+
+  lastActionAt: Date | null;
 };
 
 export type GetModerationUsersResult = {
@@ -60,7 +62,6 @@ function buildWhere(params: GetModerationUsersParams, now: Date): Prisma.UserWhe
   const { id, text } = normalizeQuery(params.q);
   const status = params.status ?? "ALL";
 
-  // Единая логика "активной" санкции:
   // ACTIVE && (endsAt == null || endsAt > now)
   const activeSanctionFilter: Prisma.UserSanctionWhereInput = {
     status: UserSanctionStatusEnum.ACTIVE,
@@ -115,7 +116,6 @@ function buildWhere(params: GetModerationUsersParams, now: Date): Prisma.UserWhe
 }
 
 function buildOrderBy(sortBy: ModerationUsersSortBy, order: ModerationUsersOrder): Prisma.UserOrderByWithRelationInput {
-  // В модели User нет createdAt/lastLoginAt, поэтому сортируем только по тем полям, которые реально есть.
   if (sortBy === "username") return { username: order };
   if (sortBy === "email") return { email: order };
   if (sortBy === "role") return { role: order };
@@ -172,6 +172,23 @@ export async function getModerationUsers(params: GetModerationUsersParams = {}):
     prisma.user.count({ where }),
   ]);
 
+  const userIds = itemsRaw.map((u) => u.id);
+
+  const actionsAgg = userIds.length
+    ? await prisma.moderationAction.groupBy({
+        by: ["subjectUserId"],
+        where: { subjectUserId: { in: userIds } },
+        _max: { createdAt: true },
+      })
+    : [];
+
+  const lastActionByUserId = new Map<number, Date>();
+  for (const row of actionsAgg) {
+    if (typeof row.subjectUserId === "number" && row._max?.createdAt) {
+      lastActionByUserId.set(row.subjectUserId, row._max.createdAt);
+    }
+  }
+
   const items: ModerationUserListItem[] = itemsRaw.map((u) => {
     const activeSanctions = u.sanctions;
 
@@ -179,6 +196,7 @@ export async function getModerationUsers(params: GetModerationUsersParams = {}):
       (s) => s.type === UserSanctionTypeEnum.TEMP_BAN || s.type === UserSanctionTypeEnum.PERM_BAN
     );
     const isRestricted = activeSanctions.some((s) => s.type === UserSanctionTypeEnum.RESTRICT);
+
     const lastSanctionAt = activeSanctions.length ? activeSanctions[0].createdAt : null;
 
     return {
@@ -191,6 +209,7 @@ export async function getModerationUsers(params: GetModerationUsersParams = {}):
       isBanned,
       isRestricted,
       lastSanctionAt,
+      lastActionAt: lastActionByUserId.get(u.id) ?? null,
     };
   });
 

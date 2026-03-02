@@ -18,6 +18,8 @@ const ACTION_TYPES: ModerationActionType[] = [
   "NOTE",
   "CONTENT_HIDDEN",
   "CONTENT_UNHIDDEN",
+  "CONTENT_SHADOW_HIDDEN",
+  "CONTENT_SHADOW_UNHIDDEN",
   "CONTENT_DELETED",
   "USER_RESTRICTED",
   "USER_UNRESTRICTED",
@@ -189,7 +191,11 @@ export default function ModerationHistory() {
 
               <tbody>
                 {items.map((a) => {
-                  const userId = a.targetType === "USER" ? toPositiveInt(a.targetId) : null;
+                  const subjectId = a.subjectUserId ?? null;
+
+                  const targetUserId = a.targetType === "USER" ? toPositiveInt(a.targetId) : null;
+
+                  const userIdForLink = subjectId ?? targetUserId;
 
                   return (
                     <tr
@@ -207,7 +213,7 @@ export default function ModerationHistory() {
                       </td>
 
                       <td>
-                        {userId ? (
+                        {userIdForLink ? (
                           <button
                             type="button"
                             className={styles.userLink}
@@ -215,10 +221,10 @@ export default function ModerationHistory() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              navigate(`/moderation/users?open=${userId}`);
+                              navigate(`/moderation/users?open=${userIdForLink}`);
                             }}
                           >
-                            USER #{userId}
+                            USER #{userIdForLink}
                           </button>
                         ) : (
                           <span>
@@ -256,11 +262,7 @@ export default function ModerationHistory() {
         </div>
       </div>
 
-      <ModerationActionModal
-        open={selectedActionId !== null}
-        actionId={selectedActionId}
-        onClose={() => setSelectedActionId(null)}
-      />
+      <ModerationActionModal open={selectedActionId !== null} actionId={selectedActionId} onClose={() => setSelectedActionId(null)} />
     </>
   );
 }

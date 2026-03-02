@@ -24,6 +24,7 @@ export async function hidePost({ actorId, postId, reason }: ModeratePostInput) {
     actionType: ModerationActionType.CONTENT_HIDDEN,
     targetType: ModerationTargetType.POST,
     targetId: String(postId),
+    subjectUserId: post.userId,
     reason: reason ?? null,
     metadata: { mode: "hide" },
   });
@@ -47,6 +48,7 @@ export async function unhidePost({ actorId, postId, reason }: ModeratePostInput)
     actionType: ModerationActionType.CONTENT_UNHIDDEN,
     targetType: ModerationTargetType.POST,
     targetId: String(postId),
+    subjectUserId: post.userId,
     reason: reason ?? null,
     metadata: { mode: "unhide" },
   });
@@ -70,6 +72,7 @@ export async function softDeletePost({ actorId, postId, reason }: ModeratePostIn
     actionType: ModerationActionType.CONTENT_DELETED,
     targetType: ModerationTargetType.POST,
     targetId: String(postId),
+    subjectUserId: post.userId,
     reason: reason ?? null,
     metadata: { mode: "soft" },
   });

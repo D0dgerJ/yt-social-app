@@ -96,18 +96,12 @@ export const getReportById = async (reportId: number) => {
   return response.data;
 };
 
-export const approveReport = async (
-  reportId: number,
-  payload: { reason: string; message?: string }
-) => {
+export const approveReport = async (reportId: number, payload: { reason: string; message?: string }) => {
   const response = await axios.post(`/mod/reports/posts/${reportId}/approve`, payload);
   return response.data;
 };
 
-export const rejectReport = async (
-  reportId: number,
-  payload: { reason: string; message?: string }
-) => {
+export const rejectReport = async (reportId: number, payload: { reason: string; message?: string }) => {
   const response = await axios.post(`/mod/reports/posts/${reportId}/reject`, payload);
   return response.data;
 };
@@ -195,13 +189,14 @@ export const getUserSanctions = async (userId: number) => {
   return response.data as { ok: boolean; items: UserSanctionItem[] };
 };
 
-
 export type ModerationTargetType = "POST" | "COMMENT" | "STORY" | "USER" | "MESSAGE" | "OTHER";
 
 export type ModerationActionType =
   | "REPORT_CREATED"
   | "CONTENT_HIDDEN"
   | "CONTENT_UNHIDDEN"
+  | "CONTENT_SHADOW_HIDDEN"
+  | "CONTENT_SHADOW_UNHIDDEN"
   | "CONTENT_DELETED"
   | "USER_RESTRICTED"
   | "USER_UNRESTRICTED"
@@ -219,9 +214,19 @@ export type ModerationActionItem = {
   targetType: ModerationTargetType;
   targetId: string;
 
+  subjectUserId?: number | null;
+
   reason: string | null;
   metadata: any | null;
   createdAt: string;
+};
+
+export type GetModerationActionsResponse = {
+  ok: boolean;
+  total: number;
+  skip: number;
+  take: number;
+  items: ModerationActionItem[];
 };
 
 export const getModerationActions = async (params?: {
@@ -229,28 +234,35 @@ export const getModerationActions = async (params?: {
   skip?: number;
 
   actorId?: number;
+  subjectUserId?: number;
+
   actionType?: ModerationActionType;
   targetType?: ModerationTargetType;
   targetId?: string;
 
   q?: string;
-  from?: string; 
-  to?: string;  
+  from?: string;
+  to?: string;
 }) => {
   const search = new URLSearchParams();
 
-  if (params?.take) search.set("take", String(params.take));
-  if (params?.skip) search.set("skip", String(params.skip));
-  if (params?.actorId) search.set("actorId", String(params.actorId));
+  if (typeof params?.take === "number") search.set("take", String(params.take));
+  if (typeof params?.skip === "number") search.set("skip", String(params.skip));
+
+  if (typeof params?.actorId === "number") search.set("actorId", String(params.actorId));
+  if (typeof params?.subjectUserId === "number") search.set("subjectUserId", String(params.subjectUserId));
+
   if (params?.actionType) search.set("actionType", params.actionType);
   if (params?.targetType) search.set("targetType", params.targetType);
   if (params?.targetId) search.set("targetId", params.targetId);
+
   if (params?.q) search.set("q", params.q);
   if (params?.from) search.set("from", params.from);
   if (params?.to) search.set("to", params.to);
 
-  const response = await axios.get(`/mod/actions?${search.toString()}`);
-  return response.data;
+  const qs = search.toString();
+  const response = await axios.get(`/mod/actions${qs ? `?${qs}` : ""}`);
+  return response.data as GetModerationActionsResponse;
 };
 
 export const getModerationActionById = async (id: number) => {
@@ -413,18 +425,12 @@ export const getCommentReportById = async (reportId: number) => {
   return response.data as { ok: boolean; report: ModerationCommentReportView };
 };
 
-export const approveCommentReport = async (
-  reportId: number,
-  payload: { reason: string; message?: string }
-) => {
+export const approveCommentReport = async (reportId: number, payload: { reason: string; message?: string }) => {
   const response = await axios.post(`/mod/reports/comments/${reportId}/approve`, payload);
   return response.data as { ok: boolean; report: any };
 };
 
-export const rejectCommentReport = async (
-  reportId: number,
-  payload: { reason: string; message?: string }
-) => {
+export const rejectCommentReport = async (reportId: number, payload: { reason: string; message?: string }) => {
   const response = await axios.post(`/mod/reports/comments/${reportId}/reject`, payload);
   return response.data as { ok: boolean; report: any };
 };

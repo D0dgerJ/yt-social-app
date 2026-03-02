@@ -15,6 +15,14 @@ type Props = {
   onClose: () => void;
 };
 
+type EvidenceResponse = {
+  ok?: boolean;
+  action?: ModerationActionItem;
+  targetPost?: any;
+  targetUser?: any;
+  targetComment?: any;
+};
+
 export default function ModerationActionModal({ open, actionId, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState<ModerationActionItem | null>(null);
@@ -25,6 +33,24 @@ export default function ModerationActionModal({ open, actionId, onClose }: Props
     if (!action) return "Moderation Action";
     return `${action.actionType} · ${action.targetType} #${action.targetId}`;
   }, [action]);
+
+  const subjectUserId = useMemo(() => {
+    // action может уже содержать subjectUserId 
+    const fromAction = (action as any)?.subjectUserId;
+    if (typeof fromAction === "number" && Number.isFinite(fromAction) && fromAction > 0) return fromAction;
+
+    // fallback: попробуем вытащить из evidence
+    const fromPost = evidence?.targetPost?.userId;
+    if (typeof fromPost === "number" && Number.isFinite(fromPost) && fromPost > 0) return fromPost;
+
+    const fromComment = evidence?.targetComment?.userId;
+    if (typeof fromComment === "number" && Number.isFinite(fromComment) && fromComment > 0) return fromComment;
+
+    const fromUser = evidence?.targetUser?.id;
+    if (typeof fromUser === "number" && Number.isFinite(fromUser) && fromUser > 0) return fromUser;
+
+    return null;
+  }, [action, evidence]);
 
   // ESC close
   useEffect(() => {
@@ -69,17 +95,25 @@ export default function ModerationActionModal({ open, actionId, onClose }: Props
       setError("");
 
       try {
-        const [aRes, eRes] = await Promise.all([
+        const [aRes, eResRaw] = await Promise.all([
           getModerationActionById(id),
           getModerationActionEvidence(id),
         ]);
 
         if (cancelled) return;
 
-        const actionItem = (aRes?.item ?? aRes?.action ?? aRes) as ModerationActionItem;
+        // /mod/actions/:id -> { ok, action }
+        const actionItem = (aRes?.action ?? aRes?.item ?? aRes) as ModerationActionItem;
         setAction(actionItem);
 
-        setEvidence(eRes?.evidence ?? eRes?.item ?? eRes ?? null);
+        // /mod/actions/:id/evidence -> { ok, action, targetPost, targetUser, targetComment }
+        const eRes = (eResRaw ?? {}) as EvidenceResponse;
+
+        setEvidence({
+          targetPost: eRes.targetPost ?? null,
+          targetUser: eRes.targetUser ?? null,
+          targetComment: eRes.targetComment ?? null,
+        });
       } catch (e: any) {
         if (cancelled) return;
         setAction(null);
@@ -117,11 +151,7 @@ export default function ModerationActionModal({ open, actionId, onClose }: Props
             <div className={styles.header}>
               <div className={styles.title}>{title}</div>
               <div className={styles.sub}>
-                {loading
-                  ? "Loading..."
-                  : action?.createdAt
-                  ? new Date(action.createdAt).toLocaleString()
-                  : ""}
+                {loading ? "Loading..." : action?.createdAt ? new Date(action.createdAt).toLocaleString() : ""}
               </div>
             </div>
 
@@ -133,21 +163,24 @@ export default function ModerationActionModal({ open, actionId, onClose }: Props
                 {action?.actor?.username
                   ? `@${action.actor.username}`
                   : action?.actorId
-                  ? `#${action.actorId}`
-                  : "system"}
+                    ? `#${action.actorId}`
+                    : "system"}
               </div>
             </div>
 
             <div className={styles.row}>
               <div className={styles.label}>Target</div>
-              <div className={styles.value}>
-                {action ? `${action.targetType} #${action.targetId}` : "—"}
-              </div>
+              <div className={styles.value}>{action ? `${action.targetType} #${action.targetId}` : "—"}</div>
             </div>
 
             <div className={styles.row}>
               <div className={styles.label}>Action Type</div>
               <div className={styles.value}>{action?.actionType ?? "—"}</div>
+            </div>
+
+            <div className={styles.row}>
+              <div className={styles.label}>Subject User</div>
+              <div className={styles.value}>{subjectUserId ? `USER #${subjectUserId}` : <span className={styles.muted}>—</span>}</div>
             </div>
 
             <div className={styles.block}>

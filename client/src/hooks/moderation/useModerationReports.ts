@@ -8,12 +8,35 @@ type Counts = {
   REJECTED: number;
 };
 
+const STATUSES: Array<keyof Counts> = ["PENDING", "APPROVED", "REJECTED"];
+
+function sortByCreatedDesc(a: { createdAt: string }, b: { createdAt: string }) {
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
 export function useModerationReports(postId: number) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [activeReportId, setActiveReportId] = useState<number | null>(null);
+
+  async function fetchAll(postIdValue: number) {
+    const [pending, approved, rejected] = await Promise.all([
+      getReportItems({ postId: postIdValue, status: "PENDING", take: 200, skip: 0 }),
+      getReportItems({ postId: postIdValue, status: "APPROVED", take: 200, skip: 0 }),
+      getReportItems({ postId: postIdValue, status: "REJECTED", take: 200, skip: 0 }),
+    ]);
+
+    const all: ReportItem[] = [
+      ...(pending?.items ?? []),
+      ...(approved?.items ?? []),
+      ...(rejected?.items ?? []),
+    ];
+
+    all.sort(sortByCreatedDesc);
+    return all;
+  }
 
   // --- load reports (PENDING + APPROVED + REJECTED) ---
   useEffect(() => {
@@ -29,23 +52,7 @@ export function useModerationReports(postId: number) {
       setError("");
 
       try {
-        const [pending, approved, rejected] = await Promise.all([
-          getReportItems({ postId, status: "PENDING", take: 200, skip: 0 }),
-          getReportItems({ postId, status: "APPROVED", take: 200, skip: 0 }),
-          getReportItems({ postId, status: "REJECTED", take: 200, skip: 0 }),
-        ]);
-
-        const all: ReportItem[] = [
-          ...(pending?.items ?? []),
-          ...(approved?.items ?? []),
-          ...(rejected?.items ?? []),
-        ];
-
-        all.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
+        const all = await fetchAll(postId);
         if (cancelled) return;
 
         setReports(all);
@@ -53,8 +60,7 @@ export function useModerationReports(postId: number) {
         const newestPending = all.find((r) => r.status === "PENDING");
         const fallback = all[0];
 
-        const nextActive = newestPending?.id ?? fallback?.id ?? null;
-        setActiveReportId(nextActive);
+        setActiveReportId(newestPending?.id ?? fallback?.id ?? null);
       } catch (e: any) {
         if (cancelled) return;
         setError(e?.message || "Failed to load reports");
@@ -72,39 +78,39 @@ export function useModerationReports(postId: number) {
 
   const counts: Counts = useMemo(() => {
     const out: Counts = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
-    for (const r of reports) out[r.status] += 1;
+
+    for (const r of reports) {
+      // защита от неожиданных статусов
+      if (STATUSES.includes(r.status as any)) out[r.status as keyof Counts] += 1;
+    }
+
     return out;
   }, [reports]);
 
   const activeLite = useMemo(
     () => reports.find((r) => r.id === activeReportId) ?? null,
-    [reports, activeReportId]
+    [reports, activeReportId],
   );
 
   const refreshCase = useCallback(async () => {
-    const [pending, approved, rejected] = await Promise.all([
-      getReportItems({ postId, status: "PENDING", take: 200, skip: 0 }),
-      getReportItems({ postId, status: "APPROVED", take: 200, skip: 0 }),
-      getReportItems({ postId, status: "REJECTED", take: 200, skip: 0 }),
-    ]);
+    if (!Number.isFinite(postId) || postId <= 0) return;
 
-    const all: ReportItem[] = [
-      ...(pending?.items ?? []),
-      ...(approved?.items ?? []),
-      ...(rejected?.items ?? []),
-    ];
+    setIsLoading(true);
+    setError("");
 
-    all.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    setReports(all);
+    try {
+      const all = await fetchAll(postId);
+      setReports(all);
 
-    const stillExists =
-      activeReportId !== null && all.some((r) => r.id === activeReportId);
-    if (!stillExists) {
-      const newestPending = all.find((r) => r.status === "PENDING");
-      setActiveReportId(newestPending?.id ?? all[0]?.id ?? null);
+      const stillExists = activeReportId !== null && all.some((r) => r.id === activeReportId);
+      if (!stillExists) {
+        const newestPending = all.find((r) => r.status === "PENDING");
+        setActiveReportId(newestPending?.id ?? all[0]?.id ?? null);
+      }
+    } catch (e: any) {
+      setError(e?.message || "Failed to refresh reports");
+    } finally {
+      setIsLoading(false);
     }
   }, [activeReportId, postId]);
 
@@ -120,11 +126,9 @@ export function useModerationReports(postId: number) {
     activeReportId,
     setActiveReportId,
 
-    // derived
     counts,
     activeLite,
 
-    // actions
     refreshCase,
   };
 }

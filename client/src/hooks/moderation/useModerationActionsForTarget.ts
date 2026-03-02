@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getModerationActions,
-  type ModerationActionItem,
-  type ModerationTargetType,
-} from "@/utils/api/mod.api";
+import { getModerationActions, type ModerationActionItem, type ModerationTargetType } from "@/utils/api/mod.api";
 
 export type AlreadyHandled = {
   actionType: string;
@@ -29,23 +25,33 @@ function deriveAlreadyHandled(items: ModerationActionItem[]): AlreadyHandled {
 
 export function useModerationActionsForTarget(
   targetType: ModerationTargetType,
-  targetId: string
+  targetId: string,
+  opts?: { subjectUserId?: number | null },
 ) {
   const [actions, setActions] = useState<ModerationActionItem[]>([]);
   const [isLoadingActions, setIsLoadingActions] = useState(false);
-
   const [alreadyHandled, setAlreadyHandled] = useState<AlreadyHandled>(null);
 
   async function refreshActions() {
-    if (!targetId) return;
+    const subjectUserId = opts?.subjectUserId ?? null;
+
+    // если задан subjectUserId — грузим историю эскалации по нему
+    // иначе — по targetType/targetId
+    if (!targetId && !subjectUserId) return;
 
     setIsLoadingActions(true);
     try {
-      const data = await getModerationActions({ targetType, targetId, take: 50, skip: 0 });
-      const items = (data?.items ?? []) as ModerationActionItem[];
+      const data = subjectUserId
+        ? await getModerationActions({ subjectUserId, take: 50, skip: 0 })
+        : await getModerationActions({ targetType, targetId, take: 50, skip: 0 });
+
+      const items: ModerationActionItem[] = (data?.items ?? (data as any)?.actions ?? []) as ModerationActionItem[];
 
       setActions(items);
       setAlreadyHandled(deriveAlreadyHandled(items));
+    } catch {
+      setActions([]);
+      setAlreadyHandled(null);
     } finally {
       setIsLoadingActions(false);
     }
@@ -54,7 +60,7 @@ export function useModerationActionsForTarget(
   useEffect(() => {
     void refreshActions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetType, targetId]);
+  }, [targetType, targetId, opts?.subjectUserId]);
 
   return { actions, isLoadingActions, alreadyHandled, refreshActions, setAlreadyHandled };
 }

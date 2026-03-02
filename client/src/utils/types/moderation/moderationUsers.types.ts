@@ -100,6 +100,7 @@ export type ModerationUserDetails = {
     actionType: string;
     targetType: string;
     targetId: string;
+    subjectUserId?: number | null;
     reason: string | null;
     createdAt: string;
     actor: { id: number; username: string; role: string } | null;
