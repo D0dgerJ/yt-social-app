@@ -1,8 +1,14 @@
-import { CommentStatus, ModerationActionType, ModerationTargetType } from "@prisma/client";
+import {
+  CommentStatus,
+  ModerationActionType,
+  ModerationTargetType,
+  ReportStatus,
+} from "@prisma/client";
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import type { ReportCommentDto } from "../../../validation/commentSchemas.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { logModerationAction } from "../../services/moderation/logModerationAction.ts";
 
 type Params = {
   actorId: number;
@@ -41,7 +47,7 @@ export const reportComment = async ({ actorId, commentId, dto }: Params) => {
         reporterId: actorId,
         reason: dto.reason,
         details: dto.details,
-        status: "PENDING",
+        status: ReportStatus.PENDING,
       },
       select: {
         id: true,
@@ -50,17 +56,19 @@ export const reportComment = async ({ actorId, commentId, dto }: Params) => {
       },
     });
 
-    await prisma.moderationAction.create({
-      data: {
-        actorId,
-        actionType: ModerationActionType.REPORT_CREATED,
-        targetType: ModerationTargetType.COMMENT,
-        targetId: String(comment.id),
-        reason: dto.reason,
-        metadata: {
-          commentId: comment.id,
-          postId: comment.postId,
-        },
+    await logModerationAction({
+      actorId,
+      actionType: ModerationActionType.REPORT_CREATED,
+      targetType: ModerationTargetType.COMMENT,
+      targetId: String(comment.id),
+
+      subjectUserId: comment.userId,
+
+      reason: dto.reason,
+      metadata: {
+        commentId: comment.id,
+        postId: comment.postId,
+        reportId: created.id,
       },
     });
 

@@ -63,6 +63,7 @@ model User {
   events Event[]
 
   moderationActions ModerationAction[]
+  moderationSubjectActions ModerationAction[] @relation("ModerationActionSubjectUser")
   hiddenPosts       Post[]             @relation("PostHiddenBy")
   deletedPosts      Post[]             @relation("PostDeletedBy")
 
@@ -543,6 +544,9 @@ model ModerationAction {
   targetType ModerationTargetType
   targetId   String
 
+  subjectUserId Int?
+  subjectUser   User? @relation("ModerationActionSubjectUser", fields: [subjectUserId], references: [id], onDelete: SetNull)
+
   reason    String?
   metadata  Json?
   createdAt DateTime @default(now())
@@ -550,6 +554,9 @@ model ModerationAction {
   @@index([actorId])
   @@index([targetType, targetId])
   @@index([createdAt])
+
+  @@index([subjectUserId, createdAt])
+  @@index([actionType, createdAt])
 }
 
 enum OutboxStatus {

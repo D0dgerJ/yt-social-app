@@ -24,7 +24,14 @@ import { getUserSanctions } from "../../application/services/moderation/getUserS
 import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.ts";
 import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
 
-import { hideComment, unhideComment, softDeleteComment, restoreDeletedComment, shadowHideComment, shadowUnhideComment, } from "../../application/services/moderation/moderateCommentVisibility.ts";
+import {
+  hideComment,
+  unhideComment,
+  softDeleteComment,
+  restoreDeletedComment,
+  shadowHideComment,
+  shadowUnhideComment,
+} from "../../application/services/moderation/moderateCommentVisibility.ts";
 import { assertApprovedCommentReport } from "../../application/services/moderation/assertApprovedReport.ts";
 
 const router = Router();
@@ -533,12 +540,19 @@ router.post("/reports/posts/:reportId/approve", authMiddleware, requireModerator
 
     // На всякий случай (хотя count=1 гарантирует, что он есть)
     if (!updated) throw Errors.notFound("Report not found");
+    const postOwner = updated.postId
+      ? await prisma.post.findUnique({
+          where: { id: updated.postId },
+          select: { userId: true },
+        })
+      : null;
 
     await logModerationAction({
       actorId: req.user!.id,
       actionType: ModerationActionType.NOTE,
       targetType: ModerationTargetType.POST,
       targetId: String(updated.postId),
+      subjectUserId: postOwner?.userId ?? null,
       reason: decisionReason,
       metadata: {
         reportId: updated.id,
@@ -583,12 +597,19 @@ router.post("/reports/posts/:reportId/reject", authMiddleware, requireModerator,
     });
 
     if (!updated) throw Errors.notFound("Report not found");
+    const postOwner = updated.postId
+      ? await prisma.post.findUnique({
+          where: { id: updated.postId },
+          select: { userId: true },
+        })
+      : null;
 
     await logModerationAction({
       actorId: req.user!.id,
       actionType: ModerationActionType.NOTE,
       targetType: ModerationTargetType.POST,
       targetId: String(updated.postId),
+      subjectUserId: postOwner?.userId ?? null,
       reason: decisionReason,
       metadata: {
         reportId: updated.id,
@@ -827,12 +848,17 @@ router.post("/reports/comments/:reportId/approve", authMiddleware, requireModera
     });
 
     if (!updated) throw Errors.notFound("Report not found");
+    const commentOwner = await prisma.comment.findUnique({
+      where: { id: updated.commentId },
+      select: { userId: true },
+    });
 
     await logModerationAction({
       actorId: req.user!.id,
       actionType: ModerationActionType.NOTE,
       targetType: ModerationTargetType.COMMENT,
       targetId: String(updated.commentId),
+      subjectUserId: commentOwner?.userId ?? null,
       reason: decisionReason,
       metadata: {
         reportId: updated.id,
@@ -875,12 +901,17 @@ router.post("/reports/comments/:reportId/reject", authMiddleware, requireModerat
     });
 
     if (!updated) throw Errors.notFound("Report not found");
+    const commentOwner = await prisma.comment.findUnique({
+      where: { id: updated.commentId },
+      select: { userId: true },
+    });
 
     await logModerationAction({
       actorId: req.user!.id,
       actionType: ModerationActionType.NOTE,
       targetType: ModerationTargetType.COMMENT,
       targetId: String(updated.commentId),
+      subjectUserId: commentOwner?.userId ?? null,
       reason: decisionReason,
       metadata: {
         reportId: updated.id,
@@ -896,16 +927,6 @@ router.post("/reports/comments/:reportId/reject", authMiddleware, requireModerat
 });
 
 // -------------------- moderation users (UI table) --------------------
-
-/**
- * GET /api/v1/mod/users
- * q: поиск по id (точно), username/email (contains)
- * status: ALL | BANNED | RESTRICTED | SANCTIONED | CLEAN
- * sortBy: id | username | email | role
- * order: asc | desc
- * page: 1..n
- * limit: 1..100
- */
 
 function getPage(query: any): number {
   const raw = Number(query?.page ?? 1);
@@ -961,14 +982,6 @@ router.get("/users", authMiddleware, requireModerator, async (req, res, next) =>
   }
 });
 
-/**
- * GET /api/v1/mod/users/:userId
- * Детали пользователя для модалки/страницы модерации:
- * - user (поля профиля)
- * - activeSanctions + recentSanctions
- * - sanctionsSummary (isBanned/isRestricted/lastSanctionAt)
- * - последние moderation actions по этому USER
- */
 router.get("/users/:userId", authMiddleware, requireModerator, async (req, res, next) => {
   try {
     const userId = parseId(req.params.userId, "Invalid userId");
@@ -1079,6 +1092,9 @@ router.get("/actions", authMiddleware, requireModerator, async (req, res, next) 
     const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
 
     const actorId = req.query.actorId ? parseId(req.query.actorId, "Invalid actorId") : undefined;
+    const subjectUserId = req.query.subjectUserId
+      ? parseId(req.query.subjectUserId, "Invalid subjectUserId")
+      : undefined;
 
     const actionTypeRaw = typeof req.query.actionType === "string" ? req.query.actionType : undefined;
     const targetTypeRaw = typeof req.query.targetType === "string" ? req.query.targetType : undefined;
@@ -1108,6 +1124,7 @@ router.get("/actions", authMiddleware, requireModerator, async (req, res, next) 
 
     const where: Prisma.ModerationActionWhereInput = {
       ...(actorId ? { actorId } : {}),
+      ...(subjectUserId ? { subjectUserId } : {}),
       ...(actionType ? { actionType } : {}),
       ...(targetType ? { targetType } : {}),
       ...(targetId ? { targetId } : {}),

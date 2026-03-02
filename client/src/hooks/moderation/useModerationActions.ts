@@ -10,10 +10,13 @@ export type AlreadyHandled = {
 } | null;
 
 function deriveAlreadyHandled(items: ModerationActionItem[]): AlreadyHandled {
+  // Считаем handled, если было любое “решение” по контенту
   const last =
     items.find((a) => a.actionType === "CONTENT_DELETED") ||
     items.find((a) => a.actionType === "CONTENT_HIDDEN") ||
     items.find((a) => a.actionType === "CONTENT_UNHIDDEN") ||
+    items.find((a) => a.actionType === "CONTENT_SHADOW_HIDDEN") ||
+    items.find((a) => a.actionType === "CONTENT_SHADOW_UNHIDDEN") ||
     null;
 
   if (!last) return null;
@@ -27,74 +30,113 @@ function deriveAlreadyHandled(items: ModerationActionItem[]): AlreadyHandled {
   };
 }
 
+type Mode = "TARGET" | "SUBJECT";
+
 /**
- * По умолчанию работает как раньше для POST.
- * Для комментариев: useModerationActions(commentId, "COMMENT")
+ * По умолчанию работает как раньше для POST/COMMENT (targetType+targetId).
+ * Если нужно “историю эскалации” по пользователю-владельцу контента —
+ * передай mode="SUBJECT" и targetId=userId.
+ *
+ * Примеры:
+ * - useModerationActions(postId, "POST") -> по таргету
+ * - useModerationActions(commentId, "COMMENT") -> по таргету
+ * - useModerationActions(userId, "POST", "SUBJECT") -> по subjectUserId=userId (история эскалации)
  */
-export function useModerationActions(targetId: number, targetType: "POST" | "COMMENT" = "POST") {
+export function useModerationActions(
+  targetId: number,
+  targetType: "POST" | "COMMENT" = "POST",
+  mode: Mode = "TARGET",
+) {
   const [actions, setActions] = useState<ModerationActionItem[]>([]);
   const [alreadyHandled, setAlreadyHandled] = useState<AlreadyHandled>(null);
   const [isLoadingActions, setIsLoadingActions] = useState(false);
 
-  const refreshActions = useCallback(async () => {
+  const fetchActions = useCallback(async () => {
     if (!Number.isFinite(targetId) || targetId <= 0) return;
 
     setIsLoadingActions(true);
     try {
-      const res = await getModerationActions({
-        targetType,
-        targetId: String(targetId),
-        take: 50,
-        skip: 0,
-      });
+      const res =
+        mode === "SUBJECT"
+          ? await getModerationActions({
+              subjectUserId: targetId,
+              take: 50,
+              skip: 0,
+            })
+          : await getModerationActions({
+              targetType,
+              targetId: String(targetId),
+              take: 50,
+              skip: 0,
+            });
 
-      const items: ModerationActionItem[] = res?.items ?? res?.actions ?? [];
+      // основной контракт сервера: items
+      // fallback на actions оставлен для совместимости
+      const items: ModerationActionItem[] = (res?.items ?? (res as any)?.actions ?? []) as ModerationActionItem[];
+
       setActions(items);
       setAlreadyHandled(deriveAlreadyHandled(items));
+    } catch {
+      setActions([]);
+      setAlreadyHandled(null);
     } finally {
       setIsLoadingActions(false);
     }
-  }, [targetId, targetType]);
+  }, [mode, targetId, targetType]);
+
+  const refreshActions = useCallback(async () => {
+    await fetchActions();
+  }, [fetchActions]);
 
   useEffect(() => {
-    if (!Number.isFinite(targetId) || targetId <= 0) return;
-
     let cancelled = false;
 
-    async function loadActions() {
+    async function run() {
+      if (!Number.isFinite(targetId) || targetId <= 0) return;
+
       setIsLoadingActions(true);
       try {
-        const res = await getModerationActions({
-          targetType,
-          targetId: String(targetId),
-          take: 50,
-          skip: 0,
-        });
+        const res =
+          mode === "SUBJECT"
+            ? await getModerationActions({
+                subjectUserId: targetId,
+                take: 50,
+                skip: 0,
+              })
+            : await getModerationActions({
+                targetType,
+                targetId: String(targetId),
+                take: 50,
+                skip: 0,
+              });
 
-        const items: ModerationActionItem[] = res?.items ?? res?.actions ?? [];
+        const items: ModerationActionItem[] = (res?.items ?? (res as any)?.actions ?? []) as ModerationActionItem[];
         if (cancelled) return;
 
         setActions(items);
         setAlreadyHandled(deriveAlreadyHandled(items));
       } catch {
-        if (!cancelled) setActions([]);
+        if (!cancelled) {
+          setActions([]);
+          setAlreadyHandled(null);
+        }
       } finally {
         if (!cancelled) setIsLoadingActions(false);
       }
     }
 
-    void loadActions();
+    void run();
 
     return () => {
       cancelled = true;
     };
-  }, [targetId, targetType]);
+  }, [mode, targetId, targetType]);
 
   return {
     actions,
     isLoadingActions,
     alreadyHandled,
     refreshActions,
-    setAlreadyHandled, // нужно для 409 alreadyHandled (поведение как было)
+    setAlreadyHandled,
   };
 }

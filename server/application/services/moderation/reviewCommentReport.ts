@@ -1,6 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { ModerationActionType, ModerationTargetType } from "@prisma/client";
+import { ModerationActionType, ModerationTargetType, ReportStatus } from "@prisma/client";
+import { logModerationAction } from "./logModerationAction.ts";
 
 export const approveCommentReport = async (params: { actorId: number; reportId: number; reason: string }) => {
   const { actorId, reportId, reason } = params;
@@ -11,27 +12,31 @@ export const approveCommentReport = async (params: { actorId: number; reportId: 
   });
 
   if (!report) throw Errors.notFound("Report not found");
-  if (report.status !== "PENDING") throw Errors.validation("Report already reviewed");
+  if (report.status !== ReportStatus.PENDING) throw Errors.validation("Report already reviewed");
 
   const updated = await prisma.commentReport.update({
     where: { id: reportId },
     data: {
-      status: "APPROVED",
+      status: ReportStatus.APPROVED,
       reviewedById: actorId,
       reviewedAt: new Date(),
     },
-    select: { id: true, status: true, reviewedAt: true },
+    select: { id: true, status: true, reviewedAt: true, commentId: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.NOTE,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(report.commentId),
-      reason,
-      metadata: { reportId, decision: "APPROVED" },
-    },
+  const commentOwner = await prisma.comment.findUnique({
+    where: { id: report.commentId },
+    select: { userId: true },
+  });
+
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.NOTE,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(report.commentId),
+    subjectUserId: commentOwner?.userId ?? null,
+    reason,
+    metadata: { reportId, decision: "APPROVED" },
   });
 
   return updated;
@@ -46,27 +51,31 @@ export const rejectCommentReport = async (params: { actorId: number; reportId: n
   });
 
   if (!report) throw Errors.notFound("Report not found");
-  if (report.status !== "PENDING") throw Errors.validation("Report already reviewed");
+  if (report.status !== ReportStatus.PENDING) throw Errors.validation("Report already reviewed");
 
   const updated = await prisma.commentReport.update({
     where: { id: reportId },
     data: {
-      status: "REJECTED",
+      status: ReportStatus.REJECTED,
       reviewedById: actorId,
       reviewedAt: new Date(),
     },
-    select: { id: true, status: true, reviewedAt: true },
+    select: { id: true, status: true, reviewedAt: true, commentId: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.NOTE,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(report.commentId),
-      reason,
-      metadata: { reportId, decision: "REJECTED" },
-    },
+  const commentOwner = await prisma.comment.findUnique({
+    where: { id: report.commentId },
+    select: { userId: true },
+  });
+
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.NOTE,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(report.commentId),
+    subjectUserId: commentOwner?.userId ?? null,
+    reason,
+    metadata: { reportId, decision: "REJECTED" },
   });
 
   return updated;

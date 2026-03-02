@@ -7,6 +7,7 @@ import {
   ModerationTargetType,
 } from "@prisma/client";
 import { assertApprovedCommentReport } from "./assertApprovedReport.ts";
+import { logModerationAction } from "./logModerationAction.ts";
 
 export const hideComment = async (params: {
   actorId: number;
@@ -17,7 +18,7 @@ export const hideComment = async (params: {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, userId: true },
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
@@ -42,14 +43,14 @@ export const hideComment = async (params: {
     select: { id: true, status: true, hiddenAt: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.CONTENT_HIDDEN,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(commentId),
-      reason,
-    },
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.CONTENT_HIDDEN,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(commentId),
+    subjectUserId: comment.userId,
+    reason,
+    metadata: { mode: "hide" },
   });
 
   return updated;
@@ -64,7 +65,7 @@ export const unhideComment = async (params: {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, userId: true },
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
@@ -87,14 +88,14 @@ export const unhideComment = async (params: {
     select: { id: true, status: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.CONTENT_UNHIDDEN,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(commentId),
-      reason,
-    },
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.CONTENT_UNHIDDEN,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(commentId),
+    subjectUserId: comment.userId,
+    reason,
+    metadata: { mode: "unhide" },
   });
 
   return updated;
@@ -109,13 +110,14 @@ export const shadowHideComment = async (params: {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, status: true, visibility: true },
+    select: { id: true, status: true, visibility: true, userId: true },
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
   if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is deleted");
-  if (comment.visibility === CommentVisibility.SHADOW_HIDDEN)
+  if (comment.visibility === CommentVisibility.SHADOW_HIDDEN) {
     throw Errors.validation("Comment is already shadow hidden");
+  }
 
   await assertApprovedCommentReport(commentId);
 
@@ -134,14 +136,14 @@ export const shadowHideComment = async (params: {
     select: { id: true, status: true, visibility: true, shadowHiddenAt: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.CONTENT_SHADOW_HIDDEN,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(commentId),
-      reason,
-    },
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.CONTENT_SHADOW_HIDDEN,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(commentId),
+    subjectUserId: comment.userId,
+    reason,
+    metadata: { mode: "shadow_hide" },
   });
 
   return updated;
@@ -156,13 +158,14 @@ export const shadowUnhideComment = async (params: {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, status: true, visibility: true },
+    select: { id: true, status: true, visibility: true, userId: true },
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
   if (comment.status === CommentStatus.DELETED) throw Errors.validation("Comment is deleted");
-  if (comment.visibility !== CommentVisibility.SHADOW_HIDDEN)
+  if (comment.visibility !== CommentVisibility.SHADOW_HIDDEN) {
     throw Errors.validation("Comment is not shadow hidden");
+  }
 
   await assertApprovedCommentReport(commentId);
 
@@ -181,14 +184,14 @@ export const shadowUnhideComment = async (params: {
     select: { id: true, status: true, visibility: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.CONTENT_SHADOW_UNHIDDEN,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(commentId),
-      reason,
-    },
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.CONTENT_SHADOW_UNHIDDEN,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(commentId),
+    subjectUserId: comment.userId,
+    reason,
+    metadata: { mode: "shadow_unhide" },
   });
 
   return updated;
@@ -207,7 +210,7 @@ export const softDeleteComment = async (params: {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, userId: true },
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
@@ -235,14 +238,14 @@ export const softDeleteComment = async (params: {
     select: { id: true, status: true, deletedAt: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.CONTENT_DELETED,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(commentId),
-      reason,
-    },
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.CONTENT_DELETED,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(commentId),
+    subjectUserId: comment.userId,
+    reason,
+    metadata: { mode: "soft_delete" },
   });
 
   return updated;
@@ -260,7 +263,7 @@ export const restoreDeletedComment = async (params: {
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, userId: true },
   });
 
   if (!comment) throw Errors.notFound("Comment not found");
@@ -277,14 +280,14 @@ export const restoreDeletedComment = async (params: {
     select: { id: true, status: true },
   });
 
-  await prisma.moderationAction.create({
-    data: {
-      actorId,
-      actionType: ModerationActionType.NOTE,
-      targetType: ModerationTargetType.COMMENT,
-      targetId: String(commentId),
-      reason: `Restored deleted comment. ${reason}`,
-    },
+  await logModerationAction({
+    actorId,
+    actionType: ModerationActionType.NOTE,
+    targetType: ModerationTargetType.COMMENT,
+    targetId: String(commentId),
+    subjectUserId: comment.userId,
+    reason: `Restored deleted comment. ${reason}`,
+    metadata: { mode: "restore" },
   });
 
   return updated;

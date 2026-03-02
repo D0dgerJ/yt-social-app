@@ -1,7 +1,12 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { logModerationAction } from "./logModerationAction.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { ModerationActionType, ModerationTargetType, UserSanctionStatus, UserSanctionType } from "@prisma/client";
+import {
+  ModerationActionType,
+  ModerationTargetType,
+  UserSanctionStatus,
+  UserSanctionType,
+} from "@prisma/client";
 import { assertActorCanModerateUser } from "./assertActorCanModerateUser.ts";
 
 type LiftUserSanctionInput = {
@@ -14,7 +19,7 @@ function mapLiftActionType(type: UserSanctionType): ModerationActionType {
   if (type === UserSanctionType.RESTRICT) return ModerationActionType.USER_UNRESTRICTED;
   if (type === UserSanctionType.TEMP_BAN) return ModerationActionType.USER_UNBANNED;
   if (type === UserSanctionType.PERM_BAN) return ModerationActionType.USER_UNBANNED;
-  return ModerationActionType.NOTE; 
+  return ModerationActionType.NOTE;
 }
 
 export async function liftUserSanction({ actorId, sanctionId, liftReason }: LiftUserSanctionInput) {
@@ -52,9 +57,12 @@ export async function liftUserSanction({ actorId, sanctionId, liftReason }: Lift
 
   await logModerationAction({
     actorId,
-    actionType: mapLiftActionType(sanction.type),
+    actionType: mapLiftActionType(updated.type),
     targetType: ModerationTargetType.USER,
-    targetId: String(sanction.userId),
+    targetId: String(updated.userId),
+
+    subjectUserId: updated.userId,
+
     reason: liftReason,
     metadata: {
       sanctionId: updated.id,

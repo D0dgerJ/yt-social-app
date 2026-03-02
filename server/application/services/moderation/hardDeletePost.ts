@@ -92,6 +92,9 @@ export async function hardDeletePost({ actorId, postId, reason }: HardDeletePost
     actionType: ModerationActionType.CONTENT_DELETED,
     targetType: ModerationTargetType.POST,
     targetId: String(post.id),
+
+    subjectUserId: post.userId,
+
     reason: reason ?? null,
     metadata: { mode: "hard" },
   });

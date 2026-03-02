@@ -87,7 +87,7 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
     OR: [{ endsAt: null }, { endsAt: { gt: now } }],
   };
 
-  const [activeSanctions, recentSanctions, sanctionsTotal, recentActions] = await prisma.$transaction([
+  const [activeSanctions, recentSanctions, sanctionsTotal, recentActionsRaw] = await prisma.$transaction([
     prisma.userSanction.findMany({
       where: activeWhere,
       orderBy: { createdAt: "desc" },
@@ -128,16 +128,28 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
 
     prisma.moderationAction.findMany({
       where: {
-        targetType: ModerationTargetType.USER,
-        targetId: String(userId),
+        OR: [
+          // ✅ новая “история эскалации”: все действия, где этот юзер — владелец контента/субъект
+          { subjectUserId: userId },
+
+          // ✅ fallback для старых записей, где subjectUserId ещё не писали
+          { targetType: ModerationTargetType.USER, targetId: String(userId) },
+        ],
       },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 50,
       include: {
         actor: { select: { id: true, username: true, role: true } },
       },
     }),
   ]);
+
+  const seen = new Set<number>();
+  const recentActions = recentActionsRaw.filter((a) => {
+    if (seen.has(a.id)) return false;
+    seen.add(a.id);
+    return true;
+  });
 
   const isBanned = activeSanctions.some(
     (s) => s.type === UserSanctionType.TEMP_BAN || s.type === UserSanctionType.PERM_BAN,
@@ -198,9 +210,7 @@ export async function getModerationUserById(userId: number): Promise<ModerationU
       targetId: a.targetId,
       reason: a.reason ?? null,
       createdAt: a.createdAt,
-      actor: a.actor
-        ? { id: a.actor.id, username: a.actor.username, role: String(a.actor.role) }
-        : null,
+      actor: a.actor ? { id: a.actor.id, username: a.actor.username, role: String(a.actor.role) } : null,
     })),
   };
 }
