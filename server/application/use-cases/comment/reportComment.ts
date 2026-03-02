@@ -9,6 +9,7 @@ import type { ReportCommentDto } from "../../../validation/commentSchemas.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 import { logModerationAction } from "../../services/moderation/logModerationAction.ts";
+import { assertReportRateLimit } from "../../services/moderation/assertReportRateLimit.ts";
 
 type Params = {
   actorId: number;
@@ -22,6 +23,9 @@ export const reportComment = async ({ actorId, commentId, dto }: Params) => {
 
   // banned блокируем, restricted разрешаем репортить
   await assertUserActionAllowed({ userId: actorId, forbidRestricted: false });
+
+  // анти-спам на репорты (post + comment)
+  await assertReportRateLimit({ reporterId: actorId });
 
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },

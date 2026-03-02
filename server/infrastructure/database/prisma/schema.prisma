@@ -603,6 +603,7 @@ model PostReport {
   @@unique([postId, reporterId])
   @@index([status, createdAt])
   @@index([postId])
+  @@index([reporterId, createdAt])
 }
 
 enum ReportStatus {
