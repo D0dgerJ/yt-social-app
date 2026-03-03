@@ -3,7 +3,8 @@ import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
 import type { NotificationType } from "../notification/notificationTypes.ts";
 import { extractMentions } from "../notification/extractMentions.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.ts";
 
 type MediaKind = "image" | "video" | "file" | "gif" | "audio";
 
@@ -45,7 +46,7 @@ interface SendMessageInput {
 export const sendMessage = async (rawInput: SendMessageInput) => {
   try {
     const data = sendMessageSchema.parse(rawInput);
-    await assertUserActionAllowed({ userId: data.senderId, forbidRestricted: true });
+    await assertActionAllowed({ actorId: data.senderId, action: "MESSAGE_SEND" });
 
     const {
       conversationId,
@@ -70,17 +71,21 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
     });
 
     if (!isParticipant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw Errors.forbidden("You are not a participant of this chat");
     }
 
     if (repliedToId) {
       const original = await prisma.message.findUnique({
         where: { id: repliedToId },
-        select: { id: true, conversationId: true },
+        select: { id: true, conversationId: true, isDeleted: true },
       });
 
-      if (!original || original.conversationId !== conversationId) {
-        throw new Error("Ответ на сообщение из другого чата запрещён");
+      if (!original || original.isDeleted) {
+        throw Errors.notFound("Replied message not found");
+      }
+
+      if (original.conversationId !== conversationId) {
+        throw Errors.validation("Replying to a message from another chat is not allowed");
       }
     }
 
@@ -105,7 +110,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       !legacyMediaUrl &&
       attachments.length === 0
     ) {
-      throw new Error("Для mediaType требуется mediaUrl");
+      throw Errors.validation("mediaUrl is required for this mediaType");
     }
 
     const first = attachments[0];
@@ -247,7 +252,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         });
 
         if (!withRelations) {
-          throw new Error("Не удалось получить созданное сообщение");
+          throw Errors.internal("Failed to load created message");
         }
 
         return {
@@ -256,6 +261,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         };
       });
 
+      // уведомления — ошибки глотаем, но не валим отправку
       try {
         const [participants, conversation] = await Promise.all([
           prisma.participant.findMany({
@@ -352,9 +358,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
 
             const mentionTargets = mentionedUsers
               .map((u) => u.id)
-              .filter(
-                (id) => id !== senderId && participantIds.has(id),
-              );
+              .filter((id) => id !== senderId && participantIds.has(id));
 
             if (mentionTargets.length > 0) {
               const mentionPayload = JSON.stringify({
@@ -407,10 +411,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
                 });
 
                 if (fullMention) {
-                  io.to(`user:${toUserId}`).emit(
-                    "notification:new",
-                    fullMention,
-                  );
+                  io.to(`user:${toUserId}`).emit("notification:new", fullMention);
                 }
               }
             }
@@ -423,6 +424,8 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       return message;
     } catch (e: any) {
       const isP2002 = typeof e?.code === "string" && e.code === "P2002";
+
+      // идемпотентность по clientMessageId
       if (isP2002 && clientMessageId) {
         const existing = await prisma.message.findUnique({
           where: { clientMessageId },
@@ -475,7 +478,8 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
     }
   } catch (error) {
     console.error("❌ Ошибка при отправке сообщения:", error);
-    if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось отправить сообщение");
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error) throw Errors.internal(error.message);
+    throw Errors.internal("Failed to send message");
   }
 };

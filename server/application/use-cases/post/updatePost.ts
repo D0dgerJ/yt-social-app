@@ -1,7 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface UpdatePostInput {
   postId: number;
@@ -27,7 +27,8 @@ export const updatePost = async ({
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
 
-  await assertUserActionAllowed({ userId, forbidRestricted: true });
+  // Anti-abuse: санкции + rate limit апдейтов
+  await assertActionAllowed({ actorId: userId, action: "POST_UPDATE" });
 
   const existing = await prisma.post.findUnique({
     where: { id: postId },

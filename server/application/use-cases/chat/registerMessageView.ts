@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface RegisterMessageViewInput {
   messageId: number;
@@ -10,6 +11,9 @@ export const registerMessageView = async ({
   userId,
 }: RegisterMessageViewInput) => {
   try {
+    // Anti-abuse: санкции + rate limit на регистрации просмотров
+    await assertActionAllowed({ actorId: userId, action: "MESSAGE_VIEW" });
+
     return await prisma.$transaction(async (tx) => {
       const msg = await tx.message.findUnique({
         where: { id: messageId },

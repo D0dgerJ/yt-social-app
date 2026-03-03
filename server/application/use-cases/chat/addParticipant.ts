@@ -1,7 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
 import { createNotification } from "../notification/createNotification.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface AddParticipantInput {
   conversationId: number;
@@ -17,7 +17,9 @@ export const addParticipant = async ({
   role = "member",
 }: AddParticipantInput) => {
   try {
-    await assertUserActionAllowed({ userId: addedById, forbidRestricted: true });
+    // Anti-abuse: санкции + лимит инвайтов
+    await assertActionAllowed({ actorId: addedById, action: "CHAT_INVITE" });
+
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       include: { participants: true },
@@ -27,9 +29,7 @@ export const addParticipant = async ({
       throw new Error("Чат не найден");
     }
 
-    const addedBy = conversation.participants.find(
-      (p) => p.userId === addedById,
-    );
+    const addedBy = conversation.participants.find((p) => p.userId === addedById);
     if (!addedBy || !["admin", "owner"].includes(addedBy.role)) {
       throw new Error("У вас нет прав добавлять участников");
     }

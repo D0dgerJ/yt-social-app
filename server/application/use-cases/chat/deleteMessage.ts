@@ -1,6 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface DeleteMessageInput {
   messageId: number;
@@ -9,7 +10,16 @@ interface DeleteMessageInput {
 
 export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) => {
   try {
-    await assertUserActionAllowed({ userId, forbidRestricted: true });
+    if (!Number.isFinite(messageId) || messageId <= 0) {
+      throw Errors.validation("Invalid messageId");
+    }
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw Errors.validation("Invalid userId");
+    }
+
+    // Anti-abuse: санкции + лимит удалений
+    await assertActionAllowed({ actorId: userId, action: "MESSAGE_DELETE" });
+
     const message = await prisma.message.findUnique({
       where: { id: messageId },
     });
