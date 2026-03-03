@@ -3,7 +3,7 @@ import { ContentStatus, CommentStatus, CommentVisibility } from "@prisma/client"
 import { createNotification } from "../notification/createNotification.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface ToggleLikeParams {
   commentId: number;
@@ -14,8 +14,13 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
   if (!Number.isFinite(commentId) || commentId <= 0) {
     throw Errors.validation("Invalid commentId");
   }
+  if (!Number.isFinite(userId) || userId <= 0) {
+    throw Errors.validation("Invalid userId");
+  }
 
-  await assertUserActionAllowed({ userId, forbidRestricted: true });
+  // Anti-abuse: санкции + rate limit (реакции/лайки)
+  await assertActionAllowed({ actorId: userId, action: "REACTION_ADD" });
+
   // ✅ thread auto-lock: если root не ACTIVE — лайки запрещены в ветке
   await assertCommentThreadActionAllowed({ commentId, actorId: userId });
 

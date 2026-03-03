@@ -2,8 +2,7 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { ContentStatus, ModerationActionType, ModerationTargetType, ReportStatus } from "@prisma/client";
 import { logModerationAction } from "../../services/moderation/logModerationAction.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
-import { assertReportRateLimit } from "../../services/moderation/assertReportRateLimit.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 type ReportPostInput = {
   postId: number;
@@ -27,11 +26,8 @@ export async function reportPost({ postId, reporterId, reason, message }: Report
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
   if (!Number.isFinite(reporterId) || reporterId <= 0) throw Errors.validation("Invalid reporterId");
 
-  // banned блокируем, restricted разрешаем репортить
-  await assertUserActionAllowed({ userId: reporterId, forbidRestricted: false });
-
-  // анти-спам на репорты (post + comment)
-  await assertReportRateLimit({ reporterId });
+  // Anti-abuse: banned блокируем, restricted разрешаем репортить + rate limit
+  await assertActionAllowed({ actorId: reporterId, action: "REPORT_CREATE" });
 
   const cleanReason = String(reason ?? "").trim().toLowerCase();
   if (!cleanReason) throw Errors.validation("Reason is required");

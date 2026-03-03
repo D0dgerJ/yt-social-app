@@ -6,7 +6,7 @@ import { assertCommentThreadActionAllowed } from "../../services/comment/assertC
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { CommentStatus } from "@prisma/client";
 import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface CreateCommentParams {
   postId: number;
@@ -31,8 +31,9 @@ export const createComment = async ({
     throw Errors.validation("Invalid post ID");
   }
 
-  // ban/restrict enforcement в домене
-  await assertUserActionAllowed({ userId, forbidRestricted: true });
+  // Anti-abuse: санкции + общий лимит comment-create
+  await assertActionAllowed({ actorId: userId, action: "COMMENT_CREATE" });
+
   await assertPostActionAllowed(postId);
 
   const post = await prisma.post.findUnique({
@@ -55,7 +56,7 @@ export const createComment = async ({
     // auto-lock: запрещаем reply/like/update/delete в ветке, если root не ACTIVE
     const thread = await assertCommentThreadActionAllowed({ commentId: parentId, actorId: userId });
 
-    // ✅ rate limit replies (только replies)
+    // ✅ rate limit replies (только replies) — ОСТАВЛЯЕМ ТВОЮ ЛОГИКУ
     await rateLimitConsume({ key: `rl:reply:user:${userId}`, limit: 10, windowSec: 60 });
     await rateLimitConsume({
       key: `rl:reply:thread:${userId}:${thread.rootId}`,
@@ -104,7 +105,6 @@ export const createComment = async ({
 
   const snippet = trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;
 
-  // уведомления/mentions — можно глотать ошибки, но НЕ валидацию
   try {
     if (parentComment) {
       if (parentComment.userId !== userId) {

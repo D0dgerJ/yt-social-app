@@ -1,7 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { getIO } from "../../../infrastructure/websocket/socket.ts";
 import { createChatSchema } from "../../../validation/chatSchemas.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 interface CreateChatInput {
   userIds: number[];
@@ -12,7 +12,9 @@ interface CreateChatInput {
 export const createChat = async (data: CreateChatInput) => {
   try {
     const { userIds: rawUserIds, name, creatorId } = createChatSchema.parse(data);
-    await assertUserActionAllowed({ userId: creatorId, forbidRestricted: true });
+
+    // Anti-abuse: санкции + rate limit создания чатов
+    await assertActionAllowed({ actorId: creatorId, action: "CHAT_CREATE" });
 
     const userIds = Array.from(new Set([...rawUserIds, creatorId])).sort();
 

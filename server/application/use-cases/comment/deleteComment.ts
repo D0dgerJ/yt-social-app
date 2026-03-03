@@ -1,7 +1,7 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { CommentStatus, ContentStatus, UserRole } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 
 export const deleteComment = async (params: {
   commentId: number;
@@ -18,7 +18,7 @@ export const deleteComment = async (params: {
   }
 
   // ban/restrict enforcement в домене
-  await assertUserActionAllowed({ userId: actorId, forbidRestricted: true });
+  await assertActionAllowed({ actorId, action: "COMMENT_DELETE" });
 
   const comment = await prisma.comment.findFirst({
     where: {

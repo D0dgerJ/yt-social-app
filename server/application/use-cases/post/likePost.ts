@@ -2,7 +2,6 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { createNotification } from "../notification/createNotification.ts";
 import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
 
 interface LikePostInput {
   userId: number;
@@ -13,7 +12,6 @@ export const likePost = async ({ userId, postId }: LikePostInput) => {
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
 
-  await assertUserActionAllowed({ userId, forbidRestricted: true });
   await assertPostActionAllowed(postId);
 
   const post = await prisma.post.findUnique({
