@@ -128,6 +128,8 @@ model Post {
   deletedBy     User?        @relation("PostDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
   deletedReason String?
   postReports   PostReport[]
+
+  @@index([status, createdAt])
 }
 
 model Like {
