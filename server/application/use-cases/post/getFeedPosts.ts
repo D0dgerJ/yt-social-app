@@ -10,20 +10,26 @@ export const getFeedPosts = async (userId: number) => {
     throw Errors.validation("Invalid userId");
   }
 
+  // 0) followingIds считаем один раз (и используем для ranked + fallback)
+  const following = await prisma.follow.findMany({
+    where: { followerId: userId },
+    select: { followingId: true },
+  });
+  const followingIds = following.map((f) => f.followingId);
+
   // 1) ranked (7 days window внутри сервиса)
-  const ranked = await getRankedFeedPostIds({ userId, limit: FEED_LIMIT, offset: 0 });
+  const ranked = await getRankedFeedPostIds({
+    userId,
+    followingIds,
+    limit: FEED_LIMIT,
+    offset: 0,
+  });
   const rankedIds = ranked.map((r) => r.id);
 
   // 2) fallback: если ranked мало — добираем по createdAt desc из той же ленты (я + following)
   let fallbackIds: number[] = [];
   if (rankedIds.length < FEED_LIMIT) {
     const need = FEED_LIMIT - rankedIds.length;
-
-    const following = await prisma.follow.findMany({
-      where: { followerId: userId },
-      select: { followingId: true },
-    });
-    const followingIds = following.map((f) => f.followingId);
 
     const fallback = await prisma.post.findMany({
       where: {
@@ -42,6 +48,7 @@ export const getFeedPosts = async (userId: number) => {
   const ids = [...rankedIds, ...fallbackIds];
   if (ids.length === 0) return [];
 
+  // 3) грузим посты
   const posts = await prisma.post.findMany({
     where: {
       id: { in: ids },
