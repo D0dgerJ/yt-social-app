@@ -11,7 +11,8 @@ import {
   unsavePost,
   getUserPostsByUsername,
   getAllPosts,
-  reportPost, 
+  reportPost,
+  getExplorePosts,
 } from "../../application/use-cases/post/index.ts";
 import { Errors } from "../../infrastructure/errors/ApiError.ts";
 
@@ -107,6 +108,15 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction): 
   try {
     const userId = req.user!.id;
     const posts = await getFeedPosts(userId);
+    res.status(200).json(posts);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getExplore = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const posts = await getExplorePosts();
     res.status(200).json(posts);
   } catch (err) {
     next(err);

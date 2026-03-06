@@ -10,3 +10,4 @@ export * from './unsavePost.ts';
 export * from './getUserPostsByUsername.ts';
 export * from './getAllPosts.ts';
 export * from "./reportPost.ts";
+export { getExplorePosts } from "./getExplorePosts.ts";

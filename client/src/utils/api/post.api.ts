@@ -69,6 +69,11 @@ export const getFeedPosts = async () => {
   return response.data;
 };
 
+export const getExplorePosts = async () => {
+  const response = await axios.get("/posts/explore");
+  return response.data;
+};
+
 export const getFeedPostsByUserId = async (userId: number) => {
   const response = await axios.get(`/posts/feed/${userId}`);
   return response.data;

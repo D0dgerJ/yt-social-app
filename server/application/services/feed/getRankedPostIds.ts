@@ -28,7 +28,7 @@ export async function getRankedPostIds({
         ) * 0.5
       )::float8 AS score
     FROM "Post" p
-    WHERE p.status = ${ContentStatus.ACTIVE}
+    WHERE p.status = CAST(${ContentStatus.ACTIVE} AS "ContentStatus")
     ORDER BY score DESC
     LIMIT ${limit}
     OFFSET ${offset}

@@ -5,7 +5,11 @@ import NewsFeed from "../../components/NewsFeed/NewsFeed";
 import Rightbar from "../../components/Rightbar/Rightbar";
 import "./Home.scss";
 
-const Home = () => {
+interface HomeProps {
+  feedMode?: "home" | "explore";
+}
+
+const Home: React.FC<HomeProps> = ({ feedMode = "home" }) => {
   return (
     <>
       <Navbar />
@@ -14,7 +18,7 @@ const Home = () => {
           <Sidebar />
         </div>
         <div className="newsfeed-wrapper">
-          <NewsFeed />
+          <NewsFeed mode={feedMode} />
         </div>
         <div className="rightbar-wrapper">
           <Rightbar />

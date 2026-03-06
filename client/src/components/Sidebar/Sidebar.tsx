@@ -1,20 +1,16 @@
 import React, { useContext } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { SiFeedly } from "react-icons/si";
-import { BiSolidVideos } from "react-icons/bi";
+import { BiSolidVideos, BiCalendar, BiCompass } from "react-icons/bi";
 import { MdGroups } from "react-icons/md";
 import {
   IoChatboxEllipsesSharp,
   IoBookmarks,
-  IoBriefcase,
 } from "react-icons/io5";
-import { BsFillQuestionSquareFill } from "react-icons/bs";
-import { FaUserGraduate, FaCalendarDay } from "react-icons/fa";
 import FriendsList from "../FriendsList/FriendsList";
 import { AuthContext } from "../../context/AuthContext";
 import useFriends from "../../hooks/useFriends";
 import "./Sidebar.scss";
-import { BiCalendar } from "react-icons/bi";
 
 const Sidebar: React.FC = () => {
   const { user } = useContext(AuthContext);
@@ -38,9 +34,22 @@ const Sidebar: React.FC = () => {
               }
             >
               <SiFeedly className="sidebar-icon" />
-              <span>Feeds</span>
+              <span>Home</span>
             </NavLink>
           </li>
+
+          <li className="sidebar-list-item">
+            <NavLink
+              to="/explore"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? "active" : ""}`
+              }
+            >
+              <BiCompass className="sidebar-icon" />
+              <span>Explore</span>
+            </NavLink>
+          </li>
+
           <li className="sidebar-list-item">
             <NavLink
               to="/shorts"
@@ -52,12 +61,14 @@ const Sidebar: React.FC = () => {
               <span>Videos</span>
             </NavLink>
           </li>
+
           <li className="sidebar-list-item">
-            <NavLink to="" className={({isActive}) => `sidebar-link ${isActive ? "active" : ""}`}>
+            <NavLink to="" className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
               <MdGroups className="sidebar-icon" />
               <span>Groups</span>
             </NavLink>
           </li>
+
           <li className="sidebar-list-item">
             <NavLink
               to="/chat"
@@ -69,16 +80,19 @@ const Sidebar: React.FC = () => {
               <span>Chat</span>
             </NavLink>
           </li>
+
           <li className="sidebar-list-item">
             <IoBookmarks className="sidebar-icon" />
             <span>Bookmarks</span>
           </li>
+
           <li className="sidebar-list-item">
-            <NavLink to="/events" className={({isActive}) => `sidebar-link ${isActive ? "active" : ""}`}>
+            <NavLink to="/events" className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
               <BiCalendar className="sidebar-icon" />
               <span>Events</span>
             </NavLink>
           </li>
+
           {canModerate && (
             <li className="sidebar-list-item">
               <NavLink
