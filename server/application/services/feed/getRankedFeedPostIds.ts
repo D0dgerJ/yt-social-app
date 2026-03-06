@@ -20,20 +20,45 @@ export async function getRankedFeedPostIds({
     SELECT
       p.id,
       (
+        -- базовый engagement
         (SELECT COUNT(*) FROM "Like" l WHERE l."postId" = p.id) * 3
         +
         (SELECT COUNT(*) FROM "Comment" c WHERE c."postId" = p.id) * 5
+
+        -- time decay
         -
         (EXTRACT(EPOCH FROM (NOW() - p."createdAt")) / 3600.0)
+
+        -- freshness boost (первые 24 часа)
         +
         GREATEST(
           0,
           24 - (EXTRACT(EPOCH FROM (NOW() - p."createdAt")) / 3600.0)
         ) * 0.5
+
+        -- personal boost: пользователь лайкал посты этого автора
+        +
+        (
+          SELECT COUNT(*)
+          FROM "Like" l2
+          INNER JOIN "Post" p2 ON p2.id = l2."postId"
+          WHERE l2."userId" = ${userId}
+            AND p2."userId" = p."userId"
+        ) * 2
+
+        -- personal boost: пользователь комментировал посты этого автора
+        +
+        (
+          SELECT COUNT(*)
+          FROM "Comment" c2
+          INNER JOIN "Post" p3 ON p3.id = c2."postId"
+          WHERE c2."userId" = ${userId}
+            AND p3."userId" = p."userId"
+        ) * 3
       )::float8 AS score
     FROM "Post" p
     WHERE
-      p.status = ${ContentStatus.ACTIVE}
+      p.status = CAST(${ContentStatus.ACTIVE} AS "ContentStatus")
       AND p."createdAt" > NOW() - INTERVAL '7 days'
       AND (
         p."userId" = ${userId}

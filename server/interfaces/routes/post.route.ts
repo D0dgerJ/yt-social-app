@@ -6,6 +6,7 @@ import {
   getById,
   getUser,
   getFeed,
+  getExplore,
   like,
   save,
   unsave,
@@ -55,6 +56,7 @@ router.delete(
 
 router.get("/", getAll);
 router.get("/feed", authMiddleware, enforceSanctions, getFeed);
+router.get("/explore", getExplore);
 router.get("/feed/:id", getFeedById);
 router.get("/user", getUserPostsFlexible);
 router.get("/user/:userId", getUser);

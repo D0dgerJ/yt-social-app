@@ -59,7 +59,8 @@ const AppInner: React.FC = () => {
     <>
       <ToastContainer />
       <Routes>
-        <Route path="/" element={user ? <Home /> : <Navigate to="/register" />} />
+        <Route path="/" element={user ? <Home feedMode="home" /> : <Navigate to="/register" />} />
+        <Route path="/explore" element={user ? <Home feedMode="explore" /> : <Navigate to="/login" />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/shorts" element={user ? <Shorts /> : <Navigate to="/login" />} />
         <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
@@ -72,7 +73,7 @@ const AppInner: React.FC = () => {
         <Route path="/moderation/posts/:postId" element={user ? <ModerationPostDetails /> : <Navigate to="/login" />} />
         <Route path="/moderation/history" element={user ? <ModerationHistory /> : <Navigate to="/login" />} />
         <Route path="/moderation/comments" element={user ? <ModerationComments /> : <Navigate to="/login" />} />
-        <Route path="/moderation/comments/:commentId" element={user ? <ModerationCommentDetails /> : <Navigate to="/login" />}/>
+        <Route path="/moderation/comments/:commentId" element={user ? <ModerationCommentDetails /> : <Navigate to="/login" />} />
       </Routes>
 
       <FloatingChatWindow />

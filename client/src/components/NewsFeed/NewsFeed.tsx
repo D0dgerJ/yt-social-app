@@ -1,14 +1,18 @@
 import React, { useContext, useEffect, useState } from "react";
 import UploadPost from "../UploadPost/UploadPost";
 import Post from "../Post/Post";
-import { getAllPosts, getUserPostsByUsername } from "../../utils/api/post.api";
+import {
+  getExplorePosts,
+  getFeedPosts,
+  getUserPostsByUsername,
+} from "../../utils/api/post.api";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import Masonry from "react-masonry-css";
 import "./NewsFeed.scss";
 
 interface NewsFeedProps {
-  userPosts?: boolean;
+  mode?: "home" | "explore" | "profile";
 }
 
 type LikeEntity = number | string | { userId: number | string };
@@ -20,6 +24,9 @@ interface PostType {
   images?: string[];
   videos?: string[];
   files?: string[];
+  tags?: string[];
+  location?: string;
+  score?: number | null;
   userId: number;
   user?: {
     username: string;
@@ -46,17 +53,23 @@ const toLikeArray = (likes: unknown): LikeEntity[] => {
   return Array.isArray(likes) ? (likes as LikeEntity[]) : [];
 };
 
-const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
+const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
   const [posts, setPosts] = useState<PostType[]>([]);
   const { username } = useParams();
   const { user } = useContext(AuthContext);
 
+  const isProfile = mode === "profile";
+  const isHome = mode === "home";
+
   useEffect(() => {
-    const timelinePosts = async () => {
+    const loadPosts = async () => {
       try {
-        const data: any[] = userPosts
-          ? await getUserPostsByUsername(username as string)
-          : await getAllPosts();
+        const data: any[] =
+          mode === "profile"
+            ? await getUserPostsByUsername(username as string)
+            : mode === "explore"
+            ? await getExplorePosts()
+            : await getFeedPosts();
 
         const normalized: PostType[] = data.map((p: any) => {
           const likesArray = toLikeArray(p?.likes);
@@ -88,19 +101,19 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ userPosts }) => {
       }
     };
 
-    timelinePosts();
-  }, [username, userPosts]);
+    loadPosts();
+  }, [username, mode]);
 
   return (
     <div
       className={`newsFeed ${
-        userPosts ? "newsFeed--profile" : "newsFeed--home"
+        isProfile ? "newsFeed--profile" : "newsFeed--home"
       }`}
     >
-      {(!username || username === user?.username) && <UploadPost />}
+      {isHome && <UploadPost />}
 
       <Masonry
-        breakpointCols={userPosts ? profileColumns : feedColumns}
+        breakpointCols={isProfile ? profileColumns : feedColumns}
         className="masonry-grid"
         columnClassName="masonry-grid_column"
       >
