@@ -11,9 +11,13 @@ export async function resolveTagAliases({
 }: ResolveTagAliasesInput): Promise<string[]> {
   if (tags.length === 0) return [];
 
+  const normalizedInput = tags
+    .map((t) => t.toLowerCase())
+    .filter(Boolean);
+
   const aliases = await tx.tagAlias.findMany({
     where: {
-      alias: { in: tags },
+      alias: { in: normalizedInput },
     },
     include: {
       tag: true,
@@ -21,11 +25,12 @@ export async function resolveTagAliases({
   });
 
   const aliasMap = new Map<string, string>();
+
   for (const row of aliases) {
-    aliasMap.set(row.alias, row.tag.slug);
+    aliasMap.set(row.alias.toLowerCase(), row.tag.slug);
   }
 
-  const resolved = tags.map((tag) => aliasMap.get(tag) ?? tag);
+  const resolved = normalizedInput.map((tag) => aliasMap.get(tag) ?? tag);
 
   return [...new Set(resolved)];
 }
