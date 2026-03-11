@@ -2,6 +2,9 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { ContentStatus } from "@prisma/client";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { normalizeTags } from "../../services/tags/normalizeTags.ts";
+import { resolveTagAliases } from "../../services/tags/resolveTagAliases.ts";
+import { syncManualPostTags } from "../../services/tags/syncManualPostTags.ts";
 
 interface UpdatePostInput {
   postId: number;
@@ -27,7 +30,6 @@ export const updatePost = async ({
   if (!Number.isFinite(postId) || postId <= 0) throw Errors.validation("Invalid postId");
   if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
 
-  // Anti-abuse: санкции + rate limit апдейтов
   await assertActionAllowed({ actorId: userId, action: "POST_UPDATE" });
 
   const existing = await prisma.post.findUnique({
@@ -45,15 +47,38 @@ export const updatePost = async ({
     throw Errors.forbidden("Post cannot be edited in current status");
   }
 
-  return prisma.post.update({
-    where: { id: postId },
-    data: {
-      ...(desc !== undefined && { desc }),
-      ...(images !== undefined && { images }),
-      ...(videos !== undefined && { videos }),
-      ...(files !== undefined && { files }),
-      ...(tags !== undefined && { tags }),
-      ...(location !== undefined && { location }),
-    },
+  const normalizedTags = tags !== undefined ? normalizeTags(tags) : undefined;
+  const cleanLocation = typeof location === "string" ? location.trim() : location;
+
+  return prisma.$transaction(async (tx) => {
+    const resolvedTags =
+      normalizedTags !== undefined
+        ? await resolveTagAliases({
+            tx,
+            tags: normalizedTags,
+          })
+        : undefined;
+
+    const updatedPost = await tx.post.update({
+      where: { id: postId },
+      data: {
+        ...(desc !== undefined && { desc }),
+        ...(images !== undefined && { images }),
+        ...(videos !== undefined && { videos }),
+        ...(files !== undefined && { files }),
+        ...(resolvedTags !== undefined && { tags: resolvedTags }),
+        ...(location !== undefined && { location: cleanLocation ? cleanLocation : null }),
+      },
+    });
+
+    if (resolvedTags !== undefined) {
+      await syncManualPostTags({
+        tx,
+        postId,
+        normalizedTags: resolvedTags,
+      });
+    }
+
+    return updatedPost;
   });
 };
