@@ -5,6 +5,8 @@ import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 import { normalizeTags } from "../../services/tags/normalizeTags.ts";
 import { resolveTagAliases } from "../../services/tags/resolveTagAliases.ts";
 import { syncManualPostTags } from "../../services/tags/syncManualPostTags.ts";
+import { extractAutoRuleTags } from "../../services/tags/extractAutoRuleTags.ts";
+import { syncAutoRulePostTags } from "../../services/tags/syncAutoRulePostTags.ts";
 
 interface UpdatePostInput {
   postId: number;
@@ -34,7 +36,7 @@ export const updatePost = async ({
 
   const existing = await prisma.post.findUnique({
     where: { id: postId },
-    select: { id: true, userId: true, status: true },
+    select: { id: true, userId: true, status: true, desc: true, tags: true },
   });
 
   if (!existing) throw Errors.notFound("Post not found");
@@ -57,7 +59,9 @@ export const updatePost = async ({
             tx,
             tags: normalizedTags,
           })
-        : undefined;
+        : existing.tags;
+
+    const nextDesc = desc !== undefined ? desc : existing.desc ?? undefined;
 
     const updatedPost = await tx.post.update({
       where: { id: postId },
@@ -66,16 +70,29 @@ export const updatePost = async ({
         ...(images !== undefined && { images }),
         ...(videos !== undefined && { videos }),
         ...(files !== undefined && { files }),
-        ...(resolvedTags !== undefined && { tags: resolvedTags }),
+        ...(normalizedTags !== undefined && { tags: resolvedTags }),
         ...(location !== undefined && { location: cleanLocation ? cleanLocation : null }),
       },
     });
 
-    if (resolvedTags !== undefined) {
+    if (normalizedTags !== undefined) {
       await syncManualPostTags({
         tx,
         postId,
         normalizedTags: resolvedTags,
+      });
+    }
+
+    if (desc !== undefined || normalizedTags !== undefined) {
+      const autoRuleTags = extractAutoRuleTags({
+        desc: nextDesc,
+        manualTags: resolvedTags,
+      }).filter((tag) => !resolvedTags.includes(tag));
+
+      await syncAutoRulePostTags({
+        tx,
+        postId,
+        autoTags: autoRuleTags,
       });
     }
 

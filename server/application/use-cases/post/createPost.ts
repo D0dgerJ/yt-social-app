@@ -4,6 +4,8 @@ import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
 import { normalizeTags } from "../../services/tags/normalizeTags.ts";
 import { resolveTagAliases } from "../../services/tags/resolveTagAliases.ts";
 import { syncManualPostTags } from "../../services/tags/syncManualPostTags.ts";
+import { extractAutoRuleTags } from "../../services/tags/extractAutoRuleTags.ts";
+import { syncAutoRulePostTags } from "../../services/tags/syncAutoRulePostTags.ts";
 
 interface CreatePostInput {
   userId: number;
@@ -39,6 +41,11 @@ export const createPost = async ({
       tags: normalizedTags,
     });
 
+    const autoRuleTags = extractAutoRuleTags({
+      desc,
+      manualTags: resolvedTags,
+    }).filter((tag) => !resolvedTags.includes(tag));
+
     const post = await tx.post.create({
       data: {
         userId,
@@ -55,6 +62,12 @@ export const createPost = async ({
       tx,
       postId: post.id,
       normalizedTags: resolvedTags,
+    });
+
+    await syncAutoRulePostTags({
+      tx,
+      postId: post.id,
+      autoTags: autoRuleTags,
     });
 
     return post;
