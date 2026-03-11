@@ -1,6 +1,9 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { normalizeTags } from "../../services/tags/normalizeTags.ts";
+import { resolveTagAliases } from "../../services/tags/resolveTagAliases.ts";
+import { syncManualPostTags } from "../../services/tags/syncManualPostTags.ts";
 
 interface CreatePostInput {
   userId: number;
@@ -21,22 +24,39 @@ export const createPost = async ({
   tags = [],
   location,
 }: CreatePostInput) => {
-  if (!Number.isFinite(userId) || userId <= 0) throw Errors.validation("Invalid userId");
+  if (!Number.isFinite(userId) || userId <= 0) {
+    throw Errors.validation("Invalid userId");
+  }
 
-  // Anti-abuse: санкции + rate limit
   await assertActionAllowed({ actorId: userId, action: "POST_CREATE" });
 
   const cleanLocation = typeof location === "string" ? location.trim() : undefined;
+  const normalizedTags = normalizeTags(tags);
 
-  return prisma.post.create({
-    data: {
-      userId,
-      desc,
-      images,
-      videos,
-      files,
-      tags,
-      location: cleanLocation ? cleanLocation : null,
-    },
+  return prisma.$transaction(async (tx) => {
+    const resolvedTags = await resolveTagAliases({
+      tx,
+      tags: normalizedTags,
+    });
+
+    const post = await tx.post.create({
+      data: {
+        userId,
+        desc,
+        images,
+        videos,
+        files,
+        tags: resolvedTags,
+        location: cleanLocation ? cleanLocation : null,
+      },
+    });
+
+    await syncManualPostTags({
+      tx,
+      postId: post.id,
+      normalizedTags: resolvedTags,
+    });
+
+    return post;
   });
 };

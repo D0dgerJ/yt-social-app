@@ -105,6 +105,7 @@ model Post {
   likes    Like[]
   comments Comment[]
   savedBy  SavedPost[]
+  postTags PostTag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -669,6 +670,13 @@ enum CommentStatus {
   DELETED
 }
 
+enum PostTagSource {
+  MANUAL
+  AUTO_RULE
+  AUTO_AI
+  AUTO_ADMIN
+}
+
 model CommentReport {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
@@ -691,4 +699,50 @@ model CommentReport {
   @@unique([commentId, reporterId])
   @@index([commentId, status])
   @@index([reporterId, createdAt])
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  label     String
+  category  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aliases   TagAlias[]
+  postTags  PostTag[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model TagAlias {
+  id        Int      @id @default(autoincrement())
+  alias     String   @unique
+  tagId     Int
+  createdAt DateTime @default(now())
+
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@index([tagId])
+}
+
+model PostTag {
+  id         Int           @id @default(autoincrement())
+  postId     Int
+  tagId      Int
+  source     PostTagSource
+  confidence Float?
+  weight     Float         @default(1.0)
+  isPrimary  Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  post       Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag        Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId, source])
+  @@index([postId])
+  @@index([tagId])
+  @@index([tagId, weight])
 }
