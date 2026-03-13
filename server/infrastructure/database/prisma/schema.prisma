@@ -35,6 +35,11 @@ model User {
   stories      Story[]
   storyViews   StoryView[]
 
+  feedInteractions   FeedInteraction[]
+  tagInterests       UserTagInterest[]
+  authorInterests    UserAuthorInterest[] @relation("UserAuthorInterestUser")
+  authorInterestFrom UserAuthorInterest[] @relation("UserAuthorInterestAuthor")
+
   sentRequests     FriendRequest[] @relation("SentRequests")
   receivedRequests FriendRequest[] @relation("ReceivedRequests")
 
@@ -62,10 +67,10 @@ model User {
 
   events Event[]
 
-  moderationActions ModerationAction[]
+  moderationActions        ModerationAction[]
   moderationSubjectActions ModerationAction[] @relation("ModerationActionSubjectUser")
-  hiddenPosts       Post[]             @relation("PostHiddenBy")
-  deletedPosts      Post[]             @relation("PostDeletedBy")
+  hiddenPosts              Post[]             @relation("PostHiddenBy")
+  deletedPosts             Post[]             @relation("PostDeletedBy")
 
   postReportsSent     PostReport[] @relation("PostReportReporter")
   postReportsReviewed PostReport[] @relation("PostReportReviewedBy")
@@ -102,10 +107,11 @@ model Post {
   mediaUrl  String?
   mediaType String  @default("image") // image / video
 
-  likes    Like[]
-  comments Comment[]
-  savedBy  SavedPost[]
-  postTags PostTag[]
+  likes            Like[]
+  comments         Comment[]
+  savedBy          SavedPost[]
+  postTags         PostTag[]
+  feedInteractions FeedInteraction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,11 +140,11 @@ model Post {
 }
 
 model Like {
-  id     Int  @id @default(autoincrement())
-  userId Int
-  postId Int
-  user   User @relation(fields: [userId], references: [id])
-  post   Post @relation(fields: [postId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
   createdAt DateTime @default(now())
 
   @@unique([userId, postId], name: "userId_postId")
@@ -159,9 +165,10 @@ model Comment {
   parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies  Comment[] @relation("CommentReplies")
 
-  post  Post          @relation(fields: [postId], references: [id])
-  user  User          @relation(fields: [userId], references: [id])
-  likes CommentLike[]
+  post             Post              @relation(fields: [postId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  likes            CommentLike[]
+  feedInteractions FeedInteraction[]
 
   status CommentStatus @default(ACTIVE)
 
@@ -521,6 +528,24 @@ enum ContentStatus {
   DELETED
 }
 
+enum FeedEventType {
+  POST_IMPRESSION
+  POST_OPEN
+  POST_DWELL
+  POST_LIKE
+  POST_UNLIKE
+  POST_SAVE
+  POST_UNSAVE
+  POST_HIDE
+  POST_REPORT
+
+  COMMENT_OPEN
+  COMMENT_CREATE
+  COMMENT_REPLY
+  COMMENT_LIKE
+  COMMENT_UNLIKE
+}
+
 model Event {
   id          Int       @id @default(autoincrement())
   userId      Int
@@ -712,6 +737,7 @@ model Tag {
 
   aliases   TagAlias[]
   postTags  PostTag[]
+  interests UserTagInterest[]
 
   @@index([category])
   @@index([isActive])
@@ -723,7 +749,7 @@ model TagAlias {
   tagId     Int
   createdAt DateTime @default(now())
 
-  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@index([tagId])
 }
@@ -738,11 +764,68 @@ model PostTag {
   isPrimary  Boolean       @default(false)
   createdAt  DateTime      @default(now())
 
-  post       Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag        Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([postId, tagId, source])
   @@index([postId])
   @@index([tagId])
   @@index([tagId, weight])
+}
+
+model FeedInteraction {
+  id           BigInt        @id @default(autoincrement())
+  userId       Int
+  postId       Int?
+  commentId    Int?
+  targetUserId Int?
+  eventType    FeedEventType
+  value        Float?
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, eventType, createdAt])
+  @@index([postId, eventType, createdAt])
+  @@index([commentId, eventType, createdAt])
+}
+
+model UserTagInterest {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  tagId            Int
+  score            Float    @default(0)
+  positiveScore    Float    @default(0)
+  negativeScore    Float    @default(0)
+  lastInteractedAt DateTime?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tagId])
+  @@index([userId, score])
+  @@index([tagId, score])
+}
+
+model UserAuthorInterest {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  authorId         Int
+  score            Float    @default(0)
+  lastInteractedAt DateTime?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  user   User @relation("UserAuthorInterestUser", fields: [userId], references: [id], onDelete: Cascade)
+  author User @relation("UserAuthorInterestAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, authorId])
+  @@index([userId, score])
+  @@index([authorId, score])
 }

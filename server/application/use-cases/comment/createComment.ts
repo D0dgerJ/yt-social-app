@@ -7,6 +7,8 @@ import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { CommentStatus } from "@prisma/client";
 import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.ts";
 import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
 
 interface CreateCommentParams {
   postId: number;
@@ -31,7 +33,6 @@ export const createComment = async ({
     throw Errors.validation("Invalid post ID");
   }
 
-  // Anti-abuse: санкции + общий лимит comment-create
   await assertActionAllowed({ actorId: userId, action: "COMMENT_CREATE" });
 
   await assertPostActionAllowed(postId);
@@ -45,7 +46,6 @@ export const createComment = async ({
     throw Errors.notFound("Post not found");
   }
 
-  // ✅ Если это reply — проверяем parent ДО создания
   let parentComment: { id: number; userId: number; postId: number } | null = null;
 
   if (typeof parentId === "number") {
@@ -53,10 +53,8 @@ export const createComment = async ({
       throw Errors.validation("Invalid parentId");
     }
 
-    // auto-lock: запрещаем reply/like/update/delete в ветке, если root не ACTIVE
     const thread = await assertCommentThreadActionAllowed({ commentId: parentId, actorId: userId });
 
-    // ✅ rate limit replies (только replies) — ОСТАВЛЯЕМ ТВОЮ ЛОГИКУ
     await rateLimitConsume({ key: `rl:reply:user:${userId}`, limit: 10, windowSec: 60 });
     await rateLimitConsume({
       key: `rl:reply:thread:${userId}:${thread.rootId}`,
@@ -86,21 +84,42 @@ export const createComment = async ({
     throw Errors.validation("Content is required");
   }
 
-  const comment = await prisma.comment.create({
-    data: {
-      postId,
+  const comment = await prisma.$transaction(async (tx) => {
+    const createdComment = await tx.comment.create({
+      data: {
+        postId,
+        userId,
+        content: trimmed,
+        parentId: parentId ?? null,
+        images,
+        videos,
+        files,
+      },
+      include: {
+        user: { select: { id: true, username: true, profilePicture: true } },
+        _count: { select: { likes: true } },
+        likes: { select: { userId: true } },
+      },
+    });
+
+    await recordFeedInteraction({
+      tx,
       userId,
-      content: trimmed,
-      parentId: parentId ?? null,
-      images,
-      videos,
-      files,
-    },
-    include: {
-      user: { select: { id: true, username: true, profilePicture: true } },
-      _count: { select: { likes: true } },
-      likes: { select: { userId: true } },
-    },
+      eventType: parentComment ? "COMMENT_REPLY" : "COMMENT_CREATE",
+      postId,
+      commentId: createdComment.id,
+      targetUserId: post.userId,
+    });
+
+    await applyFeedInterestSignal({
+      tx,
+      userId,
+      postId,
+      authorId: post.userId,
+      eventType: "COMMENT_CREATE",
+    });
+
+    return createdComment;
   });
 
   const snippet = trimmed.length > 140 ? `${trimmed.slice(0, 137)}…` : trimmed;

@@ -2,6 +2,8 @@ import prisma from "../../../infrastructure/database/prismaClient.ts";
 import { createNotification } from "../notification/createNotification.ts";
 import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
 
 interface LikePostInput {
   userId: number;
@@ -25,9 +27,30 @@ export const likePost = async ({ userId, postId }: LikePostInput) => {
   let createdNow = false;
 
   try {
-    like = await prisma.like.create({
-      data: { userId, postId },
+    like = await prisma.$transaction(async (tx) => {
+      const createdLike = await tx.like.create({
+        data: { userId, postId },
+      });
+
+      await recordFeedInteraction({
+        tx,
+        userId,
+        eventType: "POST_LIKE",
+        postId,
+        targetUserId: post.userId,
+      });
+
+      await applyFeedInterestSignal({
+        tx,
+        userId,
+        postId,
+        authorId: post.userId,
+        eventType: "POST_LIKE",
+      });
+
+      return createdLike;
     });
+
     createdNow = true;
   } catch (error: unknown) {
     const err = error as { code?: string; meta?: { target?: string[] } };
