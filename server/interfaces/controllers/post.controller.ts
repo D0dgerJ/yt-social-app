@@ -114,9 +114,10 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
-export const getExplore = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getExplore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const posts = await getExplorePosts();
+    const viewerId = req.user?.id ?? null;
+    const posts = await getExplorePosts(viewerId);
     res.status(200).json(posts);
   } catch (err) {
     next(err);

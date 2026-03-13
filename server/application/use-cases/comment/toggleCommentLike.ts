@@ -4,6 +4,8 @@ import { createNotification } from "../notification/createNotification.ts";
 import { Errors } from "../../../infrastructure/errors/ApiError.ts";
 import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
 import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
 
 interface ToggleLikeParams {
   commentId: number;
@@ -18,10 +20,7 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
     throw Errors.validation("Invalid userId");
   }
 
-  // Anti-abuse: санкции + rate limit (реакции/лайки)
   await assertActionAllowed({ actorId: userId, action: "REACTION_ADD" });
-
-  // ✅ thread auto-lock: если root не ACTIVE — лайки запрещены в ветке
   await assertCommentThreadActionAllowed({ commentId, actorId: userId });
 
   const existingLike = await prisma.commentLike.findUnique({
@@ -29,22 +28,14 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
     select: { id: true },
   });
 
-  if (existingLike) {
-    await prisma.commentLike.delete({ where: { id: existingLike.id } });
-    return { liked: false };
-  }
-
-  // ✅ лайкать можно только ACTIVE (не HIDDEN/DELETED) + пост ACTIVE
   const comment = await prisma.comment.findFirst({
     where: {
       id: commentId,
       status: CommentStatus.ACTIVE,
       post: { status: ContentStatus.ACTIVE },
-
-      // shadow moderation:
       OR: [
         { visibility: CommentVisibility.PUBLIC },
-        { visibility: CommentVisibility.SHADOW_HIDDEN, userId }, // автор может лайкать своё
+        { visibility: CommentVisibility.SHADOW_HIDDEN, userId },
       ],
     },
     select: {
@@ -53,6 +44,11 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
       postId: true,
       parentId: true,
       content: true,
+      post: {
+        select: {
+          userId: true,
+        },
+      },
     },
   });
 
@@ -60,8 +56,52 @@ export const toggleCommentLike = async ({ commentId, userId }: ToggleLikeParams)
     throw Errors.notFound("Comment does not exist.");
   }
 
-  await prisma.commentLike.create({
-    data: { userId, commentId },
+  if (existingLike) {
+    await prisma.$transaction(async (tx) => {
+      await tx.commentLike.delete({ where: { id: existingLike.id } });
+
+      await recordFeedInteraction({
+        tx,
+        userId,
+        eventType: "COMMENT_UNLIKE",
+        postId: comment.postId,
+        commentId: comment.id,
+        targetUserId: comment.post.userId,
+      });
+
+      await applyFeedInterestSignal({
+        tx,
+        userId,
+        postId: comment.postId,
+        authorId: comment.post.userId,
+        eventType: "COMMENT_UNLIKE",
+      });
+    });
+
+    return { liked: false };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.commentLike.create({
+      data: { userId, commentId },
+    });
+
+    await recordFeedInteraction({
+      tx,
+      userId,
+      eventType: "COMMENT_LIKE",
+      postId: comment.postId,
+      commentId: comment.id,
+      targetUserId: comment.post.userId,
+    });
+
+    await applyFeedInterestSignal({
+      tx,
+      userId,
+      postId: comment.postId,
+      authorId: comment.post.userId,
+      eventType: "COMMENT_LIKE",
+    });
   });
 
   try {
