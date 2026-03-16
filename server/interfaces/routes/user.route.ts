@@ -9,6 +9,8 @@
     unfollow as unfollowUserController,
     friends as getUserFriendsController,
     getByUsername as getUserByUsernameController,
+    getMyInterestsTags,
+    getMyInterestsAuthors,
   } from "../controllers/user.controller.ts";
   import {
     sendFriendRequest,
@@ -26,6 +28,8 @@
 
   router.get("/username/:username", getUserByUsernameController);
   router.get("/profile", authMiddleware, getUserProfileController);
+  router.get("/me/interests/tags", authMiddleware, getMyInterestsTags);
+  router.get("/me/interests/authors", authMiddleware, getMyInterestsAuthors);
   router.get("/friends/:id", authMiddleware, getUserFriendsController);
   router.get("/:id", getUserByIdController);
 

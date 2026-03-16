@@ -16,6 +16,8 @@ import {
   sendFriendRequest as sendFriendRequestUseCase,
   acceptFriendRequest as acceptFriendRequestUseCase,
   rejectFriendRequest as rejectFriendRequestUseCase,
+  getMyTagInterests,
+  getMyAuthorInterests,
 } from "../../application/use-cases/user/index.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../infrastructure/errors/ApiError.ts";
@@ -215,6 +217,26 @@ export const getFollowers = async (req: Request, res: Response, next: NextFuncti
     });
 
     res.status(200).json(followers.map((f) => f.follower));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyInterestsTags = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const interests = await getMyTagInterests(userId);
+    res.status(200).json(interests);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyInterestsAuthors = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const interests = await getMyAuthorInterests(userId);
+    res.status(200).json(interests);
   } catch (err) {
     next(err);
   }

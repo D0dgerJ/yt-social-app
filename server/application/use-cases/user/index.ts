@@ -15,3 +15,5 @@ export * from './rejectFriendRequest.ts';
 export * from './getIncomingFriendRequests.ts';
 export * from './getOutgoingFriendRequests.ts';
 export * from './cancelFriendRequest.ts';
+export * from "./getMyTagInterests.ts";
+export * from "./getMyAuthorInterests.ts";
