@@ -37,7 +37,17 @@ export const createChat = async (data: CreateChatInput) => {
           },
         },
         include: {
-          participants: { include: { user: true } },
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
+              },
+            },
+          },
         },
       });
 

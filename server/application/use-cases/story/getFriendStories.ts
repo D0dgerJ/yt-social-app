@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { publicUserSelect } from "../../serializers/user.select.ts";
 
 export const getFriendStories = async (userId: number) => {
   const following = await prisma.follow.findMany({
@@ -13,6 +14,8 @@ export const getFriendStories = async (userId: number) => {
       userId: { in: friendIds },
       expiresAt: { gt: new Date() },
     },
-    include: { user: true },
+    include: {
+      user: { select: publicUserSelect },
+    },
   });
 };

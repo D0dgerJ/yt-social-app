@@ -1,7 +1,9 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { privateUserSelect } from "../../serializers/user.select.ts";
 
 export const getUserProfile = async (id: number) => {
-  return await prisma.user.findUnique({
+  return prisma.user.findUnique({
     where: { id },
+    select: privateUserSelect,
   });
 };

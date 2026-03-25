@@ -21,6 +21,7 @@ import {
 } from "../../application/use-cases/user/index.ts";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 import { Errors } from "../../infrastructure/errors/ApiError.ts";
+import { publicUserSelect } from "../../application/serializers/user.select.ts";
 
 function parseId(raw: unknown, message: string) {
   const n = Number(raw);
@@ -213,7 +214,11 @@ export const getFollowers = async (req: Request, res: Response, next: NextFuncti
 
     const followers = await prisma.follow.findMany({
       where: { followingId: id },
-      include: { follower: true },
+      include: {
+        follower: {
+          select: publicUserSelect,
+        },
+      },
     });
 
     res.status(200).json(followers.map((f) => f.follower));

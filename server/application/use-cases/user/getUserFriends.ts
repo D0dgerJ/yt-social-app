@@ -1,21 +1,19 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { publicUserSelect } from "../../serializers/user.select.ts";
 
 export const getUserFriends = async (userId: number) => {
   const accepted = await prisma.friendRequest.findMany({
     where: {
-      OR: [
-        { senderId: userId },
-        { receiverId: userId },
-      ],
+      OR: [{ senderId: userId }, { receiverId: userId }],
       status: "accepted",
     },
     include: {
-      sender: true,
-      receiver: true,
+      sender: { select: publicUserSelect },
+      receiver: { select: publicUserSelect },
     },
   });
 
-  return accepted.map(req => {
+  return accepted.map((req) => {
     return req.senderId === userId ? req.receiver : req.sender;
   });
 };

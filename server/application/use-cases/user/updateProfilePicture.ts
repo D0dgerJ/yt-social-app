@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.ts";
+import { privateUserSelect } from "../../serializers/user.select.ts";
 
 interface UpdateProfilePictureInput {
   userId: number;
@@ -9,8 +10,9 @@ export const updateProfilePicture = async ({
   userId,
   profilePicture,
 }: UpdateProfilePictureInput) => {
-  return await prisma.user.update({
+  return prisma.user.update({
     where: { id: userId },
     data: { profilePicture },
+    select: privateUserSelect,
   });
 };
