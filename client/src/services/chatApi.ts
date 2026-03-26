@@ -1,7 +1,8 @@
-import axios from '@/utils/api/axiosInstance';
-import { getToken } from '@/utils/authStorage';
+import axios from "@/utils/api/axiosInstance";
+import { getToken } from "@/utils/authStorage";
+import { env } from "@/config/env";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = env.API_URL;
 
 // ---------- helpers ----------
 export type UploadResult = { url: string; name: string; mime: string };

@@ -1,14 +1,12 @@
 import express, { Express } from "express";
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { env } from "../config/env.ts";
 import { fixLatin1ToUtf8, encodeRFC5987, asciiFallback } from "../utils/encoding.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-dotenv.config();
 
 let app: Express;
 
@@ -32,12 +30,12 @@ try {
     "/uploads",
     express.static(path.resolve(__dirname, "../uploads"), {
       setHeaders: (res, filePath) => {
-        const storedName = path.basename(filePath); 
-        const fixedName = fixLatin1ToUtf8(storedName); 
+        const storedName = path.basename(filePath);
+        const fixedName = fixLatin1ToUtf8(storedName);
         const fallbackName = asciiFallback(fixedName);
         const encodedName = encodeRFC5987(fixedName);
 
-        const extMime = (mime.default || mime).lookup(filePath) || ""; 
+        const extMime = (mime.default || mime).lookup(filePath) || "";
         const isMedia =
           typeof extMime === "string" &&
           (extMime.startsWith("image/") ||
@@ -52,7 +50,6 @@ try {
         );
 
         res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-
         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       },
     })
@@ -65,15 +62,24 @@ try {
   );
 
   app.use(morgan("dev"));
+
   app.use(
     cors({
-      origin: "http://localhost:5173",
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        if (env.CORS_ORIGINS.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true,
       exposedHeaders: ["ETag"],
     })
   );
-  app.use(compression());
 
+  app.use(compression());
   app.use(express.json({ limit: "2mb" }));
 
   app.use("/api/v1", routes);

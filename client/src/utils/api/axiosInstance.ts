@@ -1,8 +1,9 @@
-import axios from 'axios';
-import { getToken } from '@/utils/authStorage';
+import axios from "axios";
+import { getToken } from "@/utils/authStorage";
+import { env } from "@/config/env";
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000/api/v1',
+  baseURL: `${env.API_URL}/api/v1`,
   withCredentials: true,
 });
 

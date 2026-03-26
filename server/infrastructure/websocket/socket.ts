@@ -3,6 +3,7 @@ import http from "http";
 import jwt from "jsonwebtoken";
 import prisma from "../database/prismaClient.ts";
 import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
+import { env } from "../../config/env.ts";
 
 let io: Server;
 
@@ -34,16 +35,18 @@ const broadcastOnlineUsers = () => {
 export const initSocket = (server: http.Server) => {
   io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: env.CORS_ORIGINS,
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("Unauthorized"));
+
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number };
+      const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: number };
       socket.data.userId = decoded.userId;
       next();
     } catch {
@@ -67,6 +70,7 @@ export const initSocket = (server: http.Server) => {
         where: { userId },
         select: { conversationId: true },
       });
+
       for (const { conversationId } of conversations) {
         socket.join(String(conversationId));
       }
@@ -84,6 +88,7 @@ export const initSocket = (server: http.Server) => {
         where: { userId, conversationId },
         select: { id: true },
       });
+
       if (isParticipant) {
         socket.join(String(conversationId));
       } else {

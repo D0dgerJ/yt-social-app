@@ -10,8 +10,9 @@ import {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { getToken } from "@/utils/authStorage";
+import { env } from "@/config/env";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+const SOCKET_URL = env.SOCKET_URL;
 
 type SocketCtx = {
   socket: Socket | null;
@@ -37,7 +38,6 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
   const listenersAttachedRef = useRef(false);
   const joinedRoomsRef = useRef<Set<number>>(new Set());
 
-  // === Создание сокета ===
   useEffect(() => {
     const token = getToken();
 
@@ -52,12 +52,12 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
     const s = io(SOCKET_URL, {
       autoConnect: false,
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 500,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
       auth: { token },
+      withCredentials: true,
     });
 
     if (!listenersAttachedRef.current) {
@@ -86,7 +86,6 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
       s.connect();
     }
 
-    // 🧹 Очистка при размонтировании
     return () => {
       try {
         s.removeAllListeners();
@@ -100,7 +99,6 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     };
   }, []);
 
-  // === Logout через localStorage (другая вкладка) ===
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "user" && !e.newValue) {
@@ -117,47 +115,44 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
         }
       }
     };
+
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // === Обновление токена без перезагрузки ===
   useEffect(() => {
     const syncToken = () => {
-    const token = getToken();
-    const s = socketRef.current;
-    if (!s) return;
+      const token = getToken();
+      const s = socketRef.current;
+      if (!s) return;
 
-    const current = (s.auth as any)?.token;
+      const current = (s.auth as any)?.token;
 
-    if (!token) {
-      s.auth = { token: undefined };
-      if (s.connected) s.disconnect();
-      return;
-    }
+      if (!token) {
+        s.auth = { token: undefined };
+        if (s.connected) s.disconnect();
+        return;
+      }
 
-    if (token !== current) {
-      s.auth = { token };
-      if (s.connected) s.disconnect();
-      s.connect();
-      return;
-    }
+      if (token !== current) {
+        s.auth = { token };
+        if (s.connected) s.disconnect();
+        s.connect();
+        return;
+      }
 
-    if (!s.connected && !s.active) {
-      s.connect();
-    }
-  };
+      if (!s.connected && !s.active) {
+        s.connect();
+      }
+    };
 
-    // первый прогон
     syncToken();
 
-    // слушаем кастомное событие после логина
     const onCustom = () => syncToken();
     window.addEventListener("token:changed", onCustom);
     return () => window.removeEventListener("token:changed", onCustom);
   }, []);
 
-  // === Управление комнатами ===
   const joinConversation = useCallback((conversationId: number) => {
     if (!Number.isFinite(conversationId) || conversationId <= 0) return;
     joinedRoomsRef.current.add(conversationId);
@@ -174,7 +169,6 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     s?.emit?.("leaveConversation", conversationId);
   }, []);
 
-  // === Подписка на события ===
   const on = useCallback(<T,>(event: string, handler: (payload: T) => void) => {
     const s = socketRef.current;
     if (!s) return;
@@ -187,16 +181,12 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     s.off(event, handler as any);
   }, []);
 
-  // === Контекст ===
   const value = useMemo<SocketCtx>(
     () => ({ socket, joinConversation, leaveConversation, on, off }),
     [socket, joinConversation, leaveConversation, on, off]
   );
 
-  return (
-    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 };
 
-// === Хук для доступа к сокету ===
 export const useSocket = () => useContext(SocketContext);
