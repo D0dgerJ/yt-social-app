@@ -47,7 +47,9 @@ export const deleteConversationIfEmpty = async (conversationId: number): Promise
     const io = getIO();
     io.to(String(conversationId)).emit("chat:deleted", { conversationId });
 
-    console.log(`🗑️ Чат ${conversationId} удалён, участников не осталось.`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🗑️ Чат ${conversationId} удалён, участников не осталось.`);
+    }
     return true;
   } catch (error) {
     console.error(`❌ Ошибка при удалении пустого чата ${conversationId}:`, error);

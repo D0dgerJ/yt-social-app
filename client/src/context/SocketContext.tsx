@@ -62,18 +62,25 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
     if (!listenersAttachedRef.current) {
       s.on("connect", () => {
-        console.log("[socket] connected");
+        if (import.meta.env.DEV) {
+          console.log("[socket] connected");
+        }
+
         for (const room of joinedRoomsRef.current) {
           s.emit("joinConversation", room);
         }
       });
 
       s.on("connect_error", (err) => {
-        console.warn("[socket] connect_error:", err?.message ?? err);
+        if (import.meta.env.DEV) {
+          console.warn("[socket] connect_error:", err?.message ?? err);
+        }
       });
 
       s.on("disconnect", (reason) => {
-        console.log("[socket] disconnected:", reason);
+        if (import.meta.env.DEV) {
+          console.log("[socket] disconnected:", reason);
+        }
       });
 
       listenersAttachedRef.current = true;

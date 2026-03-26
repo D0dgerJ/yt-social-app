@@ -39,9 +39,6 @@ const Register: React.FC = () => {
         password: auth.password,
       });
 
-      
-      console.log("REGISTER RESPONSE:", user);
-
       dispatch({ type: "LOGIN_SUCCESS", payload: user });
 
       toast.success(`Welcome, ${user.username}!`);

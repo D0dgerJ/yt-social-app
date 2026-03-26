@@ -105,7 +105,7 @@ const PopupChatBody: React.FC<PopupBodyProps> = ({ conversationId }) => {
         isLoadingOlder={isLoadingOlder}
         hasMoreOlder={hasMoreOlder}
         loadOlder={loadOlder}
-        onRetry={(m) => console.log("retry", m)}
+        onRetry={() => {}}
         onReply={(m) => setReplyTarget(m)}
         onReact={(m, emoji) => reactToMessage(m, emoji)}
         onOpenAttachment={(url) => window.open(url, "_blank")}

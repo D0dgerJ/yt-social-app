@@ -27,7 +27,9 @@ export async function transcribeWithWhisper(
   return new Promise((resolve, reject) => {
     const args = [WHISPER_SCRIPT, absoluteFilePath];
 
-    console.log("[whisper] spawn:", WHISPER_PYTHON, args.join(" "));
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[whisper] spawn:", WHISPER_PYTHON, args.join(" "));
+    }
 
     const child = spawn(WHISPER_PYTHON, args, {
       stdio: ["ignore", "pipe", "pipe"],
@@ -50,7 +52,9 @@ export async function transcribeWithWhisper(
       const s = chunk.toString("utf8");
       stderr += s;
       // Можно логировать ворнинги Whisper (FP16 и т.п.), но не падать.
-      console.log("[whisper][stderr]", s.trim());
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[whisper][stderr]", s.trim());
+      }
     });
 
     child.on("error", (err) => {

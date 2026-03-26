@@ -146,7 +146,6 @@ export function useSendMessage() {
         let failTimer: ReturnType<typeof setTimeout> | null = null;
 
         const finalizeOk = (serverMsg: any, fallbackPlainText?: string) => {
-          console.log('[DEBUG FINALIZE]', serverMsg);
           if (acked) return;
           acked = true;
 
@@ -229,8 +228,6 @@ export function useSendMessage() {
               }));
             }
 
-            console.log('[DEBUG attachments]', body.attachments?.length, body.attachments);
-
             socket.emit('message:send', body, (resp?: any) => {
               if (
                 resp?.status === 'ok' &&
@@ -281,7 +278,6 @@ export function useSendMessage() {
             };
 
             const serverMessage = await sendMessageREST(conversationId, body);
-            console.log('[DEBUG REST]', serverMessage);
 
             if (serverMessage?.id) {
               finalizeOk(
@@ -293,7 +289,7 @@ export function useSendMessage() {
             }
           }
         } catch (e) {
-          console.error(e);
+          console.error("Send message failed:", e);
           if (!acked) {
             markStatus(conversationId, clientMessageId, { localStatus: 'failed' });
           }

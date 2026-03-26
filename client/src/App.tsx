@@ -37,8 +37,7 @@ const AppInner: React.FC = () => {
     const checkUser = async () => {
       try {
         if (user) {
-          const profile = await getUserProfile();
-          console.log("PROFILE OK", profile);
+          await getUserProfile();
         }
       } catch (error) {
         console.error("❌ PROFILE ERROR:", error);

@@ -47,12 +47,6 @@ export const useFriendStatus = ({ currentUserId, targetUserId }: UseFriendStatus
           getFollowers(currentUserId),
         ]);
 
-        console.log("👥 Друзья:", friends);
-        console.log("📤 Отправленные:", outgoing);
-        console.log("📥 Полученные:", incoming);
-        console.log("➡️ Подписки:", followings);
-        console.log("⬅️ Подписчики:", followers);
-
         const isFriend = friends.some((f: any) => f.id === targetUserId);
         if (isFriend) {
           setStatus("friends");

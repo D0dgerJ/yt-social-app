@@ -58,7 +58,9 @@ export const initSocket = (server: http.Server) => {
     const userId: number = socket.data.userId;
     const userRoom = `user:${userId}`;
 
-    console.log(`🟢 Пользователь ${userId} подключён (socket=${socket.id})`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🟢 Пользователь ${userId} подключён (socket=${socket.id})`);
+    }
 
     socket.join(userRoom);
 
@@ -96,7 +98,7 @@ export const initSocket = (server: http.Server) => {
       }
     });
 
-    socket.on("leaveConversation", async (conversationId: number) => {
+    socket.on("leaveConversation", (conversationId: number) => {
       socket.leave(String(conversationId));
     });
 
@@ -168,7 +170,9 @@ export const initSocket = (server: http.Server) => {
     });
 
     socket.on("disconnect", () => {
-      console.log(`🔴 Пользователь отключился: ${userId}`);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`🔴 Пользователь отключился: ${userId}`);
+      }
       removeOnlineUser(userId, socket.id);
       broadcastOnlineUsers();
     });

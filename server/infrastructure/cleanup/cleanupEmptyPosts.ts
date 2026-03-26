@@ -11,7 +11,9 @@ export const cleanupEmptyPosts = async () => {
       },
     });
 
-    console.log(`🧹 Удалено пустых постов: ${result.count}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🧹 Удалено пустых постов: ${result.count}`);
+    }
   } catch (error) {
     console.error("❌ Ошибка при очистке постов:", error);
   }

@@ -44,12 +44,14 @@ async function processOutboxOnce() {
 
     for (const item of batch) {
       try {
-        console.log("[outbox] sending:", {
-          id: item.id,
-          eventType: item.eventType,
-          entityType: item.entityType,
-          entityId: item.entityId,
-        });
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[outbox] sending:", {
+            id: item.id,
+            eventType: item.eventType,
+            entityType: item.entityType,
+            entityId: item.entityId,
+          });
+        }
 
         await prisma.moderationOutbox.update({
           where: { id: item.id },
@@ -83,7 +85,9 @@ export function startModerationOutboxWorker() {
   if (started) return;
   started = true;
 
-  console.log(`[outbox] worker started: every ${INTERVAL_MS}ms, batch=${BATCH_SIZE}`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[outbox] worker started: every ${INTERVAL_MS}ms, batch=${BATCH_SIZE}`);
+  }
 
   processOutboxOnce().catch((e) => console.error("[outbox] initial run error:", e));
 

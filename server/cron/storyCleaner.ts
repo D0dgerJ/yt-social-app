@@ -10,7 +10,9 @@ export const cleanExpiredStories = async (): Promise<void> => {
         },
       },
     });
-    console.log("🧹 Expired stories cleaned");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🧹 Expired stories cleaned");
+    }
   } catch (error) {
     console.error("❌ Error cleaning expired stories:", error);
   }
