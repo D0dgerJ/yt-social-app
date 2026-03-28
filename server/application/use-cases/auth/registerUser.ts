@@ -1,6 +1,7 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { env } from "../../../config/env.ts";
 
 interface RegisterInput {
   username: string;
@@ -10,8 +11,9 @@ interface RegisterInput {
 
 export const registerUser = async ({ username, email, password }: RegisterInput) => {
   const existingUser = await prisma.user.findUnique({ where: { email } });
+
   if (existingUser) {
-    throw new Error('User already exists');
+    throw new Error("User already exists");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -24,8 +26,8 @@ export const registerUser = async ({ username, email, password }: RegisterInput)
     },
   });
 
-  const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET as string, {
-    expiresIn: '7d',
+  const token = jwt.sign({ userId: newUser.id }, env.JWT_SECRET, {
+    expiresIn: "7d",
   });
 
   return {

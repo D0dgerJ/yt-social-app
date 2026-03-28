@@ -1,12 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { Errors } from "../errors/ApiError.ts";
+import { env } from "../../config/env.ts";
 
 interface JwtPayload {
   userId: number;
 }
 
-export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+export const authMiddleware = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -17,7 +22,7 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
   const token = authHeader.slice("Bearer ".length).trim();
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
     req.user = { id: decoded.userId };
     next();
   } catch {

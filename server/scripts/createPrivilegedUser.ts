@@ -1,23 +1,28 @@
-import 'dotenv/config';
-import bcrypt from 'bcryptjs';
-import { UserRole } from '@prisma/client';
-import prisma from '../infrastructure/database/prismaClient.ts';
+import bcrypt from "bcryptjs";
+import { UserRole } from "@prisma/client";
+import prisma from "../infrastructure/database/prismaClient.ts";
+import { env } from "../config/env.ts";
 
-function readEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env var: ${name}`);
-  return v;
+function requireSeedValue(name: "SEED_EMAIL" | "SEED_USERNAME" | "SEED_PASSWORD") {
+  const value = env[name];
+  if (!value) {
+    throw new Error(`Missing env var: ${name}`);
+  }
+  return value;
 }
 
-const email = readEnv('SEED_EMAIL');
-const username = readEnv('SEED_USERNAME');
-const password = readEnv('SEED_PASSWORD');
-const roleRaw = (process.env.SEED_ROLE ?? 'ADMIN').toUpperCase();
+const email = requireSeedValue("SEED_EMAIL");
+const username = requireSeedValue("SEED_USERNAME");
+const password = requireSeedValue("SEED_PASSWORD");
+const roleRaw = (env.SEED_ROLE ?? "ADMIN").toUpperCase();
 
 const role = (() => {
   if (!Object.values(UserRole).includes(roleRaw as UserRole)) {
-    throw new Error(`Invalid SEED_ROLE: ${roleRaw}. Allowed: ${Object.values(UserRole).join(', ')}`);
+    throw new Error(
+      `Invalid SEED_ROLE: ${roleRaw}. Allowed: ${Object.values(UserRole).join(", ")}`
+    );
   }
+
   return roleRaw as UserRole;
 })();
 
@@ -62,8 +67,8 @@ async function main() {
 
 main()
   .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error('[seed:user] Failed:', e);
+  .catch(async (error) => {
+    console.error("[seed:user] Failed:", error);
     await prisma.$disconnect();
     process.exit(1);
   });

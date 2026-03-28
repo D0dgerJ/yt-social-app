@@ -8,28 +8,35 @@ import { env } from "../../config/env.ts";
 let io: Server;
 
 const onlineUsers = new Map<number, Set<string>>();
-
 const recentClientMsgs = new Map<string, { message: any; ts: number }>();
+
 const RECENT_TTL_MS = 15_000;
 
 const makeKey = (userId: number, clientMessageId?: string | null) =>
   clientMessageId ? `${userId}:${clientMessageId}` : null;
 
 const addOnlineUser = (userId: number, socketId: string) => {
-  if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
+  if (!onlineUsers.has(userId)) {
+    onlineUsers.set(userId, new Set());
+  }
+
   onlineUsers.get(userId)!.add(socketId);
 };
 
 const removeOnlineUser = (userId: number, socketId: string) => {
   const set = onlineUsers.get(userId);
+
   if (!set) return;
+
   set.delete(socketId);
-  if (set.size === 0) onlineUsers.delete(userId);
+
+  if (set.size === 0) {
+    onlineUsers.delete(userId);
+  }
 };
 
 const broadcastOnlineUsers = () => {
-  const ids = [...onlineUsers.keys()];
-  io.emit("onlineUsers", ids);
+  io.emit("onlineUsers", [...onlineUsers.keys()]);
 };
 
 export const initSocket = (server: http.Server) => {
@@ -43,7 +50,10 @@ export const initSocket = (server: http.Server) => {
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
-    if (!token) return next(new Error("Unauthorized"));
+
+    if (!token) {
+      return next(new Error("Unauthorized"));
+    }
 
     try {
       const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: number };
@@ -58,7 +68,7 @@ export const initSocket = (server: http.Server) => {
     const userId: number = socket.data.userId;
     const userRoom = `user:${userId}`;
 
-    if (process.env.NODE_ENV !== "production") {
+    if (!env.isProd) {
       console.log(`🟢 Пользователь ${userId} подключён (socket=${socket.id})`);
     }
 
@@ -76,13 +86,12 @@ export const initSocket = (server: http.Server) => {
       for (const { conversationId } of conversations) {
         socket.join(String(conversationId));
       }
-    } catch (err) {
-      console.error("❌ Ошибка автоподключения к чатам:", err);
+    } catch (error) {
+      console.error("❌ Ошибка автоподключения к чатам:", error);
     }
 
     socket.on("getOnlineUsers", () => {
-      const ids = [...onlineUsers.keys()];
-      socket.emit("onlineUsers", ids);
+      socket.emit("onlineUsers", [...onlineUsers.keys()]);
     });
 
     socket.on("joinConversation", async (conversationId: number) => {
@@ -107,11 +116,12 @@ export const initSocket = (server: http.Server) => {
       callback?: (res: { status: "ok"; message: any } | { status: "error"; error: string }) => void
     ) => {
       try {
-        const cmid = (messageInput?.clientMessageId ?? null) as string | null;
-        const key = makeKey(userId, cmid);
+        const clientMessageId = (messageInput?.clientMessageId ?? null) as string | null;
+        const cacheKey = makeKey(userId, clientMessageId);
 
-        if (key) {
-          const cached = recentClientMsgs.get(key);
+        if (cacheKey) {
+          const cached = recentClientMsgs.get(cacheKey);
+
           if (cached && Date.now() - cached.ts < RECENT_TTL_MS) {
             callback?.({ status: "ok", message: cached.message });
             return;
@@ -121,58 +131,70 @@ export const initSocket = (server: http.Server) => {
         const fullInput = { ...messageInput, senderId: userId };
         const message = await sendMessage(fullInput);
 
-        const key2 = makeKey(userId, message?.clientMessageId ?? null);
-        if (key2) {
-          recentClientMsgs.set(key2, { message, ts: Date.now() });
-          setTimeout(() => recentClientMsgs.delete(key2), RECENT_TTL_MS + 1000);
+        const resultKey = makeKey(userId, message?.clientMessageId ?? null);
+
+        if (resultKey) {
+          recentClientMsgs.set(resultKey, { message, ts: Date.now() });
+
+          setTimeout(() => {
+            recentClientMsgs.delete(resultKey);
+          }, RECENT_TTL_MS + 1000);
         }
 
         const room = String(message.conversationId);
 
-        if (!socket.rooms.has(room)) socket.join(room);
+        if (!socket.rooms.has(room)) {
+          socket.join(room);
+        }
 
         socket.emit("message:ack", message);
         io.to(room).except(userRoom).emit("receiveMessage", message);
 
         callback?.({ status: "ok", message });
-      } catch (err) {
-        const error = err instanceof Error ? err.message : "Неизвестная ошибка";
-        console.error("❌ Ошибка sendMessage:", err);
-        callback?.({ status: "error", error });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Неизвестная ошибка";
+
+        console.error("❌ Ошибка sendMessage:", error);
+        callback?.({ status: "error", error: message });
       }
     };
 
     socket.on("message:send", handleSendMessage);
 
-    socket.on("messageDelivered", (p: { conversationId: number; messageId: number }) => {
-      io.to(String(p.conversationId)).emit("message:delivered", p);
+    socket.on("messageDelivered", (payload: { conversationId: number; messageId: number }) => {
+      io.to(String(payload.conversationId)).emit("message:delivered", payload);
     });
 
-    socket.on("messageRead", (p: { conversationId: number; messageId: number }) => {
-      io.to(String(p.conversationId)).emit("message:read", p);
+    socket.on("messageRead", (payload: { conversationId: number; messageId: number }) => {
+      io.to(String(payload.conversationId)).emit("message:read", payload);
     });
 
-    socket.on("typing:start", (p: { conversationId: number; username?: string; displayName?: string }) => {
-      io.to(String(p.conversationId)).emit("typing:start", {
-        conversationId: p.conversationId,
-        userId,
-        username: p.username,
-        displayName: p.displayName,
-        timestamp: Date.now(),
-      });
-    });
+    socket.on(
+      "typing:start",
+      (payload: { conversationId: number; username?: string; displayName?: string }) => {
+        io.to(String(payload.conversationId)).emit("typing:start", {
+          conversationId: payload.conversationId,
+          userId,
+          username: payload.username,
+          displayName: payload.displayName,
+          timestamp: Date.now(),
+        });
+      }
+    );
 
-    socket.on("typing:stop", (p: { conversationId: number }) => {
-      io.to(String(p.conversationId)).emit("typing:stop", {
-        conversationId: p.conversationId,
+    socket.on("typing:stop", (payload: { conversationId: number }) => {
+      io.to(String(payload.conversationId)).emit("typing:stop", {
+        conversationId: payload.conversationId,
         userId,
       });
     });
 
     socket.on("disconnect", () => {
-      if (process.env.NODE_ENV !== "production") {
+      if (!env.isProd) {
         console.log(`🔴 Пользователь отключился: ${userId}`);
       }
+
       removeOnlineUser(userId, socket.id);
       broadcastOnlineUsers();
     });

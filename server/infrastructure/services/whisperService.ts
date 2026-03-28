@@ -1,43 +1,27 @@
 import { spawn } from "child_process";
 import path from "path";
+import { env } from "../../config/env.ts";
 
-/**
- * Какой python использовать:
- * - В dev: укажи в .env путь до python из venv, например:
- *   WHISPER_PYTHON=D:\projects\s-1\DodgerJSocial\social\server\venv\Scripts\python.exe
- * - Если переменной нет — возьмём "python" из PATH.
- */
-const WHISPER_PYTHON =
-  process.env.WHISPER_PYTHON || "python";
-
-/**
- * Путь до transcribe.py:
- * - по умолчанию: <CWD>/whisper/transcribe.py
- *   (то есть если ты запускаешь server из папки social/server,
- *    то там должна быть папка whisper/transcribe.py)
- * - можно переопределить через WHISPER_SCRIPT
- */
+const WHISPER_PYTHON = env.WHISPER_PYTHON ?? "python";
 const WHISPER_SCRIPT =
-  process.env.WHISPER_SCRIPT ||
-  path.resolve(process.cwd(), "whisper", "transcribe.py");
+  env.WHISPER_SCRIPT ?? path.resolve(process.cwd(), "whisper", "transcribe.py");
 
 export async function transcribeWithWhisper(
-  absoluteFilePath: string,
+  absoluteFilePath: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const args = [WHISPER_SCRIPT, absoluteFilePath];
 
-    if (process.env.NODE_ENV !== "production") {
+    if (!env.isProd) {
       console.log("[whisper] spawn:", WHISPER_PYTHON, args.join(" "));
     }
 
     const child = spawn(WHISPER_PYTHON, args, {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
-        // берём все текущие переменные окружения
         ...process.env,
-        // и принудительно говорим Python'у писать вывод в UTF-8
         PYTHONIOENCODING: "utf-8",
+        ...(env.WHISPER_MODEL ? { WHISPER_MODEL: env.WHISPER_MODEL } : {}),
       },
     });
 
@@ -49,44 +33,45 @@ export async function transcribeWithWhisper(
     });
 
     child.stderr.on("data", (chunk) => {
-      const s = chunk.toString("utf8");
-      stderr += s;
-      // Можно логировать ворнинги Whisper (FP16 и т.п.), но не падать.
-      if (process.env.NODE_ENV !== "production") {
-        console.log("[whisper][stderr]", s.trim());
+      const message = chunk.toString("utf8");
+      stderr += message;
+
+      if (!env.isProd) {
+        console.log("[whisper][stderr]", message.trim());
       }
     });
 
-    child.on("error", (err) => {
-      console.error("[whisper] spawn error:", err);
+    child.on("error", (error) => {
+      console.error("[whisper] spawn error:", error);
       reject(new Error("WHISPER_PROCESS_ERROR"));
     });
 
     child.on("close", (code) => {
       if (code !== 0) {
         console.error("[whisper] exit code:", code, "stderr:", stderr);
-        return reject(new Error("WHISPER_EXIT_" + code));
+        reject(new Error(`WHISPER_EXIT_${code}`));
+        return;
       }
 
       try {
-        // transcribe.py выводит JSON одной строкой:
-        // {"text": "..."} или {"error": "...", "details": "..."}
         const lastLine = stdout.trim().split("\n").pop() || "";
         const parsed = JSON.parse(lastLine);
 
         if (parsed.error) {
           console.error("[whisper] error from script:", parsed);
-          return reject(new Error(parsed.error));
+          reject(new Error(parsed.error));
+          return;
         }
 
         if (typeof parsed.text !== "string") {
           console.error("[whisper] no text in result:", parsed);
-          return reject(new Error("NO_TEXT_IN_RESULT"));
+          reject(new Error("NO_TEXT_IN_RESULT"));
+          return;
         }
 
         resolve(parsed.text);
-      } catch (err) {
-        console.error("[whisper] parse error:", err, "stdout:", stdout);
+      } catch (error) {
+        console.error("[whisper] parse error:", error, "stdout:", stdout);
         reject(new Error("WHISPER_PARSE_ERROR"));
       }
     });

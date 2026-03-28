@@ -1,6 +1,7 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import prisma from "../../../infrastructure/database/prismaClient.ts";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { env } from "../../../config/env.ts";
 
 interface LoginInput {
   email: string;
@@ -11,17 +12,17 @@ export const loginUser = async ({ email, password }: LoginInput) => {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error('Invalid credentials');
+    throw new Error("Invalid credentials");
   }
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
-    expiresIn: '7d',
+  const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
+    expiresIn: "7d",
   });
 
   return {

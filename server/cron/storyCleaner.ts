@@ -1,8 +1,12 @@
 import prisma from "../infrastructure/database/prismaClient.ts";
+import { env } from "../config/env.ts";
+
+const STORY_CLEAN_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const cleanExpiredStories = async (): Promise<void> => {
   try {
     const now = new Date();
+
     await prisma.story.deleteMany({
       where: {
         expiresAt: {
@@ -10,7 +14,8 @@ export const cleanExpiredStories = async (): Promise<void> => {
         },
       },
     });
-    if (process.env.NODE_ENV !== "production") {
+
+    if (!env.isProd) {
       console.log("🧹 Expired stories cleaned");
     }
   } catch (error) {
@@ -18,5 +23,8 @@ export const cleanExpiredStories = async (): Promise<void> => {
   }
 };
 
-// Очистка раз в неделю (7 дней * 24 часа * 60 минут * 60 секунд * 1000 мс)
-setInterval(cleanExpiredStories, 7 * 24 * 60 * 60 * 1000);
+if (env.STORY_CLEANER_ENABLED) {
+  setInterval(cleanExpiredStories, STORY_CLEAN_INTERVAL_MS);
+} else if (!env.isProd) {
+  console.log("[storyCleaner] disabled by env");
+}

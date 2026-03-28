@@ -1,4 +1,5 @@
 import prisma from "../infrastructure/database/prismaClient.ts";
+import { env } from "../config/env.ts";
 
 const BATCH_SIZE = 10;
 const INTERVAL_MS = 15_000;
@@ -20,7 +21,7 @@ async function claimBatch() {
 
   if (rows.length === 0) return [];
 
-  const ids = rows.map((r) => r.id);
+  const ids = rows.map((row) => row.id);
 
   await prisma.moderationOutbox.updateMany({
     where: { id: { in: ids }, status: "PENDING" },
@@ -40,11 +41,12 @@ async function processOutboxOnce() {
 
   try {
     const batch = await claimBatch();
+
     if (batch.length === 0) return;
 
     for (const item of batch) {
       try {
-        if (process.env.NODE_ENV !== "production") {
+        if (!env.isProd) {
           console.log("[outbox] sending:", {
             id: item.id,
             eventType: item.eventType,
@@ -61,8 +63,8 @@ async function processOutboxOnce() {
             lastError: null,
           },
         });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
 
         console.error("[outbox] failed:", item.id, message);
 
@@ -82,17 +84,28 @@ async function processOutboxOnce() {
 }
 
 export function startModerationOutboxWorker() {
+  if (!env.MODERATION_OUTBOX_ENABLED) {
+    if (!env.isProd) {
+      console.log("[outbox] worker disabled by env");
+    }
+    return;
+  }
+
   if (started) return;
   started = true;
 
-  if (process.env.NODE_ENV !== "production") {
+  if (!env.isProd) {
     console.log(`[outbox] worker started: every ${INTERVAL_MS}ms, batch=${BATCH_SIZE}`);
   }
 
-  processOutboxOnce().catch((e) => console.error("[outbox] initial run error:", e));
+  processOutboxOnce().catch((error) => {
+    console.error("[outbox] initial run error:", error);
+  });
 
   setInterval(() => {
-    processOutboxOnce().catch((e) => console.error("[outbox] tick error:", e));
+    processOutboxOnce().catch((error) => {
+      console.error("[outbox] tick error:", error);
+    });
   }, INTERVAL_MS);
 }
 

@@ -1,15 +1,15 @@
 import { createClient, type RedisClientType } from "redis";
 import { Errors } from "../errors/ApiError.ts";
+import { env } from "../../config/env.ts";
 
 let client: RedisClientType | null = null;
-// connect() возвращает Promise<RedisClientType>, не Promise<void>
 let connecting: Promise<RedisClientType> | null = null;
 
 function getClient(): RedisClientType {
   if (client) return client;
 
   client = createClient({
-    url: process.env.REDIS_URL || "redis://localhost:6379",
+    url: env.REDIS_URL ?? "redis://localhost:6379",
   });
 
   client.on("error", (err) => {
@@ -21,6 +21,7 @@ function getClient(): RedisClientType {
 
 async function ensureConnected() {
   const c = getClient();
+
   if (c.isOpen) return;
 
   if (!connecting) {
@@ -43,13 +44,13 @@ export async function redisRateLimitConsume(params: {
   await ensureConnected();
   const c = getClient();
 
-  const v = await c.incr(key);
+  const value = await c.incr(key);
 
-  if (v === 1) {
+  if (value === 1) {
     await c.expire(key, Math.max(1, windowSec));
   }
 
-  if (v > limit) {
+  if (value > limit) {
     const ttl = await c.ttl(key);
     const retryAfterSec = Math.max(
       1,
