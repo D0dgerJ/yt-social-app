@@ -26,8 +26,29 @@ try {
 
   app.set("trust proxy", true);
 
-  app.use(
+   app.use(
     "/uploads",
+    (req, res, next): void => {
+      const origin = req.headers.origin;
+
+      if (origin && env.CORS_ORIGINS.includes(origin)) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Vary", "Origin");
+      }
+
+      res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS");
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Origin, Content-Type, Accept, Authorization"
+      );
+
+      if (req.method === "OPTIONS") {
+        res.sendStatus(204);
+        return;
+      }
+
+      next();
+    },
     express.static(path.resolve(__dirname, "../uploads"), {
       setHeaders: (res, filePath) => {
         const storedName = path.basename(filePath);

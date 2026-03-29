@@ -12,6 +12,7 @@ import {
   type Message,
 } from '@/stores/messageStore';
 import AudioWaveform from './AudioWaveform';
+import { env } from '@/config/env';
 import './MessageItem.scss';
 
 interface GroupedReaction {
@@ -74,10 +75,11 @@ interface MessageItemProps {
   remainingViewsForMe?: number | null;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = env.API_URL;
 
 function toAbsoluteUrl(url?: string | null): string {
   if (!url) return '';
+
   try {
     new URL(url);
     return url;
@@ -89,17 +91,16 @@ function toAbsoluteUrl(url?: string | null): string {
 }
 
 function buildDownloadUrl(fileUrlFromMessage: string): string {
-  let storedName = '';
+  if (!fileUrlFromMessage) return '';
 
   try {
-    const u = new URL(fileUrlFromMessage);
-    storedName = u.pathname.split('/').pop() || '';
+    const parsed = new URL(fileUrlFromMessage);
+    return parsed.toString();
   } catch {
-    storedName = fileUrlFromMessage.split('/').pop() || '';
+    const base = String(API_BASE).replace(/\/+$/, '');
+    const rel = String(fileUrlFromMessage).replace(/^\/+/, '');
+    return `${base}/${rel}`;
   }
-
-  const base = String(API_BASE).replace(/\/+$/, '');
-  return `${base}/api/v1/download/uploads/${storedName}`;
 }
 
 const isImageByExt = (url?: string) =>
