@@ -108,6 +108,7 @@ export default function useUploadPost(
           issues.push(`${f.name}: ${ok.reason}`);
           continue;
         }
+
         accepted.push(f);
         newPreviews.push({
           kind: ok.kind,
@@ -117,7 +118,9 @@ export default function useUploadPost(
         });
       }
 
-      if (issues.length) setErrors(issues);
+      if (issues.length) {
+        setErrors(issues);
+      }
 
       if (accepted.length) {
         setFiles((prev) => [...prev, ...accepted]);
@@ -144,21 +147,35 @@ export default function useUploadPost(
 
   const submit = useCallback(async () => {
     if (isSubmitting) return null;
+
     setIsSubmitting(true);
     setErrors([]);
 
     try {
-      const result = await uploadMedia(files);
+      const result = files.length ? await uploadMedia(files) : { urls: [] };
+
+      const images = result.urls
+        .filter((item) => item.type === "image" || item.type === "gif")
+        .map((item) => item.url);
+
+      const videos = result.urls
+        .filter((item) => item.type === "video")
+        .map((item) => item.url);
+
+      const uploadedFiles = result.urls
+        .filter((item) => item.type === "file" || item.type === "audio")
+        .map((item) => item.url);
+
       return {
         desc: text.trim(),
-        images: result.images,
-        videos: result.videos,
-        files: result.files,
+        images,
+        videos,
+        files: uploadedFiles,
         tags,
         location: location.trim(),
       };
     } catch (e: any) {
-      setErrors([e?.message || "Upload failed"]);
+      setErrors([e?.response?.data?.message || e?.message || "Upload failed"]);
       return null;
     } finally {
       setIsSubmitting(false);
@@ -177,8 +194,8 @@ export default function useUploadPost(
     isSubmitting,
     errors,
 
-    setText,        
-    setLocation,   
+    setText,
+    setLocation,
 
     addTag,
     removeTag,

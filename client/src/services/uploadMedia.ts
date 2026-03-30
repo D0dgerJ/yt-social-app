@@ -1,34 +1,33 @@
-import { env } from "../config/env";
+import axios from "@/utils/api/axiosInstance";
 
-type UploadMediaResponse = {
-  success: boolean;
+type UploadedItem = {
   url: string;
-  key?: string;
-  provider: "local" | "cloudinary" | "s3";
-  name: string;
+  originalName?: string;
   mime: string;
   size: number;
+  type: "image" | "video" | "audio" | "gif" | "file";
 };
 
-export async function uploadMedia(file: File, token?: string): Promise<UploadMediaResponse> {
-  const formData = new FormData();
-  formData.append("file", file);
+type UploadMediaResponse = {
+  urls: UploadedItem[];
+};
 
-  const response = await fetch(`${env.API_URL}/api/upload/media`, {
-    method: "POST",
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : undefined,
-    body: formData,
-  });
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(data?.error || "Ошибка загрузки файла");
+export async function uploadMedia(files: File[]): Promise<UploadMediaResponse> {
+  if (!files?.length) {
+    return { urls: [] };
   }
+
+  const formData = new FormData();
+
+  for (const file of files) {
+    formData.append("files", file);
+  }
+
+  const { data } = await axios.post("/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return data as UploadMediaResponse;
 }
