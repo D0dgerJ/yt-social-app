@@ -1,20 +1,14 @@
+import fs from "fs/promises";
 import { Request, Response } from "express";
 import { fixLatin1ToUtf8 } from "../../utils/encoding.ts";
-
-function getBaseUrl(req: Request) {
-  const proto =
-    (req.headers["x-forwarded-proto"] as string) ||
-    req.protocol;
-  const host =
-    (req.headers["x-forwarded-host"] as string) ||
-    req.get("host");
-  return `${proto}://${host}`;
-}
+import { uploadToStorage } from "../../utils/uploadToStorage.ts";
+import { env } from "../../config/env.ts";
 
 function detectMediaType(
   mime: string | undefined | null
 ): "image" | "video" | "audio" | "gif" | "file" {
   if (!mime) return "file";
+
   const m = mime.toLowerCase();
 
   if (m === "image/gif") return "gif";
@@ -23,6 +17,21 @@ function detectMediaType(
   if (m.startsWith("audio/")) return "audio";
 
   return "file";
+}
+
+async function cleanupTempUploads(files: Express.Multer.File[]) {
+  if (env.STORAGE_PROVIDER !== "s3") {
+    return;
+  }
+
+  await Promise.allSettled(
+    files.map(async (file) => {
+      if (!file?.path) return;
+      try {
+        await fs.unlink(file.path);
+      } catch {}
+    })
+  );
 }
 
 export const handleUpload = async (
@@ -42,25 +51,30 @@ export const handleUpload = async (
   }
 
   try {
-    const base = getBaseUrl(req);
+    const results = await Promise.all(
+      list.map(async (f) => {
+        const uploaded = await uploadToStorage(f);
+        const fixedName = fixLatin1ToUtf8(f.originalname);
+        const guessedType = detectMediaType(f.mimetype);
 
-    const results = list.map((f) => {
-      const fixedName = fixLatin1ToUtf8(f.originalname);
-      const guessedType = detectMediaType(f.mimetype);
-
-      return {
-        url: `${base}/uploads/${f.filename}`, 
-        originalName: fixedName,    
-        mime: f.mimetype,
-        size: f.size,
-        type: guessedType,      
-      };
-    });
+        return {
+          url: uploaded.url,
+          key: uploaded.key,
+          provider: uploaded.provider,
+          originalName: fixedName,
+          mime: f.mimetype,
+          size: f.size,
+          type: guessedType,
+        };
+      })
+    );
 
     res.json({ urls: results });
   } catch (e) {
     console.error("❌ Ошибка при загрузке файла(ов):", e);
     res.status(500).json({ error: "Ошибка при загрузке файла(ов)" });
+  } finally {
+    await cleanupTempUploads(list);
   }
 };
 
@@ -69,21 +83,35 @@ export const handleFileUpload = async (
   res: Response
 ): Promise<void> => {
   const f = req.file;
+
   if (!f) {
     res.status(400).json({ error: "Файл не загружен" });
     return;
   }
 
-  const base = getBaseUrl(req);
-  const fixedName = fixLatin1ToUtf8(f.originalname);
-  const guessedType = detectMediaType(f.mimetype);
+  try {
+    const uploaded = await uploadToStorage(f);
+    const fixedName = fixLatin1ToUtf8(f.originalname);
+    const guessedType = detectMediaType(f.mimetype);
 
-  res.json({
-    message: "✅ Файл успешно загружен",
-    url: `${base}/uploads/${f.filename}`, 
-    originalName: fixedName,   
-    mime: f.mimetype,
-    size: f.size,
-    type: guessedType,
-  });
+    res.json({
+      message: "✅ Файл успешно загружен",
+      url: uploaded.url,
+      key: uploaded.key,
+      provider: uploaded.provider,
+      originalName: fixedName,
+      mime: f.mimetype,
+      size: f.size,
+      type: guessedType,
+    });
+  } catch (e) {
+    console.error("❌ Ошибка при загрузке файла:", e);
+    res.status(500).json({ error: "Ошибка при загрузке файла" });
+  } finally {
+    if (env.STORAGE_PROVIDER === "s3" && f?.path) {
+      try {
+        await fs.unlink(f.path);
+      } catch {}
+    }
+  }
 };

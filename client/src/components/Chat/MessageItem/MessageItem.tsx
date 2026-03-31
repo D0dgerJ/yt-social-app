@@ -75,32 +75,22 @@ interface MessageItemProps {
   remainingViewsForMe?: number | null;
 }
 
-const API_BASE = env.API_URL;
+const API_BASE = env.SERVER_ORIGIN;
 
 function toAbsoluteUrl(url?: string | null): string {
-  if (!url) return '';
+  if (!url) return "";
 
   try {
-    new URL(url);
-    return url;
+    return new URL(url).toString();
   } catch {
-    const base = String(API_BASE).replace(/\/+$/, '');
-    const rel = String(url).replace(/^\/+/, '');
+    const base = String(API_BASE).replace(/\/+$/, "");
+    const rel = String(url).replace(/^\/+/, "");
     return `${base}/${rel}`;
   }
 }
 
 function buildDownloadUrl(fileUrlFromMessage: string): string {
-  if (!fileUrlFromMessage) return '';
-
-  try {
-    const parsed = new URL(fileUrlFromMessage);
-    return parsed.toString();
-  } catch {
-    const base = String(API_BASE).replace(/\/+$/, '');
-    const rel = String(fileUrlFromMessage).replace(/^\/+/, '');
-    return `${base}/${rel}`;
-  }
+  return toAbsoluteUrl(fileUrlFromMessage);
 }
 
 const isImageByExt = (url?: string) =>
@@ -123,6 +113,8 @@ const MediaGrid: React.FC<{
   const handleDownload = (fileUrl: string) => {
     const a = document.createElement('a');
     a.href = buildDownloadUrl(fileUrl);
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -152,7 +144,11 @@ const MediaGrid: React.FC<{
   return (
     <div className={`message-media-grid message-media-grid--c${cols}`}>
       {subset.map((m, idx) => {
-        const isImage = m.type === 'image' || m.type === 'gif' || isImageByExt(m.url);
+        const absoluteUrl = toAbsoluteUrl(m.url);
+        const downloadableUrl = buildDownloadUrl(m.url);
+
+        const isImage =
+          m.type === 'image' || m.type === 'gif' || isImageByExt(absoluteUrl);
         const isVideo = m.type === 'video';
         const isAudio = m.type === 'audio';
         const isFile = m.type === 'file';
@@ -172,10 +168,10 @@ const MediaGrid: React.FC<{
               <>
                 <img
                   className="message-media-grid__img"
-                  src={m.url}
+                  src={absoluteUrl}
                   alt={m.originalName || 'attachment'}
                   loading="lazy"
-                  onClick={() => onOpen?.(m.url)}
+                  onClick={() => onOpen?.(absoluteUrl)}
                   tabIndex={0}
                   role="button"
                   onKeyDown={(e) => onKeyOpen(e, m.url)}
@@ -189,17 +185,17 @@ const MediaGrid: React.FC<{
             {isVideo && (
               <video
                 className="message-media-grid__video"
-                src={m.url}
+                src={absoluteUrl}
                 controls
                 preload="metadata"
-                onDoubleClick={() => onOpen?.(m.url)}
+                onDoubleClick={() => onOpen?.(absoluteUrl)}
               />
             )}
 
             {isAudio && (
               <audio
                 className="message-media-grid__audio"
-                src={buildDownloadUrl(m.url)}
+                src={downloadableUrl}
                 controls
                 preload="metadata"
               />
@@ -390,11 +386,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
   }, [ensureReactions]);
 
   const normalizedMediaUrl = toAbsoluteUrl(mediaUrl || undefined);
-  const uploadsFallback = useMemo(
-    () =>
-      mediaUrl ? `/uploads/${encodeURIComponent(mediaUrl.split('/').pop() || '')}` : '',
-    [mediaUrl],
-  );
 
   const isSingleImage =
     !!mediaUrl &&
@@ -726,13 +717,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 alt={fileName ?? 'image'}
                 loading="lazy"
                 onClick={() => handleOpenEphemeral(normalizedMediaUrl)}
-                onError={(e) => {
-                  const el = e.currentTarget as HTMLImageElement;
-                  if (uploadsFallback && el.src !== uploadsFallback) {
-                    el.src = uploadsFallback;
-                  } else {
-                    setImageFailed(true);
-                  }
+                onError={() => {
+                  setImageFailed(true);
                 }}
               />
             ) : (

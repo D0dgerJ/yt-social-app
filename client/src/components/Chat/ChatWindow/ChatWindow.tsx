@@ -7,7 +7,7 @@ import MessageList from "./MessageList/MessageList";
 import TypingIndicator from "@/components/Chat/Indicators/TypingIndicator";
 import { useReadReceipts } from "@/hooks/useReadReceipts";
 import { useMessageActions } from "@/hooks/useMessageActions";
-import { getChatMessages } from "@/services/chatApi";
+import { getChatMessages } from "@/utils/api/chat.api";
 import "./ChatWindow.scss";
 
 const PAGE_SIZE = 30;

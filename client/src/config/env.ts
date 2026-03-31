@@ -16,19 +16,37 @@ function getOptionalEnv(name: string): string | undefined {
   }
 
   const normalized = String(value).trim();
-  return normalized ? normalized : undefined;
+  return normalized || undefined;
 }
 
-function normalizeBaseUrl(url: string): string {
+function stripTrailingSlash(url: string): string {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
+function stripApiSuffix(url: string): string {
+  return stripTrailingSlash(url).replace(/\/api\/v1$/i, "");
+}
+
+const rawServerOrigin = getOptionalEnv("VITE_SERVER_ORIGIN");
+const rawApiUrl = getOptionalEnv("VITE_API_URL");
+const rawSocketUrl = getOptionalEnv("VITE_SOCKET_URL");
+
+const serverOrigin = stripTrailingSlash(
+  rawServerOrigin ??
+    (rawApiUrl ? stripApiSuffix(rawApiUrl) : "http://localhost:5000")
+);
+
+const apiBaseUrl = stripTrailingSlash(
+  rawApiUrl ?? `${serverOrigin}/api/v1`
+);
+
+const socketUrl = stripTrailingSlash(
+  rawSocketUrl ?? serverOrigin
+);
+
 export const env = {
-  API_URL: normalizeBaseUrl(
-    getEnv("VITE_API_URL", "http://localhost:5000")
-  ),
-  SOCKET_URL: normalizeBaseUrl(
-    getEnv("VITE_SOCKET_URL", "http://localhost:5000")
-  ),
+  SERVER_ORIGIN: serverOrigin,
+  API_BASE_URL: apiBaseUrl,
+  SOCKET_URL: socketUrl,
   GIPHY_API_KEY: getOptionalEnv("VITE_GIPHY_API_KEY"),
 } as const;

@@ -1,6 +1,3 @@
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
 import prisma from "../../infrastructure/database/prismaClient.ts";
 import { Request, Response } from "express";
 
@@ -27,9 +24,10 @@ import {
   unpinMessage as unpinMessageUC,
 } from "../../application/use-cases/chat/setMessagePinned.ts";
 import { registerMessageView } from "../../application/use-cases/chat/registerMessageView.ts";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {
+  downloadToTempForTranscription,
+  safeUnlink,
+} from "../../utils/uploadToStorage.ts";
 
 export const create = async (req: Request, res: Response) => {
   try {
@@ -348,6 +346,8 @@ export const transcribeMessage = async (
   req: Request,
   res: Response,
 ) => {
+  let tempFilePath: string | null = null;
+
   try {
     const messageId = Number(req.params.messageId);
     const userId = req.user!.id;
@@ -395,31 +395,8 @@ export const transcribeMessage = async (
       return;
     }
 
-    let storedName: string;
-    try {
-      const url = new URL(msg.mediaUrl);
-      storedName = url.pathname.split("/").pop() || "";
-    } catch {
-      storedName = msg.mediaUrl.split("/").pop() || "";
-    }
-
-    if (!storedName) {
-      res
-        .status(400)
-        .json({ message: "Не удалось извлечь имя файла из mediaUrl" });
-      return;
-    }
-
-    const uploadsDir = path.resolve(__dirname, "../../uploads");
-    const absPath = path.resolve(uploadsDir, storedName);
-
-    if (!fs.existsSync(absPath)) {
-      console.error("[transcribeMessage] file not found:", absPath);
-      res.status(404).json({ message: "Файл для распознавания не найден" });
-      return;
-    }
-
-    const text = await transcribeWithWhisper(absPath);
+    tempFilePath = await downloadToTempForTranscription(msg.mediaUrl);
+    const text = await transcribeWithWhisper(tempFilePath);
 
     res.status(200).json({ text });
   } catch (error) {
@@ -428,6 +405,8 @@ export const transcribeMessage = async (
       message: "Не удалось распознать голосовое сообщение",
       error: error instanceof Error ? error.message : String(error),
     });
+  } finally {
+    await safeUnlink(tempFilePath);
   }
 };
 

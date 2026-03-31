@@ -1,19 +1,29 @@
-import React from "react";
+import React from 'react';
+import { toAbsoluteMediaUrl } from '@/utils/mediaUrl';
 
-const PostVideos: React.FC<{ videos?: string[]; className?: string }> = ({
-  videos,
-  className = "post-video",
-}) => {
-  if (!videos?.length) return null;
+interface PostVideosProps {
+  videos?: string[];
+}
+
+const PostVideos: React.FC<PostVideosProps> = ({ videos = [] }) => {
+  const normalizedVideos = videos
+    .filter(Boolean)
+    .map((video) => toAbsoluteMediaUrl(video));
+
+  if (!normalizedVideos.length) return null;
+
   return (
-    <>
-      {videos.map((url, idx) => (
-        <video key={idx} controls className={className}>
-          <source src={url} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+    <div className="post-video-grid">
+      {normalizedVideos.map((video, index) => (
+        <video
+          key={`${video}-${index}`}
+          className="post-video"
+          src={video}
+          controls
+          preload="metadata"
+        />
       ))}
-    </>
+    </div>
   );
 };
 

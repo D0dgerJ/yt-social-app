@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { toggleReactionREST } from '@/services/chatApi';
+import { reactToMessage as toggleReactionREST } from '@/utils/api/chat.api';
 import './MessageReactions.scss';
 
 type User = { id: number; username: string; profilePicture: string | null };
@@ -15,13 +15,29 @@ type Props = {
   onToggleReaction?: (emoji: string) => void;
 
   recentEmojis?: string[];
-  conversationId?: number; 
+  conversationId?: number;
 };
 
-const DEFAULT_EMOJIS = ['❤️','👍','😂','🔥','👏','😮','😢','🎉','😡','🤔','🙌','🫶','👌','🥳','😎'];
+const DEFAULT_EMOJIS = [
+  '❤️',
+  '👍',
+  '😂',
+  '🔥',
+  '👏',
+  '😮',
+  '😢',
+  '🎉',
+  '😡',
+  '🤔',
+  '🙌',
+  '🫶',
+  '👌',
+  '🥳',
+  '😎',
+];
 
 const normalize = (arr: GroupedReaction[]) =>
-  arr.map(r => ({ ...r, users: Array.isArray(r.users) ? r.users : [] }));
+  arr.map((r) => ({ ...r, users: Array.isArray(r.users) ? r.users : [] }));
 
 export const MessageReactions: React.FC<Props> = ({
   messageId,
@@ -30,7 +46,6 @@ export const MessageReactions: React.FC<Props> = ({
   onReactionsUpdate,
   onToggleReaction,
   recentEmojis = DEFAULT_EMOJIS,
-  conversationId,
 }) => {
   const [optimistic, setOptimistic] = useState<GroupedReaction[] | null>(null);
 
@@ -41,61 +56,80 @@ export const MessageReactions: React.FC<Props> = ({
   }, [reactions]);
 
   const actual = optimistic ?? [];
+
   const userHas = useMemo(() => {
     const set = new Set<string>();
-    actual.forEach(r => {
-      if (r.users?.some(u => u.id === currentUserId)) set.add(r.emoji);
+    actual.forEach((r) => {
+      if (r.users?.some((u) => u.id === currentUserId)) {
+        set.add(r.emoji);
+      }
     });
     return set;
   }, [actual, currentUserId]);
 
-  const applyLocalToggle = useCallback((emoji: string) => {
-    const next = normalize(actual);
-    const idx = next.findIndex(r => r.emoji === emoji);
-    if (idx === -1) {
-      next.push({
-        emoji,
-        count: 1,
-        users: [{ id: currentUserId, username: 'me', profilePicture: null }],
-      });
-    } else {
-      const meIdx = next[idx].users.findIndex(u => u.id === currentUserId);
-      if (meIdx === -1) {
-        next[idx] = {
-          ...next[idx],
-          count: next[idx].count + 1,
-          users: [...next[idx].users, { id: currentUserId, username: 'me', profilePicture: null }],
-        };
-      } else {
-        const users = next[idx].users.filter(u => u.id !== currentUserId);
-        const count = Math.max(0, next[idx].count - 1);
-        if (count === 0) next.splice(idx, 1);
-        else next[idx] = { ...next[idx], count, users };
-      }
-    }
-    setOptimistic(next);
-    onReactionsUpdate?.(next);
-  }, [actual, currentUserId, onReactionsUpdate]);
+  const applyLocalToggle = useCallback(
+    (emoji: string) => {
+      const next = normalize(actual);
+      const idx = next.findIndex((r) => r.emoji === emoji);
 
-  const onPick = useCallback(async (emoji: string) => {
-    if (onToggleReaction) {
-      onToggleReaction(emoji);
-      return;
-    }
-    try {
-      applyLocalToggle(emoji);
-      if (conversationId) {
-        await toggleReactionREST(conversationId, messageId, emoji);
+      if (idx === -1) {
+        next.push({
+          emoji,
+          count: 1,
+          users: [{ id: currentUserId, username: 'me', profilePicture: null }],
+        });
+      } else {
+        const meIdx = next[idx].users.findIndex((u) => u.id === currentUserId);
+
+        if (meIdx === -1) {
+          next[idx] = {
+            ...next[idx],
+            count: next[idx].count + 1,
+            users: [
+              ...next[idx].users,
+              { id: currentUserId, username: 'me', profilePicture: null },
+            ],
+          };
+        } else {
+          const users = next[idx].users.filter((u) => u.id !== currentUserId);
+          const count = Math.max(0, next[idx].count - 1);
+
+          if (count === 0) {
+            next.splice(idx, 1);
+          } else {
+            next[idx] = { ...next[idx], count, users };
+          }
+        }
       }
-    } catch {
-      /**/
-    }
-  }, [conversationId, messageId, onToggleReaction, applyLocalToggle]);
+
+      setOptimistic(next);
+      onReactionsUpdate?.(next);
+    },
+    [actual, currentUserId, onReactionsUpdate]
+  );
+
+  const onPick = useCallback(
+    async (emoji: string) => {
+      if (onToggleReaction) {
+        onToggleReaction(emoji);
+        return;
+      }
+
+      try {
+        applyLocalToggle(emoji);
+        await toggleReactionREST(messageId, emoji);
+      } catch {
+        //
+      }
+    },
+    [messageId, onToggleReaction, applyLocalToggle]
+  );
 
   return (
     <div className="reactions-grid" role="listbox" aria-label="Выберите реакцию">
       {recentEmojis.map((e) => {
         const mine = userHas.has(e);
+
         return (
           <button
             key={e}

@@ -8,6 +8,7 @@ import { getUserById } from "../../utils/api/user.api";
 import { reportPost } from "../../utils/api/post.api";
 import { AuthContext } from "../../context/AuthContext";
 import usePostLikes from "../../hooks/usePostLike";
+import { toAbsoluteMediaUrl } from "../../utils/mediaUrl";
 
 import PostModal from "../PostModal/PostModal";
 import PostGallery from "./parts/PostGallery";
@@ -152,7 +153,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
       <div className="post-top">
         <div className="post-user">
           <img
-            src={author?.profilePicture || userPic}
+            src={author?.profilePicture ? toAbsoluteMediaUrl(author.profilePicture) : userPic}
             alt="Profile"
             className="post-avatar"
           />

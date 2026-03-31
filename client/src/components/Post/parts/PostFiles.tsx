@@ -1,28 +1,39 @@
-import React from "react";
+import React from 'react';
+import { toAbsoluteMediaUrl } from '@/utils/mediaUrl';
 
-const PostFiles: React.FC<{ files?: string[]; listClassName?: string }> = ({
-  files,
-  listClassName = "post-files",
-}) => {
-  if (!files?.length) return null;
+interface PostFilesProps {
+  files?: string[];
+}
+
+const getFileName = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return decodeURIComponent(parsed.pathname.split('/').pop() || 'Файл');
+  } catch {
+    return decodeURIComponent(url.split('/').pop() || 'Файл');
+  }
+};
+
+const PostFiles: React.FC<PostFilesProps> = ({ files = [] }) => {
+  const normalizedFiles = files
+    .filter(Boolean)
+    .map((file) => toAbsoluteMediaUrl(file));
+
+  if (!normalizedFiles.length) return null;
 
   return (
-    <div className={listClassName}>
-      {files.map((url, index) => {
-        const name = url.split("/").pop() || `file-${index + 1}`;
-        return (
-          <div className="post-file-wrapper" key={index}>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="post-file-link"
-            >
-              📎 {name}
-            </a>
-          </div>
-        );
-      })}
+    <div className="post-files">
+      {normalizedFiles.map((file, index) => (
+        <a
+          key={`${file}-${index}`}
+          href={file}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="post-file-link"
+        >
+          {getFileName(file)}
+        </a>
+      ))}
     </div>
   );
 };

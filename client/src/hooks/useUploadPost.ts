@@ -79,9 +79,9 @@ export default function useUploadPost(
   const toggleLocation = useCallback(() => setShowLocation((s) => !s), []);
 
   const addTag = useCallback((tag: string) => {
-    const t = tag.trim().replace(/^#/, "");
-    if (!t) return;
-    setTags((prev) => (prev.includes(t) ? prev : [...prev, t]));
+    const normalized = tag.trim().replace(/^#/, "");
+    if (!normalized) return;
+    setTags((prev) => (prev.includes(normalized) ? prev : [...prev, normalized]));
   }, []);
 
   const removeTag = useCallback((tag: string) => {
@@ -102,19 +102,19 @@ export default function useUploadPost(
       const accepted: File[] = [];
       const newPreviews: PreviewItem[] = [];
 
-      for (const f of arr) {
-        const ok = assertAllowed(f);
-        if (!ok.ok) {
-          issues.push(`${f.name}: ${ok.reason}`);
+      for (const file of arr) {
+        const allowed = assertAllowed(file);
+        if (!allowed.ok) {
+          issues.push(`${file.name}: ${allowed.reason}`);
           continue;
         }
 
-        accepted.push(f);
+        accepted.push(file);
         newPreviews.push({
-          kind: ok.kind,
-          url: createObjectUrl(f),
-          name: f.name,
-          size: f.size,
+          kind: allowed.kind,
+          url: createObjectUrl(file),
+          name: file.name,
+          size: file.size,
         });
       }
 
@@ -133,8 +133,8 @@ export default function useUploadPost(
   const removeFile = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => {
-      const removed = prev[index]?.url;
-      if (removed) revokeMany([removed]);
+      const removedUrl = prev[index]?.url;
+      if (removedUrl) revokeMany([removedUrl]);
       return prev.filter((_, i) => i !== index);
     });
   }, []);
@@ -152,30 +152,18 @@ export default function useUploadPost(
     setErrors([]);
 
     try {
-      const result = files.length ? await uploadMedia(files) : { urls: [] };
-
-      const images = result.urls
-        .filter((item) => item.type === "image" || item.type === "gif")
-        .map((item) => item.url);
-
-      const videos = result.urls
-        .filter((item) => item.type === "video")
-        .map((item) => item.url);
-
-      const uploadedFiles = result.urls
-        .filter((item) => item.type === "file" || item.type === "audio")
-        .map((item) => item.url);
+      const result = await uploadMedia(files);
 
       return {
         desc: text.trim(),
-        images,
-        videos,
-        files: uploadedFiles,
+        images: result.images,
+        videos: result.videos,
+        files: result.files,
         tags,
         location: location.trim(),
       };
     } catch (e: any) {
-      setErrors([e?.response?.data?.message || e?.message || "Upload failed"]);
+      setErrors([e?.message || "Upload failed"]);
       return null;
     } finally {
       setIsSubmitting(false);

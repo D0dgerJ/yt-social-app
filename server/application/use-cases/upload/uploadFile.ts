@@ -1,16 +1,10 @@
-import multer, { FileFilterCallback } from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { randomUUID } from 'crypto';
+import multer, { FileFilterCallback } from "multer";
+import path from "path";
+import fs from "fs";
+import { randomUUID } from "crypto";
+import { LOCAL_UPLOADS_DIR } from "../../../infrastructure/storage/storagePaths";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const uploadDir = path.resolve(__dirname, '../../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+fs.mkdirSync(LOCAL_UPLOADS_DIR, { recursive: true });
 
 const ALLOWED_EXTS = new Set<string>([
   // изображения
@@ -44,37 +38,46 @@ const ALLOWED_MIME = new Set<string>([
   'application/zip', 'application/x-7z-compressed', 'application/x-rar-compressed',
 ]);
 
+
 const BLOCKED_EXTS = new Set<string>([
   '.exe', '.msi', '.dll', '.com', '.scr',
   '.bat', '.cmd', '.sh', '.ps1',
   '.js', '.mjs', '.jar', '.vbs',
 ]);
 
+function normalizeMime(m?: string): string {
+  return (m || "").toLowerCase().split(";")[0].trim();
+}
+
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
+  destination: (_req, _file, cb) => {
+    cb(null, LOCAL_UPLOADS_DIR);
+  },
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
+    const ext = path.extname(file.originalname || "").toLowerCase();
     cb(null, `${randomUUID()}${ext}`);
   },
 });
 
-function normalizeMime(m?: string): string {
-  return (m || '').toLowerCase().split(';')[0].trim();
-}
-
-const fileFilter = (_req: any, file: Express.Multer.File, cb: FileFilterCallback): void => {
+const fileFilter = (
+  _req: any,
+  file: Express.Multer.File,
+  cb: FileFilterCallback
+): void => {
   const ext = path.extname(file.originalname).toLowerCase();
-  const rawMime = (file.mimetype || '').toLowerCase();
+  const rawMime = (file.mimetype || "").toLowerCase();
   const mime = normalizeMime(rawMime);
 
   if (BLOCKED_EXTS.has(ext)) {
-    cb(new Error('❌ Недопустимый тип файла (заблокированное расширение)'));
+    cb(new Error("❌ Недопустимый тип файла (заблокированное расширение)"));
     return;
   }
+
   if (!ALLOWED_EXTS.has(ext)) {
     cb(new Error(`❌ Расширение файла не разрешено: ${ext}`));
     return;
   }
+
   if (!ALLOWED_MIME.has(mime)) {
     cb(new Error(`❌ MIME-тип файла не разрешён: ${rawMime}`));
     return;

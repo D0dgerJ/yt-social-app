@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { mediaUrlSchema } from "./common.ts";
 
 export const createStorySchema = z.object({
-  mediaUrl: z.string().url("Invalid media URL"),
-  expiresAt: z.string().optional(), // ISO timestamp (если нужно указать время)
+  mediaUrl: mediaUrlSchema,
+  expiresAt: z.string().optional(),
 });

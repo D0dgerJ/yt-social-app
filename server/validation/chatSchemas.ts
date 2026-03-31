@@ -1,7 +1,29 @@
 import { z } from "zod";
 
+const isValidStorageUrl = (value: string): boolean => {
+  if (!value || !value.trim()) return false;
+
+  if (value.startsWith("/uploads/")) {
+    return true;
+  }
+
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const StorageUrlSchema = z
+  .string()
+  .min(1, "Storage url is required")
+  .refine(isValidStorageUrl, {
+    message: "Invalid storage url",
+  });
+
 const AttachmentSchema = z.object({
-  url: z.string().url(),
+  url: StorageUrlSchema,
   mime: z.string().min(1),
   name: z.string().optional(),
   size: z.number().int().nonnegative().optional(),
@@ -23,15 +45,15 @@ export const sendMessageSchema = z
 
     attachments: z.array(AttachmentSchema).max(10).optional(),
 
-    mediaUrl: z.string().url().optional().nullable(),
+    mediaUrl: StorageUrlSchema.optional().nullable(),
     mediaType: z
       .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
       .optional()
       .nullable(),
     fileName: z.string().optional(),
 
-    gifUrl: z.string().url().optional().nullable(),
-    stickerUrl: z.string().url().optional().nullable(),
+    gifUrl: StorageUrlSchema.optional().nullable(),
+    stickerUrl: StorageUrlSchema.optional().nullable(),
 
     repliedToId: z.number().int().positive().optional().nullable(),
 
@@ -43,7 +65,7 @@ export const sendMessageSchema = z
       })
       .int()
       .positive()
-      .max(60 * 60 * 24 * 7) 
+      .max(60 * 60 * 24 * 7)
       .optional()
       .nullable(),
 
@@ -53,7 +75,7 @@ export const sendMessageSchema = z
       })
       .int()
       .positive()
-      .max(100) 
+      .max(100)
       .optional()
       .nullable(),
   })
@@ -86,14 +108,14 @@ export const updateMessageSchema = z
     userId: z.number().int().positive(),
 
     encryptedContent: z.string().optional().nullable(),
-    mediaUrl: z.string().url().optional().nullable(),
+    mediaUrl: StorageUrlSchema.optional().nullable(),
     mediaType: z
       .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
       .optional()
       .nullable(),
     fileName: z.string().optional().nullable(),
-    gifUrl: z.string().url().optional().nullable(),
-    stickerUrl: z.string().url().optional().nullable(),
+    gifUrl: StorageUrlSchema.optional().nullable(),
+    stickerUrl: StorageUrlSchema.optional().nullable(),
     repliedToId: z.number().int().positive().optional().nullable(),
   })
   .refine(
@@ -149,4 +171,4 @@ export const unpinMessageSchema = z
   .refine(
     (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
     { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
-  );
+  );  

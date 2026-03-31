@@ -12,8 +12,6 @@ import { io, Socket } from "socket.io-client";
 import { getToken } from "@/utils/authStorage";
 import { env } from "@/config/env";
 
-const SOCKET_URL = env.SOCKET_URL;
-
 type SocketCtx = {
   socket: Socket | null;
   joinConversation: (conversationId: number) => void;
@@ -35,22 +33,12 @@ export { SocketContext };
 export const SocketProvider = ({ children }: PropsWithChildren) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const listenersAttachedRef = useRef(false);
   const joinedRoomsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const token = getToken();
 
-    if (socketRef.current) {
-      socketRef.current.auth = { token };
-      if (!socketRef.current.connected && !socketRef.current.active) {
-        socketRef.current.connect();
-      }
-      setSocket(socketRef.current);
-      return;
-    }
-
-    const s = io(SOCKET_URL, {
+    const s = io(env.SOCKET_URL, {
       autoConnect: false,
       transports: ["websocket", "polling"],
       reconnection: true,
@@ -60,31 +48,27 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
       withCredentials: true,
     });
 
-    if (!listenersAttachedRef.current) {
-      s.on("connect", () => {
-        if (import.meta.env.DEV) {
-          console.log("[socket] connected");
-        }
+    s.on("connect", () => {
+      if (import.meta.env.DEV) {
+        console.log("[socket] connected");
+      }
 
-        for (const room of joinedRoomsRef.current) {
-          s.emit("joinConversation", room);
-        }
-      });
+      for (const room of joinedRoomsRef.current) {
+        s.emit("joinConversation", room);
+      }
+    });
 
-      s.on("connect_error", (err) => {
-        if (import.meta.env.DEV) {
-          console.warn("[socket] connect_error:", err?.message ?? err);
-        }
-      });
+    s.on("connect_error", (err) => {
+      if (import.meta.env.DEV) {
+        console.warn("[socket] connect_error:", err?.message ?? err);
+      }
+    });
 
-      s.on("disconnect", (reason) => {
-        if (import.meta.env.DEV) {
-          console.log("[socket] disconnected:", reason);
-        }
-      });
-
-      listenersAttachedRef.current = true;
-    }
+    s.on("disconnect", (reason) => {
+      if (import.meta.env.DEV) {
+        console.log("[socket] disconnected:", reason);
+      }
+    });
 
     socketRef.current = s;
     setSocket(s);
@@ -94,32 +78,24 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     }
 
     return () => {
-      try {
-        s.removeAllListeners();
-        s.disconnect();
-      } finally {
-        socketRef.current = null;
-        listenersAttachedRef.current = false;
-        joinedRoomsRef.current.clear();
-        setSocket(null);
-      }
+      s.removeAllListeners();
+      s.disconnect();
+      socketRef.current = null;
+      joinedRoomsRef.current.clear();
+      setSocket(null);
     };
   }, []);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "user" && !e.newValue) {
-        if (socketRef.current) {
-          try {
-            socketRef.current.removeAllListeners();
-            socketRef.current.disconnect();
-          } finally {
-            socketRef.current = null;
-            listenersAttachedRef.current = false;
-            joinedRoomsRef.current.clear();
-            setSocket(null);
-          }
-        }
+        const s = socketRef.current;
+        if (!s) return;
+
+        s.disconnect();
+        socketRef.current = null;
+        joinedRoomsRef.current.clear();
+        setSocket(null);
       }
     };
 
@@ -133,7 +109,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
       const s = socketRef.current;
       if (!s) return;
 
-      const current = (s.auth as any)?.token;
+      const currentToken = (s.auth as any)?.token;
 
       if (!token) {
         s.auth = { token: undefined };
@@ -141,7 +117,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
         return;
       }
 
-      if (token !== current) {
+      if (token !== currentToken) {
         s.auth = { token };
         if (s.connected) s.disconnect();
         s.connect();
@@ -155,14 +131,19 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
     syncToken();
 
-    const onCustom = () => syncToken();
-    window.addEventListener("token:changed", onCustom);
-    return () => window.removeEventListener("token:changed", onCustom);
+    const onTokenChanged = () => syncToken();
+    window.addEventListener("token:changed", onTokenChanged);
+
+    return () => {
+      window.removeEventListener("token:changed", onTokenChanged);
+    };
   }, []);
 
   const joinConversation = useCallback((conversationId: number) => {
     if (!Number.isFinite(conversationId) || conversationId <= 0) return;
+
     joinedRoomsRef.current.add(conversationId);
+
     const s = socketRef.current;
     if (s?.connected) {
       s.emit("joinConversation", conversationId);
@@ -171,9 +152,13 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
 
   const leaveConversation = useCallback((conversationId: number) => {
     if (!Number.isFinite(conversationId) || conversationId <= 0) return;
+
     joinedRoomsRef.current.delete(conversationId);
+
     const s = socketRef.current;
-    s?.emit?.("leaveConversation", conversationId);
+    if (s?.connected) {
+      s.emit("leaveConversation", conversationId);
+    }
   }, []);
 
   const on = useCallback(<T,>(event: string, handler: (payload: T) => void) => {

@@ -11,7 +11,7 @@ import { useMessageStore } from "@/stores/messageStore";
 import { useMessageActions } from "@/hooks/useMessageActions";
 import TypingIndicator from "@/components/Chat/Indicators/TypingIndicator";
 import MessageList from "@/components/Chat/ChatWindow/MessageList/MessageList";
-import { getChatMessages } from "@/services/chatApi";
+import { getChatMessages } from "@/utils/api/chat.api";
 
 import "./FloatingChatWindow.scss";
 
