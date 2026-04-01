@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import moment from "moment";
 
 import { getUserById } from "../../utils/api/user.api";
-import { reportPost } from "../../utils/api/post.api";
+import { deletePost, reportPost } from "../../utils/api/post.api";
 import { AuthContext } from "../../context/AuthContext";
 import usePostLikes from "../../hooks/usePostLike";
 import { toAbsoluteMediaUrl } from "../../utils/mediaUrl";
@@ -37,11 +37,12 @@ export interface PostProps {
     _count?: { likes?: number; comments?: number };
     user?: { username: string; profilePicture?: string };
   };
+  onDeleted?: (postId: number) => void;
 }
 
 type UserInfo = { id: number; username: string; profilePicture?: string };
 
-const Post: React.FC<PostProps> = ({ post }) => {
+const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
   const { user: currentUser } = useContext(AuthContext);
 
   const [author, setAuthor] = useState<UserInfo | null>(
@@ -55,9 +56,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
   );
 
   const [showPostModal, setShowPostModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const isOwner = currentUser?.id === post.userId;
 
   useEffect(() => {
     if (author) return;
@@ -148,6 +152,35 @@ const Post: React.FC<PostProps> = ({ post }) => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!currentUser?.id) {
+      toast.info("Нужно войти в аккаунт.");
+      return;
+    }
+
+    if (!isOwner) {
+      toast.error("Ты не можешь удалить чужой пост.");
+      return;
+    }
+
+    const confirmed = window.confirm("Удалить этот пост?");
+    if (!confirmed) return;
+
+    setIsMenuOpen(false);
+    setIsDeleting(true);
+
+    try {
+      await deletePost(post.id);
+      toast.success("Пост удалён.");
+      onDeleted?.(post.id);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Не удалось удалить пост");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="post-container" style={{ breakInside: "avoid" }}>
       <div className="post-top">
@@ -171,13 +204,24 @@ const Post: React.FC<PostProps> = ({ post }) => {
 
           {isMenuOpen && (
             <div className="post-options-menu">
-              <button
-                type="button"
-                className="post-options-item"
-                onClick={handleReport}
-              >
-                Report
-              </button>
+              {isOwner ? (
+                <button
+                  type="button"
+                  className="post-options-item"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="post-options-item"
+                  onClick={handleReport}
+                >
+                  Report
+                </button>
+              )}
             </div>
           )}
         </div>

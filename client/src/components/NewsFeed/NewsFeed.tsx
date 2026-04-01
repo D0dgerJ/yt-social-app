@@ -104,6 +104,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
     loadPosts();
   }, [username, mode]);
 
+  const handlePostDeleted = (postId: number) => {
+    setPosts((prev) => prev.filter((post) => post.id !== postId));
+  };
+
   return (
     <div
       className={`newsFeed ${
@@ -118,7 +122,11 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
         columnClassName="masonry-grid_column"
       >
         {posts.map((post) => (
-          <Post key={post.id} post={post} />
+          <Post
+            key={post.id}
+            post={post}
+            onDeleted={handlePostDeleted}
+          />
         ))}
       </Masonry>
     </div>
