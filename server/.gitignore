@@ -1,9 +1,16 @@
-node_modules
+node_modules/
+
 .env
 .env copy
-.env.backup
-.env.test
+.env.*
+!.env.example
 
-/uploads
+uploads/*
+!uploads/.gitkeep
+
+logs/
+*.log
+
+dist/
 
 venv
