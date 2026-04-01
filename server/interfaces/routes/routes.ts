@@ -11,6 +11,7 @@ import uploadRoutes from "./uploadRoutes.ts";
 import downloadRoutes from "./downloadRoutes.ts";
 import eventRoutes from "./eventRoutes.ts";
 import modRoute from "./mod.route.ts";
+import healthRoutes from "./health.route.ts";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
 import {
@@ -20,6 +21,7 @@ import {
 
 const router = express.Router();
 
+router.use("/health", healthRoutes);
 router.use("/auth", authRoutes);
 router.use("/posts", postRoutes);
 router.use("/users", userRoutes);
