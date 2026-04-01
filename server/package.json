@@ -1,33 +1,28 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "type": "module",
   "prisma": {
     "schema": "./infrastructure/database/prisma/schema.prisma"
   },
   "scripts": {
     "dev": "tsx watch interfaces/server.ts",
-    "start": "node dist/interfaces/server.js",
     "build": "tsc",
-    "prisma:generate": "npx prisma generate --schema=./infrastructure/database/prisma/schema.prisma",
-    "prisma:format": "npx prisma format --schema=./infrastructure/database/prisma/schema.prisma",
-    "prisma:studio": "npx prisma studio --schema=./infrastructure/database/prisma/schema.prisma",
-    "prisma:clean": "powershell -Command \"Remove-Item -Recurse -Force node_modules/.prisma,node_modules/@prisma/client -ErrorAction SilentlyContinue\"",
-    "prisma:fix": "npm run prisma:clean && npm run prisma:generate",
-    "schema": "./infrastructure/database/prisma/schema.prisma",
-    "migrate:both": "npm run migrate:prod && npm run migrate:test",
-    "migrate:prod": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/social_app'; npx prisma migrate dev --schema=./infrastructure/database/prisma/schema.prisma\"",
-    "migrate:test": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/dodgerjsocial_test'; npx prisma migrate deploy --schema=./infrastructure/database/prisma/schema.prisma\"",
-    "DANGEROUS:migrate:reset": "powershell -Command \"$env:DATABASE_URL='postgresql://postgres:5746@localhost:5432/social_app'; npx prisma migrate reset --force --skip-seed --schema=./infrastructure/database/prisma/schema.prisma\"",
+    "start": "node dist/interfaces/server.js",
+
+    "prisma:generate": "prisma generate --schema=./infrastructure/database/prisma/schema.prisma",
+    "prisma:format": "prisma format --schema=./infrastructure/database/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=./infrastructure/database/prisma/schema.prisma",
+
+    "prisma:migrate:dev": "prisma migrate dev --schema=./infrastructure/database/prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=./infrastructure/database/prisma/schema.prisma",
+    "prisma:reset": "prisma migrate reset --force --skip-seed --schema=./infrastructure/database/prisma/schema.prisma",
+
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "postinstall": "npm run prisma:generate",
+
     "seed:user": "tsx scripts/createPrivilegedUser.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.840.0",
     "@prisma/client": "^6.12.0",
@@ -44,11 +39,11 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
-    "nodemon": "^3.0.3",
     "socket.io": "^4.8.1",
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "nodemon": "^3.0.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
