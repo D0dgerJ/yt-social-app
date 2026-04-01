@@ -3,7 +3,7 @@ import GifPicker from './GifPicker';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { insertAtCursor } from './insertAtCursor';
-import { makeGifFile } from './makeGifFile';
+import { makeGifAttachment, type ExternalGifAttachment } from './gifAttachment';
 import './EmojiGifPopup.scss';
 
 type Tab = 'emoji' | 'gif';
@@ -11,11 +11,16 @@ type Tab = 'emoji' | 'gif';
 interface Props {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
   replyToId?: number;
-  onAddFile: (file: File) => void;
+  onAddGif: (gif: ExternalGifAttachment) => void;
   onTextInsert?: (text: string) => void;
 }
 
-export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFile, onTextInsert }) => {
+export const EmojiGifPopup: React.FC<Props> = ({
+  textareaRef,
+  replyToId,
+  onAddGif,
+  onTextInsert,
+}) => {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('emoji');
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -33,13 +38,19 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
 
   useEffect(() => {
     if (!open) return;
+
     const handleClick = (e: MouseEvent) => {
       const t = e.target as Node;
-      if (popupRef.current && !popupRef.current.contains(t) &&
-          btnRef.current && !btnRef.current.contains(t)) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(t) &&
+        btnRef.current &&
+        !btnRef.current.contains(t)
+      ) {
         setOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
@@ -50,7 +61,7 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
         ref={btnRef}
         type="button"
         className="composer__emoji-btn"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((v) => !v)}
         aria-label="Вставить эмодзи или GIF"
       >
         😊
@@ -73,7 +84,11 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
             >
               GIF
             </button>
-            <button className="composer__popup-close" onClick={() => setOpen(false)} type="button">
+            <button
+              className="composer__popup-close"
+              onClick={() => setOpen(false)}
+              type="button"
+            >
               ✕
             </button>
           </div>
@@ -83,8 +98,8 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
               data={data}
               previewPosition="none"
               onEmojiSelect={(e: any) => {
-                insertAtCursor(textareaRef, e.native); 
-                onTextInsert?.(e.native);     
+                insertAtCursor(textareaRef, e.native);
+                onTextInsert?.(e.native);
                 setOpen(false);
               }}
             />
@@ -92,10 +107,9 @@ export const EmojiGifPopup: React.FC<Props> = ({ textareaRef, replyToId, onAddFi
 
           {activeTab === 'gif' && (
             <GifPicker
-              onSelect={async (url) => {
+              onSelect={(url) => {
                 try {
-                  const file = await makeGifFile(url);
-                  onAddFile(file);
+                  onAddGif(makeGifAttachment(url));
                   setOpen(false);
                 } catch (e) {
                   console.error(e);

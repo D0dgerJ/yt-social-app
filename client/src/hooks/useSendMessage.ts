@@ -10,10 +10,19 @@ import {
 } from '@/utils/api/chat.api';
 import { useSocket } from '@/context/SocketContext';
 
+type ExternalAttachment = {
+  url: string;
+  mime: string;
+  name?: string;
+  size?: number;
+  type?: Attachment['type'];
+};
+
 type SendOptions = {
   conversationId: number;
   text?: string;
   files?: File[];
+  externalAttachments?: ExternalAttachment[];
   replyToId?: number;
   repliedToId?: number;
   ttlSeconds?: number;
@@ -67,6 +76,7 @@ export function useSendMessage() {
         conversationId,
         text,
         files = [],
+        externalAttachments = [],
         ttlSeconds,
         maxViewsPerUser,
       } = opts;
@@ -75,7 +85,10 @@ export function useSendMessage() {
 
       const repliedToId = opts.repliedToId ?? opts.replyToId;
       const trimmed = text?.trim();
-      if (!trimmed && files.length === 0) return;
+
+      if (!trimmed && files.length === 0 && externalAttachments.length === 0) {
+        return;
+      }
 
       const CHUNK = 10;
       const fileChunks: File[][] =
@@ -91,7 +104,7 @@ export function useSendMessage() {
         const clientMessageId = `optimistic-${nanoid(8)}`;
         const createdAt = new Date().toISOString();
 
-        const optimisticMediaFiles =
+        const optimisticMediaFilesFromFiles =
           chunk.length > 0
             ? chunk.map((f) => ({
                 id: Math.floor(Math.random() * 1_000_000) * -1,
@@ -103,6 +116,24 @@ export function useSendMessage() {
                 size: typeof f.size === 'number' ? f.size : null,
               }))
             : [];
+
+        const optimisticMediaFilesFromExternal =
+          chunkIndex === 0 && externalAttachments.length > 0
+            ? externalAttachments.map((a, index) => ({
+                id: (Math.floor(Math.random() * 1_000_000) + index + 1) * -1,
+                url: a.url,
+                type: a.type ?? mapMimeToType(a.mime),
+                uploadedAt: createdAt,
+                originalName: a.name ?? null,
+                mime: a.mime ?? null,
+                size: a.size ?? null,
+              }))
+            : [];
+
+        const optimisticMediaFiles = [
+          ...optimisticMediaFilesFromFiles,
+          ...optimisticMediaFilesFromExternal,
+        ];
 
         const optimistic: Message = {
           id: -1,
@@ -180,12 +211,39 @@ export function useSendMessage() {
               urls: [] as Array<{ url: string; mime: string; name?: string; size?: number }>,
             };
           }
+
           const key = `${clientMessageId}-c${chunkIndex}`;
           const cached = uploadedCacheRef.current.get(key);
           if (cached) return cached;
+
           const res = await uploadFiles(chunk);
           uploadedCacheRef.current.set(key, res);
           return res;
+        };
+
+        const buildAttachments = async (): Promise<Attachment[]> => {
+          const uploaded = await uploadChunk();
+
+          const uploadedAttachments: Attachment[] = uploaded.urls.map((u, i) => ({
+            url: u.url,
+            mime: u.mime || chunk[i]?.type || 'application/octet-stream',
+            name: u.name || chunk[i]?.name || `file-${i + 1}`,
+            size: u.size ?? chunk[i]?.size ?? undefined,
+            type: mapMimeToType(u.mime || chunk[i]?.type),
+          }));
+
+          const extraAttachments: Attachment[] =
+            chunkIndex === 0
+              ? externalAttachments.map((a) => ({
+                  url: a.url,
+                  mime: a.mime || 'image/gif',
+                  name: a.name || 'external.gif',
+                  size: a.size,
+                  type: a.type ?? mapMimeToType(a.mime),
+                }))
+              : [];
+
+          return [...uploadedAttachments, ...extraAttachments];
         };
 
         const trySocket = async (): Promise<boolean> => {
@@ -217,15 +275,9 @@ export function useSendMessage() {
               maxViewsPerUser,
             };
 
-            const uploaded = await uploadChunk();
-            if (uploaded.urls.length) {
-              body.attachments = uploaded.urls.map((u, i) => ({
-                url: u.url,
-                mime: u.mime || chunk[i]?.type || 'application/octet-stream',
-                name: u.name || chunk[i]?.name || `file-${i + 1}`,
-                size: u.size ?? chunk[i]?.size ?? undefined,
-                type: mapMimeToType(u.mime || chunk[i]?.type),
-              }));
+            const attachments = await buildAttachments();
+            if (attachments.length) {
+              body.attachments = attachments;
             }
 
             socket.emit('message:send', body, (resp?: any) => {
@@ -253,18 +305,11 @@ export function useSendMessage() {
           const okBySocket = await trySocket();
 
           if (!okBySocket && !acked) {
-            const uploaded = await uploadChunk();
             const encryptedContent = await encryptText(
               chunkIndex === 0 ? trimmed : undefined,
             );
 
-            const attachments: Attachment[] = uploaded.urls.map((u, i) => ({
-              url: u.url,
-              mime: u.mime || chunk[i]?.type || 'application/octet-stream',
-              name: u.name || chunk[i]?.name || `file-${i + 1}`,
-              size: u.size ?? chunk[i]?.size ?? undefined,
-              type: mapMimeToType(u.mime || chunk[i]?.type),
-            }));
+            const attachments = await buildAttachments();
 
             const body: SendMessageBody & { conversationId: number } = {
               conversationId,
@@ -289,12 +334,12 @@ export function useSendMessage() {
             }
           }
         } catch (e) {
-          console.error("Send message failed:", e);
+          console.error('Send message failed:', e);
           if (!acked) {
             markStatus(conversationId, clientMessageId, { localStatus: 'failed' });
           }
         } finally {
-          optimisticMediaFiles.forEach((m) => {
+          optimisticMediaFilesFromFiles.forEach((m) => {
             if (typeof m.url === 'string' && m.url.startsWith('blob:')) {
               URL.revokeObjectURL(m.url);
             }

@@ -12,6 +12,7 @@ import { useComposerStore } from '@/stores/composerStore';
 import { useMessageActions } from '@/hooks/useMessageActions';
 import { EmojiGifPopup } from './EmojiGifPopup';
 import { VoiceRecorder } from './VoiceRecorder';
+import type { ExternalGifAttachment } from './gifAttachment';
 import './MessageInput.scss';
 
 const MAX_FILES_PER_MESSAGE = 10;
@@ -27,11 +28,18 @@ const TTL_PRESETS = [
 ] as const;
 
 type EphemeralMode = 'none' | 'time' | 'views';
+type ComposerAttachment = File | ExternalGifAttachment;
 
 type MessageInputProps = {
   conversationIdOverride?: number | null;
   compact?: boolean;
 };
+
+const isExternalGif = (value: ComposerAttachment): value is ExternalGifAttachment =>
+  typeof value === 'object' &&
+  value !== null &&
+  'kind' in value &&
+  value.kind === 'external-gif';
 
 const MessageInput: React.FC<MessageInputProps> = ({
   conversationIdOverride,
@@ -52,11 +60,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const { editMessage } = useMessageActions();
 
   const [text, setText] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<ComposerAttachment[]>([]);
   const [isSending, setIsSending] = useState(false);
 
   const [ephemeralMode, setEphemeralMode] = useState<EphemeralMode>('none');
-  const [ttlSeconds, setTtlSeconds] = useState<number>(TTL_PRESETS[2].seconds); // по умолчанию 1 минута
+  const [ttlSeconds, setTtlSeconds] = useState<number>(TTL_PRESETS[2].seconds);
   const [viewsLimit, setViewsLimit] = useState<number>(1);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -101,12 +109,9 @@ const MessageInput: React.FC<MessageInputProps> = ({
     e.currentTarget.value = '';
   };
 
-  const removeFile = useCallback(
-    (idx: number) => {
-      setFiles((prev) => prev.filter((_, i) => i !== idx));
-    },
-    [setFiles],
-  );
+  const removeFile = useCallback((idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
 
   const handleSend = async () => {
     if (!effectiveConversationId) return;
@@ -143,14 +148,24 @@ const MessageInput: React.FC<MessageInputProps> = ({
     }
 
     try {
+      const localFiles = files.filter((item): item is File => item instanceof File);
+      const externalGifs = files.filter(isExternalGif);
+
       await send({
         conversationId: effectiveConversationId,
         text: trimmed || undefined,
-        files,
+        files: localFiles,
+        externalAttachments: externalGifs.map((gif) => ({
+          url: gif.url,
+          mime: gif.mime,
+          type: gif.type,
+          name: gif.name,
+        })),
         replyToId: replyIdNum,
         ttlSeconds: ttlToSend,
         maxViewsPerUser: maxViewsToSend,
       });
+
       resetComposer();
     } catch (err) {
       console.error('Ошибка при отправке сообщения:', err);
@@ -214,6 +229,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           await send({
             conversationId: effectiveConversationId,
             files: [file],
+            externalAttachments: [],
             replyToId: replyIdNum,
             ttlSeconds: ttlToSend,
             maxViewsPerUser: maxViewsToSend,
@@ -225,11 +241,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <EmojiGifPopup
         textareaRef={textareaRef}
         replyToId={replyIdNum}
-        onAddFile={(file) => {
+        onAddGif={(gif) => {
           if (!canAddMoreFiles) return;
           setFiles((prev) => {
             if (prev.length >= MAX_FILES_PER_MESSAGE) return prev;
-            return [...prev, file];
+            return [...prev, gif];
           });
         }}
         onTextInsert={(s) => setText((prev) => (prev ?? '') + s)}
@@ -238,9 +254,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <textarea
         ref={textareaRef}
         className="composer__input"
-        placeholder={
-          isEditMode ? 'Измени сообщение' : 'Напиши сообщение'
-        }
+        placeholder={isEditMode ? 'Измени сообщение' : 'Напиши сообщение'}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -307,6 +321,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           await send({
             conversationId: effectiveConversationId,
             files: [file],
+            externalAttachments: [],
             replyToId: replyIdNum,
             ttlSeconds: ttlToSend,
             maxViewsPerUser: maxViewsToSend,
@@ -318,11 +333,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <EmojiGifPopup
         textareaRef={textareaRef}
         replyToId={replyIdNum}
-        onAddFile={(file) => {
+        onAddGif={(gif) => {
           if (!canAddMoreFiles) return;
           setFiles((prev) => {
             if (prev.length >= MAX_FILES_PER_MESSAGE) return prev;
-            return [...prev, file];
+            return [...prev, gif];
           });
         }}
         onTextInsert={(s) => setText((prev) => (prev ?? '') + s)}
@@ -331,9 +346,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <textarea
         ref={textareaRef}
         className="composer__input"
-        placeholder={
-          isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'
-        }
+        placeholder={isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -457,11 +470,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
         <div className="composer__previews">
           {files.map((f, i) => (
             <div
-              key={`${f.name}-${i}`}
+              key={`${isExternalGif(f) ? f.url : f.name}-${i}`}
               className="composer__preview"
-              title={f.name}
+              title={isExternalGif(f) ? f.name : f.name}
             >
-              <span className="composer__preview-name">{f.name}</span>
+              <span className="composer__preview-name">
+                {isExternalGif(f) ? 'GIF from Giphy' : f.name}
+              </span>
               <button
                 type="button"
                 className="composer__preview-remove"
