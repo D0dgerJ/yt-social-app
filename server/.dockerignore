@@ -1,0 +1,13 @@
+node_modules
+.venv
+dist
+.git
+.gitignore
+npm-debug.log
+*.log
+.env
+.env.*
+coverage
+uploads
+tmp
+.DS_Store

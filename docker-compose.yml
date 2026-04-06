@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: yt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - yt-network
+
+  backend:
+    build:
+      context: ./server
+    container_name: yt-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      CLIENT_URL: ${CLIENT_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      REDIS_URL: ${REDIS_URL}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER}
+      WHISPER_PYTHON: /opt/venv/bin/python
+      WHISPER_SCRIPT: /app/whisper/transcribe.py
+      WHISPER_MODEL: ${WHISPER_MODEL}
+      MODERATION_OUTBOX_ENABLED: ${MODERATION_OUTBOX_ENABLED}
+      STORY_CLEANER_ENABLED: ${STORY_CLEANER_ENABLED}
+      SEED_EMAIL: ${SEED_EMAIL}
+      SEED_USERNAME: ${SEED_USERNAME}
+      SEED_PASSWORD: ${SEED_PASSWORD}
+      SEED_ROLE: ${SEED_ROLE}
+    ports:
+      - "5000:5000"
+    volumes:
+      - backend_uploads:/app/uploads
+    networks:
+      - yt-network
+
+  frontend:
+    build:
+      context: ./client
+      args:
+        VITE_SERVER_ORIGIN: http://192.168.1.102:5000
+        VITE_SOCKET_URL: http://192.168.1.102:5000
+        VITE_GIPHY_API_KEY: LIxsrrfSsnZMnx0bblBxWLYwaPs8oT
+    container_name: yt-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - yt-network
+
+volumes:
+  postgres_data:
+  backend_uploads:
+
+networks:
+  yt-network:
+    driver: bridge

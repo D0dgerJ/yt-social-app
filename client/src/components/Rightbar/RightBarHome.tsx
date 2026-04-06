@@ -20,9 +20,6 @@ const RightBarHome: React.FC<Props> = ({ friends, loading, error }) => {
     <>
       <div className="birthday-section">
         <img src={birthdayIcon} alt="Birthday" className="birthday-icon" />
-        <span>
-          <b>Henry Crentsil</b> and <b>52 others</b> have a birthday today
-        </span>
       </div>
 
       <img src={adImage} alt="Advert" className="advert-image" />
