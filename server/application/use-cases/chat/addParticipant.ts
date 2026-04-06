@@ -1,7 +1,7 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { createNotification } from "../notification/createNotification.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { getIO } from "../../../infrastructure/websocket/socket.js";
+import { createNotification } from "../notification/createNotification.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 interface AddParticipantInput {
   conversationId: number;

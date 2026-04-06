@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { deleteConversationIfEmpty } from "./deleteConversationIfEmpty.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { getIO } from "../../../infrastructure/websocket/socket.js";
+import { deleteConversationIfEmpty } from "./deleteConversationIfEmpty.js";
 
 interface LeaveConversationInput {
   conversationId: number;

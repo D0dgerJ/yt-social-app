@@ -1,7 +1,7 @@
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.ts";
-import { assertUserActionAllowed } from "../moderation/assertUserActionAllowed.ts";
-import { assertReportRateLimit } from "../moderation/assertReportRateLimit.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.js";
+import { assertUserActionAllowed } from "../moderation/assertUserActionAllowed.js";
+import { assertReportRateLimit } from "../moderation/assertReportRateLimit.js";
 
 export type AbuseAction =
   | "REPORT_CREATE"

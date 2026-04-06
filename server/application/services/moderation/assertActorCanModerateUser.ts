@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import { UserRole } from "@prisma/client";
 
 const ROLE_RANK: Record<UserRole, number> = {

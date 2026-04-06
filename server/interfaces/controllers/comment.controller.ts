@@ -1,18 +1,18 @@
 import { Request, Response, NextFunction } from "express";
-import { createComment } from "../../application/use-cases/comment/createComment.ts";
-import { deleteComment } from "../../application/use-cases/comment/deleteComment.ts";
-import { updateComment } from "../../application/use-cases/comment/updateComment.ts";
-import { getPostComments } from "../../application/use-cases/comment/getPostComments.ts";
-import { toggleCommentLike } from "../../application/use-cases/comment/toggleCommentLike.ts";
-import { getCommentReplies } from "../../application/use-cases/comment/getCommentReplies.ts";
-import { updateCommentReply } from "../../application/use-cases/comment/updateCommentReply.ts";
-import { deleteCommentReply } from "../../application/use-cases/comment/deleteCommentReply.ts";
-import { getCommentById } from "../../application/use-cases/comment/getCommentById.ts";
-import { getRepliesCountForMany } from "../../application/use-cases/comment/getRepliesCountForMany.ts";
-import { getUserByUsername } from "../../application/use-cases/user/getUserByUsername.ts";
-import { Errors } from "../../infrastructure/errors/ApiError.ts";
-import { reportComment } from "../../application/use-cases/comment/reportComment.ts";
-import { reportCommentSchema } from "../../validation/commentSchemas.ts";
+import { createComment } from "../../application/use-cases/comment/createComment.js";
+import { deleteComment } from "../../application/use-cases/comment/deleteComment.js";
+import { updateComment } from "../../application/use-cases/comment/updateComment.js";
+import { getPostComments } from "../../application/use-cases/comment/getPostComments.js";
+import { toggleCommentLike } from "../../application/use-cases/comment/toggleCommentLike.js";
+import { getCommentReplies } from "../../application/use-cases/comment/getCommentReplies.js";
+import { updateCommentReply } from "../../application/use-cases/comment/updateCommentReply.js";
+import { deleteCommentReply } from "../../application/use-cases/comment/deleteCommentReply.js";
+import { getCommentById } from "../../application/use-cases/comment/getCommentById.js";
+import { getRepliesCountForMany } from "../../application/use-cases/comment/getRepliesCountForMany.js";
+import { getUserByUsername } from "../../application/use-cases/user/getUserByUsername.js";
+import { Errors } from "../../infrastructure/errors/ApiError.js";
+import { reportComment } from "../../application/use-cases/comment/reportComment.js";
+import { reportCommentSchema } from "../../validation/commentSchemas.js";
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {

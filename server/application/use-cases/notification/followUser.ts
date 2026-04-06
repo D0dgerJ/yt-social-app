@@ -1,7 +1,7 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { createNotification } from "./createNotification.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { createNotification } from "./createNotification.js";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 
 interface FollowUserInput {
   followerId: number;

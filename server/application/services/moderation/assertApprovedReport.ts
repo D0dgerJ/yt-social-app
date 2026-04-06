@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 
 export const assertApprovedCommentReport = async (commentId: number) => {
   const approved = await prisma.commentReport.findFirst({

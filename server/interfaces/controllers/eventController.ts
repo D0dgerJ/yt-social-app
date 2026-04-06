@@ -3,11 +3,11 @@ import {
   createEventSchema,
   getEventsQuerySchema,
   updateEventSchema,
-} from "../../validation/eventSchemas.ts";
-import { createEvent } from "../../application/use-cases/event/createEvent.ts";
-import { getEvents } from "../../application/use-cases/event/getEvents.ts";
-import { updateEvent } from "../../application/use-cases/event/updateEvent.ts";
-import { deleteEvent } from "../../application/use-cases/event/deleteEvent.ts";
+} from "../../validation/eventSchemas.js";
+import { createEvent } from "../../application/use-cases/event/createEvent.js";
+import { getEvents } from "../../application/use-cases/event/getEvents.js";
+import { updateEvent } from "../../application/use-cases/event/updateEvent.js";
+import { deleteEvent } from "../../application/use-cases/event/deleteEvent.js";
 
 export const create = async (req: Request, res: Response) => {
   const userId = req.user!.id;

@@ -1,11 +1,11 @@
 import express from "express";
-import * as controller from "../controllers/comment.controller.ts";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
-import prisma from "../../infrastructure/database/prismaClient.ts";
+import * as controller from "../controllers/comment.controller.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
+import prisma from "../../infrastructure/database/prismaClient.js";
 
-import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
-import { optionalAuthMiddleware } from "../../infrastructure/middleware/optionalAuthMiddleware.ts";
+import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.js";
+import { optionalAuthMiddleware } from "../../infrastructure/middleware/optionalAuthMiddleware.js";
 
 const router = express.Router();
 

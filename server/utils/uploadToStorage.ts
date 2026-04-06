@@ -7,9 +7,9 @@ import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import { randomUUID } from "crypto";
 
-import { env } from "../config/env.ts";
-import { s3, BUCKET, PUBLIC_BASE } from "../infrastructure/storage/s3Client.ts";
-import { LOCAL_UPLOADS_DIR } from "../infrastructure/storage/storagePaths.ts";
+import { env } from "../config/env.js";
+import { s3, BUCKET, PUBLIC_BASE } from "../infrastructure/storage/s3Client.js";
+import { LOCAL_UPLOADS_DIR } from "../infrastructure/storage/storagePaths.js";
 
 export type UploadResult = {
   url: string;

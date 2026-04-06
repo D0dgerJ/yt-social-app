@@ -7,7 +7,7 @@ import {
   getStoryById,
   getUserStories,
   viewStory,
-} from '../../application/use-cases/story/index.ts';
+} from '../../application/use-cases/story/index.js';
 
 export const create = async (req: Request, res: Response) => {
   try {

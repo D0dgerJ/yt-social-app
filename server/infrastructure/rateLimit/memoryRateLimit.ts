@@ -1,4 +1,4 @@
-import { Errors } from "../errors/ApiError.ts";
+import { Errors } from "../errors/ApiError.js";
 
 type Bucket = { count: number; resetAtMs: number };
 const buckets = new Map<string, Bucket>();

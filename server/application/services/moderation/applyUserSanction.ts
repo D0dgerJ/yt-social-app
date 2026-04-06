@@ -1,13 +1,13 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { logModerationAction } from "./logModerationAction.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { logModerationAction } from "./logModerationAction.js";
 import {
   ModerationActionType,
   ModerationTargetType,
   UserSanctionStatus,
   UserSanctionType,
 } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertActorCanModerateUser } from "./assertActorCanModerateUser.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertActorCanModerateUser } from "./assertActorCanModerateUser.js";
 
 type ApplyUserSanctionInput = {
   actorId: number;

@@ -1,33 +1,33 @@
-import prisma from "../../infrastructure/database/prismaClient.ts";
+import prisma from "../../infrastructure/database/prismaClient.js";
 import { Request, Response } from "express";
 
-import { createChat } from "../../application/use-cases/chat/createChat.ts";
-import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
-import { getUserConversations } from "../../application/use-cases/chat/getUserConversations.ts";
-import { deleteMessage } from "../../application/use-cases/chat/deleteMessage.ts";
-import { updateMessage } from "../../application/use-cases/chat/updateMessage.ts";
-import { leaveConversation } from "../../application/use-cases/chat/leaveConversation.ts";
-import { addParticipant } from "../../application/use-cases/chat/addParticipant.ts";
-import { deleteConversationIfEmpty } from "../../application/use-cases/chat/deleteConversationIfEmpty.ts";
-import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead.ts";
-import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.ts";
-import { addOrUpdateReaction } from "../../application/use-cases/chat/addOrUpdateReaction.ts";
-import { getMessageReactions } from "../../application/use-cases/chat/getMessageReactions.ts";
-import { getConversationMessages as getMsgsUC } from "../../application/use-cases/chat/getConversationMessages.ts";
-import { transcribeWithWhisper } from "../../infrastructure/services/whisperService.ts";
+import { createChat } from "../../application/use-cases/chat/createChat.js";
+import { sendMessage } from "../../application/use-cases/chat/sendMessage.js";
+import { getUserConversations } from "../../application/use-cases/chat/getUserConversations.js";
+import { deleteMessage } from "../../application/use-cases/chat/deleteMessage.js";
+import { updateMessage } from "../../application/use-cases/chat/updateMessage.js";
+import { leaveConversation } from "../../application/use-cases/chat/leaveConversation.js";
+import { addParticipant } from "../../application/use-cases/chat/addParticipant.js";
+import { deleteConversationIfEmpty } from "../../application/use-cases/chat/deleteConversationIfEmpty.js";
+import { markMessagesAsRead } from "../../application/use-cases/chat/markMessagesAsRead.js";
+import { markMessagesAsDelivered } from "../../application/use-cases/chat/markMessagesAsDelivered.js";
+import { addOrUpdateReaction } from "../../application/use-cases/chat/addOrUpdateReaction.js";
+import { getMessageReactions } from "../../application/use-cases/chat/getMessageReactions.js";
+import { getConversationMessages as getMsgsUC } from "../../application/use-cases/chat/getConversationMessages.js";
+import { transcribeWithWhisper } from "../../infrastructure/services/whisperService.js";
 import {
   pinConversation as pinConversationUC,
   unpinConversation as unpinConversationUC,
-} from "../../application/use-cases/chat/setConversationPinned.ts";
+} from "../../application/use-cases/chat/setConversationPinned.js";
 import {
   pinMessage as pinMessageUC,
   unpinMessage as unpinMessageUC,
-} from "../../application/use-cases/chat/setMessagePinned.ts";
-import { registerMessageView } from "../../application/use-cases/chat/registerMessageView.ts";
+} from "../../application/use-cases/chat/setMessagePinned.js";
+import { registerMessageView } from "../../application/use-cases/chat/registerMessageView.js";
 import {
   downloadToTempForTranscription,
   safeUnlink,
-} from "../../utils/uploadToStorage.ts";
+} from "../../utils/uploadToStorage.js";
 
 export const create = async (req: Request, res: Response) => {
   try {

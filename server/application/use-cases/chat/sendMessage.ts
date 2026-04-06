@@ -1,10 +1,10 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { sendMessageSchema } from "../../../validation/chatSchemas.ts";
-import type { NotificationType } from "../notification/notificationTypes.ts";
-import { extractMentions } from "../notification/extractMentions.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
-import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { sendMessageSchema } from "../../../validation/chatSchemas.js";
+import type { NotificationType } from "../notification/notificationTypes.js";
+import { extractMentions } from "../notification/extractMentions.js";
+import { getIO } from "../../../infrastructure/websocket/socket.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
+import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.js";
 
 type MediaKind = "image" | "video" | "file" | "gif" | "audio";
 

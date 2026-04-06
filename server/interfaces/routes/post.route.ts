@@ -14,13 +14,13 @@ import {
   getFeedById,
   getAll,
   report,
-} from "../controllers/post.controller.ts";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
-import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.ts";
-import { getUserPostsFlexible } from "../controllers/post.controller.ts";
-import prisma from "../../infrastructure/database/prismaClient.ts";
+} from "../controllers/post.controller.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
+import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
+import { getUserPostsFlexible } from "../controllers/post.controller.js";
+import prisma from "../../infrastructure/database/prismaClient.js";
 
-import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.ts";
+import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.js";
 
 const router = express.Router();
 

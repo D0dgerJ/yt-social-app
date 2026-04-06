@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { CommentStatus, ContentStatus, CommentVisibility, UserRole } from "@prisma/client";
 
 function sanitizeDeletedComment<

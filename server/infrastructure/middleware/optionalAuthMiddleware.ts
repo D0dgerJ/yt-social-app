@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import prisma from "../database/prismaClient.ts";
-import { Errors } from "../errors/ApiError.ts";
-import { env } from "../../config/env.ts";
+import prisma from "../database/prismaClient.js";
+import { Errors } from "../errors/ApiError.js";
+import { env } from "../../config/env.js";
 
 export const optionalAuthMiddleware = async (
   req: Request,

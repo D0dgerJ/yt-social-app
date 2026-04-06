@@ -18,10 +18,10 @@ import {
   rejectFriendRequest as rejectFriendRequestUseCase,
   getMyTagInterests,
   getMyAuthorInterests,
-} from "../../application/use-cases/user/index.ts";
-import prisma from "../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../infrastructure/errors/ApiError.ts";
-import { publicUserSelect } from "../../application/serializers/user.select.ts";
+} from "../../application/use-cases/user/index.js";
+import prisma from "../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../infrastructure/errors/ApiError.js";
+import { publicUserSelect } from "../../application/serializers/user.select.js";
 
 function parseId(raw: unknown, message: string) {
   const n = Number(raw);

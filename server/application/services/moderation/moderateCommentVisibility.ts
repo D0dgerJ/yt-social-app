@@ -1,13 +1,13 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import {
   CommentStatus,
   CommentVisibility,
   ModerationActionType,
   ModerationTargetType,
 } from "@prisma/client";
-import { assertApprovedCommentReport } from "./assertApprovedReport.ts";
-import { logModerationAction } from "./logModerationAction.ts";
+import { assertApprovedCommentReport } from "./assertApprovedReport.js";
+import { logModerationAction } from "./logModerationAction.js";
 
 export const hideComment = async (params: {
   actorId: number;

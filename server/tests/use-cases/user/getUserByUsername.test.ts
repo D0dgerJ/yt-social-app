@@ -1,5 +1,5 @@
 import { getUserByUsername } from '../../../application/use-cases/user/getUserByUsername';
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 
 jest.mock("../../../infrastructure/database/prismaClient.ts");
 

@@ -1,8 +1,8 @@
-import app from "./app.ts";
-import { env } from "../config/env.ts";
-import { cleanupEmptyPosts } from "../infrastructure/cleanup/cleanupEmptyPosts.ts";
+import app from "./app.js";
+import { env } from "../config/env.js";
+import { cleanupEmptyPosts } from "../infrastructure/cleanup/cleanupEmptyPosts.js";
 import { createServer } from "http";
-import { initSocket } from "../infrastructure/websocket/socket.ts";
+import { initSocket } from "../infrastructure/websocket/socket.js";
 
 (async () => {
   try {

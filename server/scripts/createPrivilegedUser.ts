@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
-import prisma from "../infrastructure/database/prismaClient.ts";
-import { env } from "../config/env.ts";
+import prisma from "../infrastructure/database/prismaClient.js";
+import { env } from "../config/env.js";
 
 function requireSeedValue(name: "SEED_EMAIL" | "SEED_USERNAME" | "SEED_PASSWORD") {
   const value = env[name];

@@ -1,23 +1,23 @@
 import express from "express";
 
-import authRoutes from "./auth.route.ts";
-import postRoutes from "./post.route.ts";
-import userRoutes from "./user.route.ts";
-import storyRoutes from "./story.route.ts";
-import commentRoutes from "./comment.route.ts";
-import notificationRoutes from "./notification.route.ts";
-import chatRoutes from "./chat.route.ts";
-import uploadRoutes from "./uploadRoutes.ts";
-import downloadRoutes from "./downloadRoutes.ts";
-import eventRoutes from "./eventRoutes.ts";
-import modRoute from "./mod.route.ts";
-import healthRoutes from "./health.route.ts";
+import authRoutes from "./auth.route.js";
+import postRoutes from "./post.route.js";
+import userRoutes from "./user.route.js";
+import storyRoutes from "./story.route.js";
+import commentRoutes from "./comment.route.js";
+import notificationRoutes from "./notification.route.js";
+import chatRoutes from "./chat.route.js";
+import uploadRoutes from "./uploadRoutes.js";
+import downloadRoutes from "./downloadRoutes.js";
+import eventRoutes from "./eventRoutes.js";
+import modRoute from "./mod.route.js";
+import healthRoutes from "./health.route.js";
 
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 import {
   enforceSanctions,
   requireNotRestricted,
-} from "../../infrastructure/middleware/enforceSanctions.ts";
+} from "../../infrastructure/middleware/enforceSanctions.js";
 
 const router = express.Router();
 

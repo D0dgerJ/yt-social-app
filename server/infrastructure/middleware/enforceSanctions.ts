@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import prisma from "../database/prismaClient.ts";
-import { Errors } from "../errors/ApiError.ts";
+import prisma from "../database/prismaClient.js";
+import { Errors } from "../errors/ApiError.js";
 import { UserSanctionStatus, UserSanctionType } from "@prisma/client";
 
 function toIso(d?: Date | null): string | null {

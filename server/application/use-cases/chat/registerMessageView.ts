@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 interface RegisterMessageViewInput {
   messageId: number;

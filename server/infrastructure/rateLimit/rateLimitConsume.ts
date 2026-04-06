@@ -1,6 +1,6 @@
-import { memoryRateLimitConsume } from "./memoryRateLimit.ts";
-import { redisRateLimitConsume } from "./redisRateLimit.ts";
-import { env } from "../../config/env.ts";
+import { memoryRateLimitConsume } from "./memoryRateLimit.js";
+import { redisRateLimitConsume } from "./redisRateLimit.js";
+import { env } from "../../config/env.js";
 
 export async function rateLimitConsume(params: {
   key: string;

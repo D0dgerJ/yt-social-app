@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.js";
 
 interface SendFriendRequestInput {
   senderId: number;

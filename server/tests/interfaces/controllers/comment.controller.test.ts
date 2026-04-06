@@ -1,5 +1,5 @@
 import * as commentController from '../../../interfaces/controllers/comment.controller';
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from '../../../infrastructure/database/prismaClient.js';
 
 import { createComment } from '../../../application/use-cases/comment/createComment';
 import { updateComment } from '../../../application/use-cases/comment/updateComment';

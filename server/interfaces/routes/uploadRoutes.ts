@@ -1,6 +1,6 @@
 import express from 'express';
-import { upload } from '../../application/use-cases/upload/uploadFile.ts';
-import { handleUpload } from '../controllers/uploadController.ts';
+import { upload } from '../../application/use-cases/upload/uploadFile.js';
+import { handleUpload } from '../controllers/uploadController.js';
 
 const router = express.Router();
 

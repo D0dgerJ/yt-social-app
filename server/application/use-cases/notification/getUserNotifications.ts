@@ -1,4 +1,4 @@
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from '../../../infrastructure/database/prismaClient.js';
 
 export const getUserNotifications = async (userId: number) => {
   if (!userId || userId <= 0) {

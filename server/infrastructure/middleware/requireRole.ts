@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { UserRole } from "@prisma/client";
-import prisma from "../database/prismaClient.ts";
-import { Errors } from "../errors/ApiError.ts";
+import prisma from "../database/prismaClient.js";
+import { Errors } from "../errors/ApiError.js";
 
 const ROLE_RANK: Record<UserRole, number> = {
   USER: 0,

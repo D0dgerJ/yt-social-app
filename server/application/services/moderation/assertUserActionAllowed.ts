@@ -1,6 +1,6 @@
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import { UserSanctionType } from "@prisma/client";
-import { getActiveUserSanction, isBannedSanction } from "./getActiveUserSanction.ts";
+import { getActiveUserSanction, isBannedSanction } from "./getActiveUserSanction.js";
 
 function toIso(d?: Date | null): string | null {
   return d ? d.toISOString() : null;

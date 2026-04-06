@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import type { NotificationType } from "./notificationTypes.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { getIO } from "../../../infrastructure/websocket/socket.js";
+import type { NotificationType } from "./notificationTypes.js";
 
 export interface CreateNotificationInput {
   fromUserId: number;

@@ -1,8 +1,8 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { CommentStatus, ContentStatus } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 export const deleteCommentReply = async (params: { commentId: number; actorId: number; reason?: string }) => {
   const { commentId, actorId, reason } = params;

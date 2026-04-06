@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 
 export const getUserPosts = async (userId: number) => {
   if (!Number.isFinite(userId) || userId <= 0) {

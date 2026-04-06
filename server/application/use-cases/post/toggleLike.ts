@@ -1,10 +1,10 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
-import { likePost } from "./likePost.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
-import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
-import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.js";
+import { likePost } from "./likePost.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.js";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.js";
 
 interface ToggleLikeInput {
   userId: number;

@@ -2,7 +2,7 @@ import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
-import { LOCAL_UPLOADS_DIR } from "../../../infrastructure/storage/storagePaths";
+import { LOCAL_UPLOADS_DIR } from "../../../infrastructure/storage/storagePaths.js";
 
 fs.mkdirSync(LOCAL_UPLOADS_DIR, { recursive: true });
 

@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { ApiError, Errors } from "../errors/ApiError.ts";
+import { ApiError, Errors } from "../errors/ApiError.js";
 
 type PrismaLikeError = {
   code?: string;

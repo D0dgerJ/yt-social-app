@@ -1,8 +1,8 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus, CommentStatus, CommentVisibility } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 interface UpdateReplyInput {
   commentId: number;

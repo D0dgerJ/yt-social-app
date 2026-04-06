@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus } from "@prisma/client";
-import { getRankedPostIds } from "../../services/feed/getRankedPostIds.ts";
+import { getRankedPostIds } from "../../services/feed/getRankedPostIds.js";
 
 const LIMIT = 50;
 

@@ -1,7 +1,7 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { CommentStatus, ContentStatus, UserRole } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 export const deleteComment = async (params: {
   commentId: number;

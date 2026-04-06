@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { logModerationAction } from "./logModerationAction.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { logModerationAction } from "./logModerationAction.js";
 import { ModerationActionType, ModerationTargetType } from "@prisma/client";
 
 type HardDeletePostInput = {

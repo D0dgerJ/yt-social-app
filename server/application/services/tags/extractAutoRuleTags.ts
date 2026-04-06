@@ -1,4 +1,4 @@
-import { TAG_KEYWORD_MAP } from "./tagKeywordMap.ts";
+import { TAG_KEYWORD_MAP } from "./tagKeywordMap.js";
 
 interface ExtractAutoRuleTagsInput {
   desc?: string;

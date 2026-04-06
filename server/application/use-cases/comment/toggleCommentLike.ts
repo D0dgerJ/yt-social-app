@@ -1,11 +1,11 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus, CommentStatus, CommentVisibility } from "@prisma/client";
-import { createNotification } from "../notification/createNotification.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
-import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
-import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
+import { createNotification } from "../notification/createNotification.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.js";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.js";
 
 interface ToggleLikeParams {
   commentId: number;

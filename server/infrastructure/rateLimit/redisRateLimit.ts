@@ -1,6 +1,6 @@
 import { createClient, type RedisClientType } from "redis";
-import { Errors } from "../errors/ApiError.ts";
-import { env } from "../../config/env.ts";
+import { Errors } from "../errors/ApiError.js";
+import { env } from "../../config/env.js";
 
 let client: RedisClientType | null = null;
 let connecting: Promise<RedisClientType> | null = null;

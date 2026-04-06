@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { ModerationTargetType, UserSanctionStatus, UserSanctionType } from "@prisma/client";
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 
 export type ModerationUserDetails = {
   user: {

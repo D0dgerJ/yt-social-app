@@ -1,12 +1,12 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
-import { normalizeTags } from "../../services/tags/normalizeTags.ts";
-import { resolveTagAliases } from "../../services/tags/resolveTagAliases.ts";
-import { syncManualPostTags } from "../../services/tags/syncManualPostTags.ts";
-import { extractAutoRuleTags } from "../../services/tags/extractAutoRuleTags.ts";
-import { syncAutoRulePostTags } from "../../services/tags/syncAutoRulePostTags.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
+import { normalizeTags } from "../../services/tags/normalizeTags.js";
+import { resolveTagAliases } from "../../services/tags/resolveTagAliases.js";
+import { syncManualPostTags } from "../../services/tags/syncManualPostTags.js";
+import { extractAutoRuleTags } from "../../services/tags/extractAutoRuleTags.js";
+import { syncAutoRulePostTags } from "../../services/tags/syncAutoRulePostTags.js";
 
 interface UpdatePostInput {
   postId: number;

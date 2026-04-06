@@ -2,9 +2,9 @@ import express, { Express } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { env } from "../config/env.ts";
-import { fixLatin1ToUtf8, encodeRFC5987, asciiFallback } from "../utils/encoding.ts";
-import { LOCAL_UPLOADS_DIR } from "../infrastructure/storage/storagePaths.ts";
+import { env } from "../config/env.js";
+import { fixLatin1ToUtf8, encodeRFC5987, asciiFallback } from "../utils/encoding.js";
+import { LOCAL_UPLOADS_DIR } from "../infrastructure/storage/storagePaths.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,12 +16,12 @@ try {
   const morgan = (await import("morgan")).default;
   const cors = (await import("cors")).default;
   const compression = (await import("compression")).default;
-  const routes = (await import("./routes/routes.ts")).default;
-  const { errorHandler } = await import("../infrastructure/middleware/errorHandler.ts");
+  const routes = (await import("./routes/routes.js")).default;
+  const { errorHandler } = await import("../infrastructure/middleware/errorHandler.js");
   const mime = await import("mime-types");
 
-  await import("../cron/storyCleaner.ts");
-  await import("../cron/moderationOutboxWorker.ts");
+  await import("../cron/storyCleaner.js");
+  await import("../cron/moderationOutboxWorker.js");
 
   app = express();
 

@@ -1,9 +1,9 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.ts";
-import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
-import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { assertUserActionAllowed } from "../../services/moderation/assertUserActionAllowed.js";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.js";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.js";
 
 interface SavePostInput {
   userId: number;

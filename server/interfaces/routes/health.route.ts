@@ -1,7 +1,7 @@
 import { Router } from "express";
-import prisma from "../../infrastructure/database/prismaClient.ts";
-import { redisPub } from "../../infrastructure/redis/redisClient.ts";
-import { env } from "../../config/env.ts";
+import prisma from "../../infrastructure/database/prismaClient.js";
+import { redisPub } from "../../infrastructure/redis/redisClient.js";
+import { env } from "../../config/env.js";
 
 const router = Router();
 

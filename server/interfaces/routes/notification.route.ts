@@ -4,8 +4,8 @@ import {
   getNotifications,
   markAsRead,
   remove,
-} from "../controllers/notification.controller.ts";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+} from "../controllers/notification.controller.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 
 const router = express.Router();
 

@@ -1,4 +1,4 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 
 export const deleteStory = async (storyId: number) => {
   return prisma.story.delete({

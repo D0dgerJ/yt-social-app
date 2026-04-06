@@ -4,8 +4,8 @@ import {
   getAll,
   update,
   remove,
-} from "../controllers/eventController.ts";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+} from "../controllers/eventController.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 
 const router = express.Router();
 

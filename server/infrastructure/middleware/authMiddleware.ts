@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { Errors } from "../errors/ApiError.ts";
-import { env } from "../../config/env.ts";
+import { Errors } from "../errors/ApiError.js";
+import { env } from "../../config/env.js";
 
 interface JwtPayload {
   userId: number;

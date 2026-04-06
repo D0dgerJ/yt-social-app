@@ -1,5 +1,5 @@
-import prisma from "../infrastructure/database/prismaClient.ts";
-import { env } from "../config/env.ts";
+import prisma from "../infrastructure/database/prismaClient.js";
+import { env } from "../config/env.js";
 
 const STORY_CLEAN_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 

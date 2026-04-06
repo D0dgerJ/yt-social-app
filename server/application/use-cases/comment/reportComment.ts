@@ -4,11 +4,11 @@ import {
   ModerationTargetType,
   ReportStatus,
 } from "@prisma/client";
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import type { ReportCommentDto } from "../../../validation/commentSchemas.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { logModerationAction } from "../../services/moderation/logModerationAction.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import type { ReportCommentDto } from "../../../validation/commentSchemas.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { logModerationAction } from "../../services/moderation/logModerationAction.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 type Params = {
   actorId: number;

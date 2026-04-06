@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { mediaUrlSchema } from "./common.ts";
+import { mediaUrlSchema } from "./common.js";
 
 export const updateUserSchema = z.object({
   username: z.string().min(3).optional(),

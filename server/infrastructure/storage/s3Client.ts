@@ -1,5 +1,5 @@
 import { S3Client } from "@aws-sdk/client-s3";
-import { env } from "../../config/env.ts";
+import { env } from "../../config/env.js";
 
 export const isS3Storage = env.STORAGE_PROVIDER === "s3";
 

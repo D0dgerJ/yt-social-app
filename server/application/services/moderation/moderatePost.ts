@@ -1,6 +1,6 @@
 import { ContentStatus, ModerationActionType, ModerationTargetType } from "@prisma/client";
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { logModerationAction } from "./logModerationAction.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { logModerationAction } from "./logModerationAction.js";
 
 type ModeratePostInput = {
   actorId: number;

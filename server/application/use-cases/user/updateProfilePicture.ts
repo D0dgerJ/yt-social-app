@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { privateUserSelect } from "../../serializers/user.select.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { privateUserSelect } from "../../serializers/user.select.js";
 
 interface UpdateProfilePictureInput {
   userId: number;

@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import { CommentStatus, CommentVisibility, UserRole } from "@prisma/client";
 
 function sanitizeDeletedComment<

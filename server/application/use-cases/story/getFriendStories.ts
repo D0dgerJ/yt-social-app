@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { publicUserSelect } from "../../serializers/user.select.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { publicUserSelect } from "../../serializers/user.select.js";
 
 export const getFriendStories = async (userId: number) => {
   const following = await prisma.follow.findMany({

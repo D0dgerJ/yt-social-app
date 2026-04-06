@@ -1,7 +1,7 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { getRankedFeedPostIds } from "../../services/feed/getRankedFeedPostIds.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { getRankedFeedPostIds } from "../../services/feed/getRankedFeedPostIds.js";
 
 const FEED_LIMIT = 50;
 

@@ -13,8 +13,8 @@ import {
   getAllPosts,
   reportPost,
   getExplorePosts,
-} from "../../application/use-cases/post/index.ts";
-import { Errors } from "../../infrastructure/errors/ApiError.ts";
+} from "../../application/use-cases/post/index.js";
+import { Errors } from "../../infrastructure/errors/ApiError.js";
 
 function parseId(raw: unknown, message: string) {
   const n = Number(raw);

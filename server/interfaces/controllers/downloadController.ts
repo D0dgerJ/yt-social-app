@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import mime from "mime-types";
 import { fileURLToPath } from "url";
-import prisma from "../../infrastructure/database/prismaClient.ts";
+import prisma from "../../infrastructure/database/prismaClient.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

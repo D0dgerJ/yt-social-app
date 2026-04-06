@@ -1,4 +1,4 @@
-import prisma from "../database/prismaClient.ts";
+import prisma from "../database/prismaClient.js";
 
 export const cleanupEmptyPosts = async () => {
   try {

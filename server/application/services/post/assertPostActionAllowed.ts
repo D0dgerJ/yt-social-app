@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { ContentStatus } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 
 export async function assertPostActionAllowed(postId: number) {
   const post = await prisma.post.findUnique({

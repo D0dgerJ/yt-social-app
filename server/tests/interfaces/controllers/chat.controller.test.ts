@@ -7,7 +7,7 @@ import { deleteMessage } from '../../../application/use-cases/chat/deleteMessage
 import { deleteConversationIfEmpty } from '../../../application/use-cases/chat/deleteConversationIfEmpty';
 import { leaveConversation } from '../../../application/use-cases/chat/leaveConversation';
 import { addParticipant } from '../../../application/use-cases/chat/addParticipant';
-import prisma from '../../../infrastructure/database/prismaClient.ts';
+import prisma from '../../../infrastructure/database/prismaClient.js';
 import { Request, Response } from 'express';
 
 jest.mock('../../../application/use-cases/chat/createChat');

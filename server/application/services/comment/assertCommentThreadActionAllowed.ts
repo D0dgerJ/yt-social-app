@@ -1,6 +1,6 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 import { CommentStatus, ContentStatus, CommentVisibility } from "@prisma/client";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 
 type Result = {
   rootId: number;

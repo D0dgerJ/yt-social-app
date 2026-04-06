@@ -1,7 +1,7 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
-import { createChatSchema } from "../../../validation/chatSchemas.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { getIO } from "../../../infrastructure/websocket/socket.js";
+import { createChatSchema } from "../../../validation/chatSchemas.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 interface CreateChatInput {
   userIds: number[];

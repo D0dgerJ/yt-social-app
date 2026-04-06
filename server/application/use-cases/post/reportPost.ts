@@ -1,8 +1,8 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import { ContentStatus, ModerationActionType, ModerationTargetType, ReportStatus } from "@prisma/client";
-import { logModerationAction } from "../../services/moderation/logModerationAction.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
+import { logModerationAction } from "../../services/moderation/logModerationAction.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 type ReportPostInput = {
   postId: number;

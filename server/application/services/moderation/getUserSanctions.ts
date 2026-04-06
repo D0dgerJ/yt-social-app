@@ -1,5 +1,5 @@
 import { UserSanctionStatus } from "@prisma/client";
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 
 export async function getUserSanctions(userId: number) {
   const now = new Date();

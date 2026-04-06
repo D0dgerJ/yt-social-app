@@ -1,14 +1,14 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { createNotification } from "../notification/createNotification.ts";
-import { notifyMentions } from "../notification/notifyMentions.ts";
-import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
-import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { createNotification } from "../notification/createNotification.js";
+import { notifyMentions } from "../notification/notifyMentions.js";
+import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.js";
+import { assertCommentThreadActionAllowed } from "../../services/comment/assertCommentThreadActionAllowed.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import { CommentStatus } from "@prisma/client";
-import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.ts";
-import { assertActionAllowed } from "../../services/abuse/antiAbuse.ts";
-import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
-import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
+import { rateLimitConsume } from "../../../infrastructure/rateLimit/rateLimitConsume.js";
+import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.js";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.js";
 
 interface CreateCommentParams {
   postId: number;

@@ -1,9 +1,9 @@
 import { Server } from "socket.io";
 import http from "http";
 import jwt from "jsonwebtoken";
-import prisma from "../database/prismaClient.ts";
-import { sendMessage } from "../../application/use-cases/chat/sendMessage.ts";
-import { env } from "../../config/env.ts";
+import prisma from "../database/prismaClient.js";
+import { sendMessage } from "../../application/use-cases/chat/sendMessage.js";
+import { env } from "../../config/env.js";
 
 let io: Server;
 

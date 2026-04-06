@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import path from "path";
-import { env } from "../../config/env.ts";
+import { env } from "../../config/env.js";
 
 const WHISPER_PYTHON = env.WHISPER_PYTHON ?? "python";
 const WHISPER_SCRIPT =

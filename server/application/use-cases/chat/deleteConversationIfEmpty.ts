@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { getIO } from "../../../infrastructure/websocket/socket.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { getIO } from "../../../infrastructure/websocket/socket.js";
 
 export const deleteConversationIfEmpty = async (conversationId: number): Promise<boolean> => {
   try {

@@ -1,9 +1,9 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { createNotification } from "../notification/createNotification.ts";
-import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.ts";
-import { Errors } from "../../../infrastructure/errors/ApiError.ts";
-import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.ts";
-import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { createNotification } from "../notification/createNotification.js";
+import { assertPostActionAllowed } from "../../services/post/assertPostActionAllowed.js";
+import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { recordFeedInteraction } from "../../services/feed/recordFeedInteraction.js";
+import { applyFeedInterestSignal } from "../../services/feed/applyFeedInterestSignal.js";
 
 interface LikePostInput {
   userId: number;

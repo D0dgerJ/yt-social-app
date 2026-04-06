@@ -1,7 +1,7 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { extractMentions } from "./extractMentions.ts";
-import { createNotification } from "./createNotification.ts";
-import type { NotificationType } from "./notificationTypes.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { extractMentions } from "./extractMentions.js";
+import { createNotification } from "./createNotification.js";
+import type { NotificationType } from "./notificationTypes.js";
 
 export interface NotifyMentionsInput {
   content: string;

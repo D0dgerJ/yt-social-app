@@ -11,7 +11,7 @@
     getByUsername as getUserByUsernameController,
     getMyInterestsTags,
     getMyInterestsAuthors,
-  } from "../controllers/user.controller.ts";
+  } from "../controllers/user.controller.js";
   import {
     sendFriendRequest,
     acceptFriendRequest,
@@ -21,8 +21,8 @@
     cancelRequest,
     getFollowing,
     getFollowers
-  } from "../controllers/user.controller.ts";
-  import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
+  } from "../controllers/user.controller.js";
+  import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 
   const router = express.Router();
 

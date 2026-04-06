@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import fs from "fs/promises";
 
-import { upload } from "../upload/uploadFile.ts";
-import { uploadToStorage } from "../../../utils/uploadToStorage.ts";
+import { upload } from "../upload/uploadFile.js";
+import { uploadToStorage } from "../../../utils/uploadToStorage.js";
 
 export const uploadMediaHandler = [
   upload.single("file"),

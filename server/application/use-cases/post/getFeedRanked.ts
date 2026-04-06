@@ -1,5 +1,5 @@
-import prisma from "../../../infrastructure/database/prismaClient.ts";
-import { getRankedPostIds } from "../../services/feed/getRankedPostIds.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
+import { getRankedPostIds } from "../../services/feed/getRankedPostIds.js";
 import { ContentStatus } from "@prisma/client";
 
 type Params = {

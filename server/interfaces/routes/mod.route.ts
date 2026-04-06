@@ -1,14 +1,14 @@
 import { Router } from "express";
-import prisma from "../../infrastructure/database/prismaClient.ts";
+import prisma from "../../infrastructure/database/prismaClient.js";
 import type { Prisma } from "@prisma/client";
-import { Errors } from "../../infrastructure/errors/ApiError.ts";
+import { Errors } from "../../infrastructure/errors/ApiError.js";
 
-import { hidePost, softDeletePost, unhidePost } from "../../application/services/moderation/moderatePost.ts";
-import { hardDeletePost } from "../../application/services/moderation/hardDeletePost.ts";
+import { hidePost, softDeletePost, unhidePost } from "../../application/services/moderation/moderatePost.js";
+import { hardDeletePost } from "../../application/services/moderation/hardDeletePost.js";
 
-import { logModerationAction } from "../../application/services/moderation/logModerationAction.ts";
-import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.ts";
-import { requireModerator, requireAdmin } from "../../infrastructure/middleware/requireRole.ts";
+import { logModerationAction } from "../../application/services/moderation/logModerationAction.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
+import { requireModerator, requireAdmin } from "../../infrastructure/middleware/requireRole.js";
 
 import {
   ModerationActionType,
@@ -18,11 +18,11 @@ import {
   UserRole,
 } from "@prisma/client";
 
-import { applyUserSanction } from "../../application/services/moderation/applyUserSanction.ts";
-import { liftUserSanction } from "../../application/services/moderation/liftUserSanction.ts";
-import { getUserSanctions } from "../../application/services/moderation/getUserSanctions.ts";
-import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.ts";
-import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.ts";
+import { applyUserSanction } from "../../application/services/moderation/applyUserSanction.js";
+import { liftUserSanction } from "../../application/services/moderation/liftUserSanction.js";
+import { getUserSanctions } from "../../application/services/moderation/getUserSanctions.js";
+import { getModerationUsers } from "../../application/services/moderation/getModerationUsers.js";
+import { getModerationUserById } from "../../application/services/moderation/getModerationUserById.js";
 
 import {
   hideComment,
@@ -31,8 +31,8 @@ import {
   restoreDeletedComment,
   shadowHideComment,
   shadowUnhideComment,
-} from "../../application/services/moderation/moderateCommentVisibility.ts";
-import { assertApprovedCommentReport } from "../../application/services/moderation/assertApprovedReport.ts";
+} from "../../application/services/moderation/moderateCommentVisibility.js";
+import { assertApprovedCommentReport } from "../../application/services/moderation/assertApprovedReport.js";
 
 const router = Router();
 

@@ -1,8 +1,8 @@
 import fs from "fs/promises";
 import { Request, Response } from "express";
-import { fixLatin1ToUtf8 } from "../../utils/encoding.ts";
-import { uploadToStorage } from "../../utils/uploadToStorage.ts";
-import { env } from "../../config/env.ts";
+import { fixLatin1ToUtf8 } from "../../utils/encoding.js";
+import { uploadToStorage } from "../../utils/uploadToStorage.js";
+import { env } from "../../config/env.js";
 
 function detectMediaType(
   mime: string | undefined | null

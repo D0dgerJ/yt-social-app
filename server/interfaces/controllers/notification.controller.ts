@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { getUserNotifications } from "../../application/use-cases/notification/getUserNotifications.ts";
-import { markNotificationAsRead } from "../../application/use-cases/notification/markNotificationAsRead.ts";
-import { createNotification } from "../../application/use-cases/notification/createNotification.ts";
-import { deleteNotification } from "../../application/use-cases/notification/deleteNotification.ts";
-import type { NotificationType } from "../../application/use-cases/notification/notificationTypes.ts";
+import { getUserNotifications } from "../../application/use-cases/notification/getUserNotifications.js";
+import { markNotificationAsRead } from "../../application/use-cases/notification/markNotificationAsRead.js";
+import { createNotification } from "../../application/use-cases/notification/createNotification.js";
+import { deleteNotification } from "../../application/use-cases/notification/deleteNotification.js";
+import type { NotificationType } from "../../application/use-cases/notification/notificationTypes.js";
 
 interface AuthedRequest extends Request {
   user?: { id: number };

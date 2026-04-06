@@ -1,6 +1,6 @@
 import type { Prisma, UserSanctionStatus, UserSanctionType } from "@prisma/client";
 import { UserSanctionStatus as UserSanctionStatusEnum, UserSanctionType as UserSanctionTypeEnum } from "@prisma/client";
-import prisma from "../../../infrastructure/database/prismaClient.ts";
+import prisma from "../../../infrastructure/database/prismaClient.js";
 
 export type ModerationUsersStatusFilter = "ALL" | "BANNED" | "RESTRICTED" | "SANCTIONED" | "CLEAN";
 export type ModerationUsersSortBy = "id" | "username" | "email" | "role";
