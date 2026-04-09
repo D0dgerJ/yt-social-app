@@ -9,6 +9,7 @@
     unfollow as unfollowUserController,
     friends as getUserFriendsController,
     getByUsername as getUserByUsernameController,
+    searchUsers as searchUsersController,
     getMyInterestsTags,
     getMyInterestsAuthors,
   } from "../controllers/user.controller.js";
@@ -26,6 +27,7 @@
 
   const router = express.Router();
 
+  router.get("/search", authMiddleware, searchUsersController);
   router.get("/username/:username", getUserByUsernameController);
   router.get("/profile", authMiddleware, getUserProfileController);
   router.get("/me/interests/tags", authMiddleware, getMyInterestsTags);

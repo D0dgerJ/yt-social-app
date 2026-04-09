@@ -17,3 +17,4 @@ export * from './getOutgoingFriendRequests.js';
 export * from './cancelFriendRequest.js';
 export * from "./getMyTagInterests.js";
 export * from "./getMyAuthorInterests.js";
+export * from './searchUsers.js';

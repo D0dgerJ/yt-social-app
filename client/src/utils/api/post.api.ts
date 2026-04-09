@@ -102,3 +102,10 @@ export const getUserPostsByUsername = async (username: string) => {
   const response = await axios.get(`/posts/username/${encodeURIComponent(username)}`);
   return response.data;
 };
+
+export const searchPosts = async (q: string, limit = 8) => {
+  const response = await axios.get("/posts/search", {
+    params: { q, limit },
+  });
+  return response.data;
+};

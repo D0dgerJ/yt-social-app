@@ -18,6 +18,7 @@ import {
   rejectFriendRequest as rejectFriendRequestUseCase,
   getMyTagInterests,
   getMyAuthorInterests,
+  searchUsers as searchUsersUseCase,
 } from "../../application/use-cases/user/index.js";
 import prisma from "../../infrastructure/database/prismaClient.js";
 import { Errors } from "../../infrastructure/errors/ApiError.js";
@@ -125,6 +126,26 @@ export const getByUsername = async (req: Request, res: Response, next: NextFunct
 
     const user = await getUserByUsername(username);
     res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const searchUsers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    const rawLimit = Number(req.query.limit);
+    const limit = Number.isFinite(rawLimit) ? rawLimit : 10;
+
+    const currentUserId = req.user?.id;
+
+    const items = await searchUsersUseCase({
+      query: q,
+      currentUserId,
+      limit,
+    });
+
+    res.status(200).json({ items });
   } catch (err) {
     next(err);
   }

@@ -13,6 +13,7 @@ import {
   getAllPosts,
   reportPost,
   getExplorePosts,
+  searchPosts as searchPostsUseCase,
 } from "../../application/use-cases/post/index.js";
 import { Errors } from "../../infrastructure/errors/ApiError.js";
 
@@ -160,6 +161,23 @@ export const getAll = async (_req: Request, res: Response, next: NextFunction): 
   try {
     const posts = await getAllPosts();
     res.status(200).json(posts);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const searchPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    const rawLimit = Number(req.query.limit);
+    const limit = Number.isFinite(rawLimit) ? rawLimit : 20;
+
+    const items = await searchPostsUseCase({
+      query: q,
+      limit,
+    });
+
+    res.status(200).json({ items });
   } catch (err) {
     next(err);
   }

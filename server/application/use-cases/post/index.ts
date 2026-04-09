@@ -10,4 +10,5 @@ export * from './unsavePost.js';
 export * from './getUserPostsByUsername.js';
 export * from './getAllPosts.js';
 export * from "./reportPost.js";
+export * from './searchPosts.js';
 export { getExplorePosts } from "./getExplorePosts.js";

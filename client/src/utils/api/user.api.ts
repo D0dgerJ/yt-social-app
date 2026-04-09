@@ -108,3 +108,10 @@ export const getFollowings = async (userId: number) => {
   const response = await axios.get(`/users/following/${userId}`);
   return response.data;
 };
+
+export const searchUsers = async (q: string, limit = 8) => {
+  const response = await axios.get("/users/search", {
+    params: { q, limit },
+  });
+  return response.data;
+};

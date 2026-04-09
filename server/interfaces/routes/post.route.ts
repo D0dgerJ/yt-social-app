@@ -14,6 +14,7 @@ import {
   getFeedById,
   getAll,
   report,
+  searchPosts,
 } from "../controllers/post.controller.js";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
@@ -57,6 +58,7 @@ router.delete(
 router.get("/", getAll);
 router.get("/feed", authMiddleware, enforceSanctions, getFeed);
 router.get("/explore", getExplore);
+router.get("/search", searchPosts);
 router.get("/feed/:id", getFeedById);
 router.get("/user", getUserPostsFlexible);
 router.get("/user/:userId", getUser);
