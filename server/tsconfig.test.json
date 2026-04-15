@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "noEmit": true,
+    "isolatedModules": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022"
+  },
+  "include": [
+    "tests/**/*.ts",
+    "interfaces/**/*.ts",
+    "application/**/*.ts",
+    "domain/**/*.ts",
+    "infrastructure/**/*.ts",
+    "validation/**/*.ts",
+    "types/**/*.ts"
+  ]
+}

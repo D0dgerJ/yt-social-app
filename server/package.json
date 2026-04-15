@@ -18,9 +18,11 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema=./infrastructure/database/prisma/schema.prisma",
     "prisma:reset": "prisma migrate reset --force --skip-seed --schema=./infrastructure/database/prisma/schema.prisma",
 
-    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "postinstall": "npm run prisma:generate",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.config.cjs --runInBand",
+    "test:critical": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.config.cjs --runInBand tests/critical",
+    "test:extended": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.config.cjs --runInBand tests/extended",
 
+    "postinstall": "npm run prisma:generate",
     "seed:user": "tsx scripts/createPrivilegedUser.ts"
   },
   "dependencies": {
