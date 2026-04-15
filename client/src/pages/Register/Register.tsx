@@ -55,65 +55,100 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="register-page">
-      <div className="register-wrapper">
-        <div className="register-left">
-          <h1>DodgerJSocial</h1>
-          <span>Connect With Friends On SDodgerJocial.</span>
-        </div>
-        <div className="register-right">
-          <form onSubmit={handleRegister} className="register-form">
-            <input
-              type="text"
-              placeholder="Username"
-              className="register-input"
-              value={auth.username}
-              onChange={(e) =>
-                setAuth((prev) => ({ ...prev, username: e.target.value }))
-              }
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="register-input"
-              value={auth.email}
-              onChange={(e) =>
-                setAuth((prev) => ({ ...prev, email: e.target.value }))
-              }
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="register-input"
-              value={auth.password}
-              onChange={(e) =>
-                setAuth((prev) => ({ ...prev, password: e.target.value }))
-              }
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              className="register-input"
-              value={auth.confirmPassword}
-              onChange={(e) =>
-                setAuth((prev) => ({
-                  ...prev,
-                  confirmPassword: e.target.value,
-                }))
-              }
-              required
-            />
-            <button type="submit" className="register-submit-btn">
-              Sign Up
-            </button>
-            <Link className="register-login-btn" to="/login">
-              Already have an account? Login
-            </Link>
-          </form>
-        </div>
+    <div className="auth-page">
+      <div className="auth-shell">
+        <section className="auth-brand">
+          <div className="auth-brand__badge">DodgerJ Social</div>
+          <h1 className="auth-brand__title">Создай аккаунт</h1>
+          <p className="auth-brand__text">
+            Присоединяйся к DodgerJ Social, чтобы публиковать посты, общаться,
+            следить за друзьями и настраивать свой профиль.
+          </p>
+
+          <div className="auth-brand__features">
+            <div className="auth-brand__feature">Персональный профиль</div>
+            <div className="auth-brand__feature">Комментарии, реакции и друзья</div>
+            <div className="auth-brand__feature">События, explore и шорты</div>
+          </div>
+        </section>
+
+        <section className="auth-panel">
+          <div className="auth-card">
+            <div className="auth-card__header">
+              <h2>Register</h2>
+              <p>Заполни форму и начни пользоваться приложением.</p>
+            </div>
+
+            <form onSubmit={handleRegister} className="auth-form">
+              <label className="auth-field">
+                <span>Username</span>
+                <input
+                  type="text"
+                  placeholder="Choose a username"
+                  className="auth-input"
+                  value={auth.username}
+                  onChange={(e) =>
+                    setAuth((prev) => ({ ...prev, username: e.target.value }))
+                  }
+                  required
+                />
+              </label>
+
+              <label className="auth-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="auth-input"
+                  value={auth.email}
+                  onChange={(e) =>
+                    setAuth((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  required
+                />
+              </label>
+
+              <label className="auth-field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  placeholder="Create a password"
+                  className="auth-input"
+                  value={auth.password}
+                  onChange={(e) =>
+                    setAuth((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                  required
+                />
+              </label>
+
+              <label className="auth-field">
+                <span>Confirm password</span>
+                <input
+                  type="password"
+                  placeholder="Repeat the password"
+                  className="auth-input"
+                  value={auth.confirmPassword}
+                  onChange={(e) =>
+                    setAuth((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </label>
+
+              <button type="submit" className="auth-submit">
+                Sign up
+              </button>
+
+              <Link className="auth-secondary auth-secondary--link" to="/login">
+                Already have an account? Login
+              </Link>
+            </form>
+          </div>
+        </section>
       </div>
     </div>
   );

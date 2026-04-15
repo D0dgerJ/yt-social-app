@@ -12,10 +12,12 @@ const TagInput: React.FC<Props> = ({ tags, onAdd, onRemove }) => {
   const submit = () => {
     const clean = value.trim().replace(/^#/, "");
     if (!clean) return;
+
     if (tags.includes(clean)) {
       setValue("");
       return;
     }
+
     onAdd(clean);
     setValue("");
   };
@@ -27,7 +29,7 @@ const TagInput: React.FC<Props> = ({ tags, onAdd, onRemove }) => {
         <input
           className="upload-post__tag-input"
           type="text"
-          placeholder="place your tag and press enter"
+          placeholder="Добавь тег и нажми Enter"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
@@ -36,19 +38,26 @@ const TagInput: React.FC<Props> = ({ tags, onAdd, onRemove }) => {
               submit();
             }
           }}
+          aria-label="Добавить тег"
         />
       </div>
 
-      <div className="upload-post__tag-list">
-        {tags.map((tag) => (
-          <span key={tag} className="upload-post__tag">
-            #{tag}
-            <button type="button" onClick={() => onRemove(tag)}>
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
+      {tags.length > 0 && (
+        <div className="upload-post__tag-list">
+          {tags.map((tag) => (
+            <span key={tag} className="upload-post__tag">
+              #{tag}
+              <button
+                type="button"
+                onClick={() => onRemove(tag)}
+                aria-label={`Удалить тег ${tag}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

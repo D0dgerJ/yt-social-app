@@ -8,7 +8,12 @@ type Props = {
   onSubmit: (data: { title: string; description?: string; color?: string }) => void;
 };
 
-const CreateEventModal: React.FC<Props> = ({ isOpen, dateLabel, onClose, onSubmit }) => {
+const CreateEventModal: React.FC<Props> = ({
+  isOpen,
+  dateLabel,
+  onClose,
+  onSubmit,
+}) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#2f54eb");
@@ -35,7 +40,9 @@ const CreateEventModal: React.FC<Props> = ({ isOpen, dateLabel, onClose, onSubmi
       <div className="event-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="event-modal-header">
           <div className="event-modal-title">Добавить событие</div>
-          <button className="event-modal-close" onClick={onClose} type="button">✕</button>
+          <button className="event-modal-close" onClick={onClose} type="button">
+            ✕
+          </button>
         </div>
 
         <div className="event-modal-date">{dateLabel}</div>
@@ -71,10 +78,20 @@ const CreateEventModal: React.FC<Props> = ({ isOpen, dateLabel, onClose, onSubmi
         </label>
 
         <div className="event-modal-actions">
-          <button className="event-modal-btn event-modal-btn--secondary" onClick={onClose} type="button">
+          <button
+            className="event-modal-btn event-modal-btn--secondary"
+            onClick={onClose}
+            type="button"
+          >
             Отмена
           </button>
-          <button className="event-modal-btn event-modal-btn--primary" onClick={handleSave} type="button" disabled={!title.trim()}>
+
+          <button
+            className="event-modal-btn event-modal-btn--primary"
+            onClick={handleSave}
+            type="button"
+            disabled={!title.trim()}
+          >
             Сохранить
           </button>
         </div>

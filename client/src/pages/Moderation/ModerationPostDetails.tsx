@@ -15,7 +15,11 @@ import Navbar from "@/components/Navbar/Navbar";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import { AuthContext } from "@/context/AuthContext";
 
-import { ALLOWED, ADMIN_PLUS, reasonLabel } from "@/utils/moderation/postDetails.constants";
+import {
+  ALLOWED,
+  ADMIN_PLUS,
+  reasonLabel,
+} from "@/utils/moderation/postDetails.constants";
 import { fmt, clip } from "@/utils/moderation/postDetails.utils";
 import type { ModerationPostView } from "@/utils/types/moderation/postDetails.types";
 
@@ -47,7 +51,8 @@ export default function ModerationPostDetails() {
     refreshCase,
   } = useModerationReports(postId);
 
-  const { activeFullReport, isLoadingActive, reloadActiveReport } = useActiveReport(activeReportId);
+  const { activeFullReport, isLoadingActive, reloadActiveReport } =
+    useActiveReport(activeReportId);
 
   const {
     actions: modActions,
@@ -57,7 +62,6 @@ export default function ModerationPostDetails() {
     setAlreadyHandled,
   } = useModerationActions(postId);
 
-  // --- access guard ---
   useEffect(() => {
     if (!user || !role || !ALLOWED.has(role)) navigate("/");
   }, [user, role, navigate]);
@@ -70,7 +74,8 @@ export default function ModerationPostDetails() {
     },
   });
 
-  const post: ModerationPostView | null = activeFullReport?.post ?? activeLite?.post ?? null;
+  const post: ModerationPostView | null =
+    activeFullReport?.post ?? activeLite?.post ?? null;
 
   const images: string[] = post?.images ?? [];
   const videos: string[] = post?.videos ?? [];
@@ -98,10 +103,12 @@ export default function ModerationPostDetails() {
     <>
       <Navbar />
 
-      <div className={styles.container}>
-        <Sidebar />
+      <div className={styles.layout}>
+        <div className={styles.sidebarWrapper}>
+          <Sidebar />
+        </div>
 
-        <div className={styles.main}>
+        <main className={styles.main}>
           <CaseHeader postId={postId} navigate={navigate} styles={styles} />
 
           {error ? <div className={styles.error}>{error}</div> : null}
@@ -178,8 +185,13 @@ export default function ModerationPostDetails() {
             />
           </div>
 
-          <ActionsHistory styles={styles} items={modActions} isLoading={isLoadingActions} fmt={fmt} />
-        </div>
+          <ActionsHistory
+            styles={styles}
+            items={modActions}
+            isLoading={isLoadingActions}
+            fmt={fmt}
+          />
+        </main>
       </div>
     </>
   );

@@ -55,21 +55,28 @@ const toLikeArray = (likes: unknown): LikeEntity[] => {
 
 const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
   const [posts, setPosts] = useState<PostType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const { username } = useParams();
   const { user } = useContext(AuthContext);
 
   const isProfile = mode === "profile";
   const isHome = mode === "home";
+  const isExplore = mode === "explore";
 
   useEffect(() => {
     const loadPosts = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const data: any[] =
           mode === "profile"
             ? await getUserPostsByUsername(username as string)
             : mode === "explore"
-            ? await getExplorePosts()
-            : await getFeedPosts();
+              ? await getExplorePosts()
+              : await getFeedPosts();
 
         const normalized: PostType[] = data.map((p: any) => {
           const likesArray = toLikeArray(p?.likes);
@@ -85,8 +92,8 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
             (typeof p?.commentsCount === "number"
               ? p.commentsCount
               : typeof p?.comment === "number"
-              ? p.comment
-              : 0);
+                ? p.comment
+                : 0);
 
           return {
             ...p,
@@ -96,40 +103,69 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
         });
 
         setPosts(normalized);
-      } catch (error) {
-        console.error("Failed to load posts", error);
+      } catch (err: any) {
+        console.error("Failed to load posts", err);
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to load posts"
+        );
+      } finally {
+        setLoading(false);
       }
     };
 
     loadPosts();
-  }, [username, mode]);
+  }, [username, mode, user?.id]);
 
   const handlePostDeleted = (postId: number) => {
     setPosts((prev) => prev.filter((post) => post.id !== postId));
   };
 
+  const emptyText = isProfile
+    ? "У этого пользователя пока нет постов."
+    : isExplore
+      ? "Пока нечего показать в Explore."
+      : "Лента пока пустая.";
+
   return (
-    <div
+    <section
       className={`newsFeed ${
         isProfile ? "newsFeed--profile" : "newsFeed--home"
       }`}
     >
       {isHome && <UploadPost />}
 
-      <Masonry
-        breakpointCols={isProfile ? profileColumns : feedColumns}
-        className="masonry-grid"
-        columnClassName="masonry-grid_column"
-      >
-        {posts.map((post) => (
-          <Post
-            key={post.id}
-            post={post}
-            onDeleted={handlePostDeleted}
-          />
-        ))}
-      </Masonry>
-    </div>
+      {loading ? (
+        <div className="newsFeed-state">
+          <div className="newsFeed-state__card">Loading posts...</div>
+        </div>
+      ) : error ? (
+        <div className="newsFeed-state">
+          <div className="newsFeed-state__card newsFeed-state__card--error">
+            {error}
+          </div>
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="newsFeed-state">
+          <div className="newsFeed-state__card">{emptyText}</div>
+        </div>
+      ) : (
+        <Masonry
+          breakpointCols={isProfile ? profileColumns : feedColumns}
+          className="masonry-grid"
+          columnClassName="masonry-grid_column"
+        >
+          {posts.map((post) => (
+            <Post
+              key={post.id}
+              post={post}
+              onDeleted={handlePostDeleted}
+            />
+          ))}
+        </Masonry>
+      )}
+    </section>
   );
 };
 

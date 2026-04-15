@@ -61,7 +61,6 @@ export default function ModerationUsers() {
   const [params, setParams] = useSearchParams();
   const openId = Number(params.get("open"));
 
-  // --- Auto refetch after closing modal ---
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
@@ -72,7 +71,6 @@ export default function ModerationUsers() {
       return;
     }
 
-    // if it was open and now closed -> refetch list
     if (wasOpenRef.current) {
       wasOpenRef.current = false;
       actions.refetch();
@@ -82,26 +80,51 @@ export default function ModerationUsers() {
   return (
     <>
       <Navbar />
-      <div className={styles.container}>
-        <Sidebar />
 
-        <div className={styles.main}>
-          <div className={styles.top}>
-            <div className={styles.titleRow}>
-              <h2 className={styles.title}>Moderation · Users</h2>
+      <div className={styles.layout}>
+        <div className={styles.sidebarWrapper}>
+          <Sidebar />
+        </div>
 
-              <div className={styles.right}>
-                <button
-                  className={styles.btn}
-                  type="button"
-                  onClick={() => navigate("/moderation")}
-                >
-                  ← Back
-                </button>
-              </div>
+        <main className={styles.main}>
+          <section className={styles.hero}>
+            <div className={styles.heroText}>
+              <h1 className={styles.title}>Users moderation</h1>
+              <p className={styles.subtitle}>
+                Просматривай пользователей, их санкции, статусы ограничений и
+                быстро переходи к детальной модерации конкретного аккаунта.
+              </p>
             </div>
 
-            <div className={styles.controls}>
+            <div className={styles.heroActions}>
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={() => navigate("/moderation")}
+              >
+                Posts
+              </button>
+
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={() => navigate("/moderation/comments")}
+              >
+                Comments
+              </button>
+
+              <button
+                className={styles.primaryBtn}
+                type="button"
+                onClick={() => navigate("/moderation/history")}
+              >
+                Open history
+              </button>
+            </div>
+          </section>
+
+          <section className={styles.filtersCard}>
+            <div className={styles.topRow}>
               <div className={styles.search}>
                 <input
                   className={styles.input}
@@ -121,80 +144,78 @@ export default function ModerationUsers() {
                 )}
               </div>
 
-              <div className={styles.filters}>
-                <label className={styles.label}>
-                  Status
-                  <select
-                    className={styles.select}
-                    value={state.status}
-                    onChange={onChangeStatus}
-                  >
-                    <option value="ALL">All</option>
-                    <option value="BANNED">Banned</option>
-                    <option value="RESTRICTED">Restricted</option>
-                    <option value="SANCTIONED">Has sanctions</option>
-                    <option value="CLEAN">Clean</option>
-                  </select>
-                </label>
-
-                <label className={styles.label}>
-                  Sort
-                  <select
-                    className={styles.select}
-                    value={state.sortBy}
-                    onChange={onChangeSortBy}
-                  >
-                    <option value="id">ID</option>
-                    <option value="username">Username</option>
-                    <option value="email">Email</option>
-                    <option value="role">Role</option>
-                  </select>
-                </label>
-
-                <label className={styles.label}>
-                  Order
-                  <select
-                    className={styles.select}
-                    value={state.order}
-                    onChange={onChangeOrder}
-                  >
-                    <option value="desc">Desc</option>
-                    <option value="asc">Asc</option>
-                  </select>
-                </label>
-
-                <label className={styles.label}>
-                  Per page
-                  <select
-                    className={styles.select}
-                    value={state.pagination.limit}
-                    onChange={(e) => actions.setLimit(Number(e.target.value))}
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </label>
-
-                <button
-                  className={styles.btnSecondary}
-                  type="button"
-                  onClick={() => actions.refetch()}
-                >
-                  Refresh
-                </button>
-              </div>
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={() => actions.refetch()}
+              >
+                Refresh
+              </button>
             </div>
-          </div>
 
-          <div className={styles.card}>
+            <div className={styles.filters}>
+              <label className={styles.label}>
+                <span>Status</span>
+                <select
+                  className={styles.select}
+                  value={state.status}
+                  onChange={onChangeStatus}
+                >
+                  <option value="ALL">All</option>
+                  <option value="BANNED">Banned</option>
+                  <option value="RESTRICTED">Restricted</option>
+                  <option value="SANCTIONED">Has sanctions</option>
+                  <option value="CLEAN">Clean</option>
+                </select>
+              </label>
+
+              <label className={styles.label}>
+                <span>Sort</span>
+                <select
+                  className={styles.select}
+                  value={state.sortBy}
+                  onChange={onChangeSortBy}
+                >
+                  <option value="id">ID</option>
+                  <option value="username">Username</option>
+                  <option value="email">Email</option>
+                  <option value="role">Role</option>
+                </select>
+              </label>
+
+              <label className={styles.label}>
+                <span>Order</span>
+                <select
+                  className={styles.select}
+                  value={state.order}
+                  onChange={onChangeOrder}
+                >
+                  <option value="desc">Desc</option>
+                  <option value="asc">Asc</option>
+                </select>
+              </label>
+
+              <label className={styles.label}>
+                <span>Per page</span>
+                <select
+                  className={styles.select}
+                  value={state.pagination.limit}
+                  onChange={(e) => actions.setLimit(Number(e.target.value))}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.cardTitle}>
                 Users
-                <span className={styles.count}>
-                  ({state.pagination.total})
-                </span>
+                <span className={styles.count}>({state.pagination.total})</span>
               </div>
 
               <div className={styles.pagination}>
@@ -206,10 +227,11 @@ export default function ModerationUsers() {
                 >
                   Prev
                 </button>
+
                 <div className={styles.pageInfo}>
-                  Page <b>{state.pagination.page}</b> /{" "}
-                  {state.pagination.totalPages}
+                  Page <b>{state.pagination.page}</b> / {state.pagination.totalPages}
                 </div>
+
                 <button
                   className={styles.pageBtn}
                   type="button"
@@ -266,8 +288,9 @@ export default function ModerationUsers() {
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter")
+                            if (e.key === "Enter") {
                               navigate(`/moderation/users?open=${u.id}`);
+                            }
                           }}
                         >
                           <td className={styles.mono}>#{u.id}</td>
@@ -278,18 +301,14 @@ export default function ModerationUsers() {
                           <td className={styles.mono}>{u.role}</td>
                           <td>
                             <span
-                              className={`${styles.badge} ${
-                                styles[`badge_${s.tone}`]
-                              }`}
+                              className={`${styles.badge} ${styles[`badge_${s.tone}`]}`}
                             >
                               {s.text}
                             </span>
                           </td>
                           <td className={styles.mono}>
                             {u.activeSanctions.length
-                              ? u.activeSanctions
-                                  .map((x) => x.type)
-                                  .join(", ")
+                              ? u.activeSanctions.map((x) => x.type).join(", ")
                               : "—"}
                           </td>
                           <td className={styles.muted}>
@@ -305,8 +324,7 @@ export default function ModerationUsers() {
 
             <div className={styles.footer}>
               <div className={styles.footerLeft}>
-                Showing <b>{state.items.length}</b> of{" "}
-                <b>{state.pagination.total}</b>
+                Showing <b>{state.items.length}</b> of <b>{state.pagination.total}</b>
               </div>
 
               <div className={styles.footerRight}>
@@ -328,13 +346,13 @@ export default function ModerationUsers() {
                 </button>
               </div>
             </div>
-          </div>
+          </section>
 
           <div className={styles.hint}>
-            Tip: you can paste a numeric ID to jump quickly (example:{" "}
-            <span className={styles.mono}>123</span>).
+            Tip: you can paste a numeric ID to jump quickly, for example{" "}
+            <span className={styles.mono}>123</span>.
           </div>
-        </div>
+        </main>
       </div>
 
       {Number.isFinite(openId) && openId > 0 && (

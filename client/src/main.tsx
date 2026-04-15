@@ -5,15 +5,18 @@ import "./styles/main.scss";
 import { BrowserRouter } from "react-router-dom";
 import { AuthContextProvider } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthContextProvider>
-        <SocketProvider>
-          <App />
-        </SocketProvider>
-      </AuthContextProvider>
+      <ThemeProvider>
+        <AuthContextProvider>
+          <SocketProvider>
+            <App />
+          </SocketProvider>
+        </AuthContextProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

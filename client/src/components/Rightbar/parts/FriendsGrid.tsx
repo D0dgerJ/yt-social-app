@@ -13,17 +13,21 @@ type Props = {
 };
 
 const FriendsGrid: React.FC<Props> = ({ friends, fallbackAvatar }) => {
+  if (!friends.length) {
+    return <div className="rightbar-empty">Пока нет друзей</div>;
+  }
+
   return (
     <div className="friends-grid">
       {friends.map((f) => (
-        <Link to={`/profile/${f.username}`} key={f.id}>
+        <Link to={`/profile/${f.username}`} key={f.id} className="friend-link">
           <div className="friend-card">
             <img
               src={f.profilePicture || fallbackAvatar}
-              alt="Friend"
+              alt={f.username}
               className="friend-img"
             />
-            <span>{f.username}</span>
+            <span className="friend-name">{f.username}</span>
           </div>
         </Link>
       ))}

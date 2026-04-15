@@ -1,35 +1,64 @@
-@use '../../styles/variables' as *;
+@use "../../styles/variables" as *;
 
 .online-user {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-  
-    .user-image-wrapper {
-      position: relative;
-      margin-right: 10px;
-  
-      .user-image {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: 50%;
-      }
-  
-      .online-badge {
-        width: 12px;
-        height: 12px;
-        background-color: $main-color;
-        border-radius: 50%;
-        position: absolute;
-        top: -2px;
-        right: 0;
-        border: 2px solid $white-color;
-      }
-    }
-  
-    .user-name {
-      font-weight: bold;
-    }
+  list-style: none;
+}
+
+/* clickable row */
+.online-user-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: inherit;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.18s ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-soft));
+    transform: translateX(2px);
   }
-  
+}
+
+/* avatar */
+.user-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+}
+
+/* online dot */
+.online-indicator {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+
+  background: #22c55e; // можно оставить зелёный, но мягкий
+  border: 2px solid var(--color-surface);
+}
+
+/* username */
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

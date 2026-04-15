@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import Navbar from "../../components/Navbar/Navbar";
@@ -25,8 +25,16 @@ const CHAT_NOTIFICATION_TYPES = new Set<string>([
   "added_to_conversation",
 ]);
 
+const DEFAULT_LIST_WIDTH = 340;
+const MIN_LIST_WIDTH = 240;
+const MAX_LIST_WIDTH = 520;
+
 const Chat: React.FC = () => {
   const [search, setSearch] = useState("");
+  const [listWidth, setListWidth] = useState(DEFAULT_LIST_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const wrapperRef = useRef<HTMLElement | null>(null);
 
   const [searchParams] = useSearchParams();
   const conversationIdParam = searchParams.get("conversationId");
@@ -73,6 +81,40 @@ const Chat: React.FC = () => {
     });
   }, [currentConversationId, notifications, markAsRead]);
 
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+
+      const rect = wrapper.getBoundingClientRect();
+      const nextWidth = e.clientX - rect.left;
+
+      const maxAllowed = Math.min(MAX_LIST_WIDTH, rect.width - 320);
+      const clamped = Math.max(MIN_LIST_WIDTH, Math.min(nextWidth, maxAllowed));
+
+      setListWidth(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isResizing]);
+
   return (
     <>
       <Navbar />
@@ -82,27 +124,48 @@ const Chat: React.FC = () => {
           <Sidebar />
         </div>
 
-        <div
+        <main
+          ref={wrapperRef}
           className={`chat-wrapper ${
-            currentConversationId ? "chat-split" : ""
-          }`}
+            currentConversationId ? "chat-wrapper--split" : ""
+          } ${isResizing ? "chat-wrapper--resizing" : ""}`}
+          style={
+            currentConversationId
+              ? ({
+                  ["--chat-list-width" as string]: `${listWidth}px`,
+                } as React.CSSProperties)
+              : undefined
+          }
         >
-          <ChatListHeader value={search} onSearchChange={setSearch} />
-
-          <div className="chat-main-content">
-            <div className="chat-list-pane">
-              <ChatList search={search} />
+          <section className="chat-panel chat-list-shell">
+            <div className="chat-list-header-shell">
+              <ChatListHeader value={search} onSearchChange={setSearch} />
             </div>
 
-            {currentConversationId && (
-              <div className="chat-window-pane">
-                <ChatHeader />
-                <ChatWindow />
-                <MessageInput />
+            <div className="chat-main-content">
+              <div className="chat-list-pane">
+                <ChatList search={search} />
               </div>
-            )}
-          </div>
-        </div>
+
+              {currentConversationId && (
+                <>
+                  <div
+                    className="chat-resize-handle"
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="Resize chat list"
+                    onMouseDown={() => setIsResizing(true)}
+                  />
+                  <div className="chat-window-pane">
+                    <ChatHeader />
+                    <ChatWindow />
+                    <MessageInput />
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+        </main>
 
         <div className="rightbar-wrapper">
           <Rightbar />

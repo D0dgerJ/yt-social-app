@@ -1,29 +1,57 @@
-@use '../../styles/mixins' as *;
-
-.home {
-  display: flex;
-  width: 100%;
-}
+@use "../../styles/mixins" as *;
+@use "../../styles/variables" as *;
 
 .layout {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
   width: 100%;
-  background-color: #f0f2f5;
+  min-height: calc(100vh - #{$navbar-height});
+  background: var(--color-bg);
+  padding: 20px 20px 0;
+}
+
+.sidebar-wrapper {
+  flex: 0 0 auto;
 }
 
 .newsfeed-wrapper {
-  width: 600px;
-  padding: 20px 20px 0 20px;
-  min-height: calc(100vh - 50px);
+  width: min(100%, 720px);
+  flex: 1 1 720px;
+  min-width: 0;
+  padding: 0 0 24px;
 }
 
-// Phones: make the center column fluid and reduce padding
+.rightbar-wrapper {
+  flex: 0 0 auto;
+}
+
+/* Tablet */
+@include respond(tablet) {
+  .layout {
+    gap: 16px;
+    padding: 16px 14px 0;
+  }
+
+  .newsfeed-wrapper {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .rightbar-wrapper {
+    display: none;
+  }
+}
+
+/* Phone */
 @include respond(phone) {
   .layout {
     justify-content: stretch;
     width: 100%;
     overflow-x: hidden;
+    gap: 0;
+    padding: 12px 12px 0;
   }
 
   .layout > .sidebar-wrapper {
@@ -39,16 +67,7 @@
 
   .newsfeed-wrapper {
     width: 100%;
-    padding: 12px 12px 0 12px;
-    padding-bottom: 84px;
+    padding: 0 0 84px;
     min-height: auto;
-  }
-}
-
-
-// Tablets: still fluid, but keep comfortable padding
-@include respond(tablet) {
-  .newsfeed-wrapper {
-    width: 100%;
   }
 }

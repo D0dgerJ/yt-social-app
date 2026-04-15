@@ -1,7 +1,7 @@
-import React, { useContext, useState, useRef, ChangeEvent } from "react";
+import React, { useContext, useState, useRef, ChangeEvent, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import EmojiPicker from "emoji-picker-react";
-import { BsEmojiSmile } from "react-icons/bs";
+import { BsEmojiSmile, BsImage } from "react-icons/bs";
 import { IoMdSend } from "react-icons/io";
 import { useComments } from "./utils";
 import CommentItem from "./CommentItem";
@@ -16,14 +16,37 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   const [showEmoji, setShowEmoji] = useState(false);
   const emojiRef = useRef<HTMLDivElement>(null);
 
-  const { comments, addComment, addReply, likeComment, deleteCommentById, updateCommentById } = useComments(postId);
+  const { comments, addComment, addReply, likeComment, deleteCommentById, updateCommentById } =
+    useComments(postId);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setShowEmoji(false);
+      }
+    };
+
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowEmoji(false);
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, []);
 
   const handleCommentSubmit = async () => {
     if (!currentUserId) return;
     if (!newComment.trim()) return;
+
     await addComment(newComment, imageFile);
     setNewComment("");
     setImageFile(null);
+    setShowEmoji(false);
   };
 
   const handleEmojiClick = (emojiData: any) => {
@@ -38,19 +61,20 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
 
   return (
     <div className="comment-section">
-      {comments.map((comment) => (
-        <CommentItem
-          key={comment.id}
-          comment={comment}
-          currentUserId={currentUserId}
-          onReply={addReply}
-          onLike={likeComment}
-          onDelete={deleteCommentById}
-          onUpdate={updateCommentById}
-        />
-      ))}
+      <div className="comment-list">
+        {comments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            currentUserId={currentUserId}
+            onReply={addReply}
+            onLike={likeComment}
+            onDelete={deleteCommentById}
+            onUpdate={updateCommentById}
+          />
+        ))}
+      </div>
 
-      {/* Инпут только для авторизованных */}
       {!!currentUserId && (
         <div className="comment-input">
           <input
@@ -60,13 +84,36 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
             onChange={(e) => setNewComment(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
           />
+
           <div ref={emojiRef} className="emoji-wrapper">
-            <BsEmojiSmile onClick={() => setShowEmoji(!showEmoji)} size={20} />
-            {showEmoji && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+            <button
+              type="button"
+              className="icon-button"
+              onClick={() => setShowEmoji((v) => !v)}
+              aria-label="Open emoji picker"
+            >
+              <BsEmojiSmile size={18} />
+            </button>
+
+            {showEmoji && (
+              <div className="emoji-popover">
+                <EmojiPicker onEmojiClick={handleEmojiClick} />
+              </div>
+            )}
           </div>
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
-          <button onClick={handleCommentSubmit}>
-            <IoMdSend size={20} />
+
+          <label className="icon-button file-button" aria-label="Upload image">
+            <BsImage size={18} />
+            <input type="file" accept="image/*" onChange={handleImageUpload} />
+          </label>
+
+          <button
+            type="button"
+            className="send-button"
+            onClick={handleCommentSubmit}
+            aria-label="Send comment"
+          >
+            <IoMdSend size={18} />
           </button>
         </div>
       )}

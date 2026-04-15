@@ -8,7 +8,7 @@ import "./Login.scss";
 const Login: React.FC = () => {
   const [auth, setAuth] = useState({ email: "", password: "" });
 
-  const { user, isFetching, error, dispatch } = useContext(AuthContext);
+  const { isFetching, error, dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,52 +35,84 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-left">
-          <h1>DodgerJSocial</h1>
-          <span>Connect With Friends On DodgerJSocial.</span>
-        </div>
-        <div className="login-right">
-          <form onSubmit={handleLogin} className="login-form">
-            <input
-              type="email"
-              placeholder="Email"
-              className="login-input"
-              value={auth.email}
-              onChange={(e) =>
-                setAuth({ ...auth, email: e.target.value })
-              }
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="login-input"
-              value={auth.password}
-              onChange={(e) =>
-                setAuth({ ...auth, password: e.target.value })
-              }
-              required
-              minLength={3}
-            />
-            <button className="login-button" disabled={isFetching}>
-              {isFetching ? "Logging In..." : "Login"}
-            </button>
+    <div className="auth-page">
+      <div className="auth-shell">
+        <section className="auth-brand">
+          <div className="auth-brand__badge">DodgerJ Social</div>
+          <h1 className="auth-brand__title">Вход в аккаунт</h1>
+          <p className="auth-brand__text">
+            Общайся с друзьями, публикуй посты, следи за активностью и управляй
+            своим профилем в современном интерфейсе.
+          </p>
 
-            {error && <p className="error-text">❌ {error}</p>}
+          <div className="auth-brand__features">
+            <div className="auth-brand__feature">Лента постов и шорты</div>
+            <div className="auth-brand__feature">Комментарии и реакции</div>
+            <div className="auth-brand__feature">События, друзья и профиль</div>
+          </div>
+        </section>
 
-            <span className="forgot-password">Forgot password?</span>
+        <section className="auth-panel">
+          <div className="auth-card">
+            <div className="auth-card__header">
+              <h2>Login</h2>
+              <p>Введи email и пароль, чтобы продолжить.</p>
+            </div>
 
-            <button
-              className="register-button"
-              type="button"
-              onClick={() => navigate("/register")}
-            >
-              Create A New Account
-            </button>
-          </form>
-        </div>
+            <form onSubmit={handleLogin} className="auth-form">
+              <label className="auth-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="auth-input"
+                  value={auth.email}
+                  onChange={(e) =>
+                    setAuth({ ...auth, email: e.target.value })
+                  }
+                  required
+                />
+              </label>
+
+              <label className="auth-field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  className="auth-input"
+                  value={auth.password}
+                  onChange={(e) =>
+                    setAuth({ ...auth, password: e.target.value })
+                  }
+                  required
+                  minLength={3}
+                />
+              </label>
+
+              {error && <div className="auth-error">❌ {error}</div>}
+
+              <button className="auth-submit" disabled={isFetching}>
+                {isFetching ? "Logging in..." : "Login"}
+              </button>
+
+              <button
+                className="auth-secondary"
+                type="button"
+                onClick={() => navigate("/register")}
+              >
+                Create a new account
+              </button>
+
+              <button
+                className="auth-link"
+                type="button"
+                onClick={() => {}}
+              >
+                Forgot password?
+              </button>
+            </form>
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -1,168 +1,153 @@
 .notifications-interactions {
-  border-radius: 8px;
-  padding: 16px;
-  max-width: 400px;
-
-  h3 {
-    font-size: 18px;
-    margin-bottom: 12px;
-    color: #333;
-  }
-
-  .friend-requests-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-
-    .friend-request-item {
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      background-color: transparent;
-      transition: background-color 0.2s ease;
-
-      &:hover {
-        background-color: #f8f8f8;
-      }
-
-      .friend-request-top {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 10px;
-
-        .friend-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 1px solid #ccc;
-        }
-
-        .friend-username {
-          font-size: 15px;
-          font-weight: 500;
-          color: #333;
-        }
-      }
-
-      .friend-request-bottom {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-
-        .btn {
-          width: 100px;
-          padding: 8px 0;
-          font-size: 14px;
-          font-weight: 500;
-          text-align: center;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-          color: #fff;
-
-          &.btn-success {
-            background-color: #28a745;
-
-            &:hover {
-              background-color: #218838;
-            }
-          }
-
-          &.btn-danger {
-            background-color: #dc3545;
-
-            &:hover {
-              background-color: #c82333;
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-  p {
-    color: #555;
-    font-size: 14px;
-  }
+  border-radius: 18px;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.btn-11 {
-  position: relative;
-  overflow: hidden;
-  border: none;
-  color: #fff;
-  z-index: 1;
-  transition: opacity 0.3s ease, box-shadow 0.3s ease;
+.notifications-interactions__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 4px 12px;
+}
 
-  .dot {
-    position: absolute;
-    content: '';
-    display: inline-block;
-    top: -180px;
-    left: 0;
-    width: 30px;
-    height: 100%;
-    background-color: #fff;
-    animation: shiny-btn1 ease-in-out infinite;
-    transform: rotate(45deg);
-    opacity: 0;
-    z-index: 2;
-  }
+.notifications-interactions__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.notifications-interactions__count {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.notifications-interactions__info {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  padding: 10px 4px;
+}
+
+.friend-requests-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friend-request-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.18s ease;
 
   &:hover {
-    opacity: 0.85;
-    text-decoration: none;
-    color: #fff;
-  }
-
-  &:active {
-    box-shadow:
-      4px 4px 6px 0 rgba(255, 255, 255, 0.3),
-      -4px -4px 6px 0 rgba(116, 125, 136, 0.2),
-      inset -4px -4px 6px 0 rgba(255, 255, 255, 0.2),
-      inset 4px 4px 6px 0 rgba(0, 0, 0, 0.2);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-soft));
+    border-color: color-mix(in srgb, var(--color-primary) 16%, var(--color-border));
+    transform: translateY(-1px);
   }
 }
 
-@keyframes shiny-btn1 {
-  0% {
-    transform: scale(0) rotate(45deg);
-    opacity: 0;
+.friend-request-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.friend-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.friend-request-user {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.friend-username {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.friend-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.friend-request-bottom {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.friend-request-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.18s ease,
+    opacity 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
   }
-  80% {
-    transform: scale(0) rotate(45deg);
-    opacity: 0.5;
-  }
-  81% {
-    transform: scale(4) rotate(45deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(50) rotate(45deg);
-    opacity: 0;
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
   }
 }
 
-.btn-success.btn-11 {
-  background: linear-gradient(0deg, #28a745 0%, #34c759 100%);
+.friend-request-btn--accept {
+  background: var(--color-primary);
+  color: #fff;
+
+  &:hover {
+    background: var(--color-primary-hover);
+  }
 }
 
-.btn-danger.btn-11 {
-  background: linear-gradient(0deg, #dc3545 0%, #ff3b30 100%);
-}
+.friend-request-btn--reject {
+  background: color-mix(in srgb, #ef4444 12%, var(--color-surface));
+  color: #dc2626;
+  border-color: color-mix(in srgb, #ef4444 22%, var(--color-border));
 
-.btn-success.btn-11 .dot {
-  animation-delay: 0s;
-  animation-duration: 4s;
-}
-
-.btn-danger.btn-11 .dot {
-  animation-delay: 0.2s;
-  animation-duration: 4s;
+  &:hover {
+    background: color-mix(in srgb, #ef4444 16%, var(--color-surface));
+  }
 }

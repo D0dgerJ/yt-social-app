@@ -7,9 +7,15 @@ type Props = {
   className?: string;
 };
 
-const FollowButton: React.FC<Props> = ({ isFollowed, loading, onClick, className }) => {
+const FollowButton: React.FC<Props> = ({
+  isFollowed,
+  loading,
+  onClick,
+  className,
+}) => {
   return (
     <button
+      type="button"
       className={className ?? "follow-button"}
       onClick={onClick}
       disabled={loading}

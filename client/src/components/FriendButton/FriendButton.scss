@@ -1,0 +1,74 @@
+.friend-btn {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.18s ease,
+    opacity 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.friend-btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+}
+
+.friend-btn--secondary {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-soft));
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface-soft));
+  }
+}
+
+.friend-btn--ghost {
+  background: var(--color-surface-soft);
+  color: var(--color-text);
+  border-color: var(--color-border);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-soft));
+    border-color: color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+  }
+}
+
+.friend-btn--danger {
+  background: color-mix(in srgb, #ef4444 12%, var(--color-surface));
+  color: #dc2626;
+  border-color: color-mix(in srgb, #ef4444 24%, var(--color-border));
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, #ef4444 18%, var(--color-surface));
+  }
+}
+
+.friend-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

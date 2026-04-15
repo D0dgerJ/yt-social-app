@@ -1,104 +1,244 @@
-@use '../../styles/mixins' as *;
+@use "../../styles/mixins" as *;
+@use "../../styles/variables" as *;
 
 .rightbar {
   width: 320px;
   min-width: 320px;
+  flex-shrink: 0;
+  height: calc(100vh - #{$navbar-height});
+  position: sticky;
+  top: $navbar-height;
+  padding: 20px 16px 24px 0;
+  overflow: hidden;
 
   .rightbar-wrapper {
-    padding: 20px;
-  }
-
-  .birthday-section {
+    height: 100%;
     display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-
-    .birthday-icon {
-      width: 40px;
-      height: 40px;
-      margin-right: 10px;
-    }
-
-    span {
-      font-weight: 600;
-      font-size: 16px;
-    }
-  }
-
-  .advert-image {
-    width: 100%;
-    border-radius: 8px;
-    margin: 30px 0;
-  }
-
-  .online-title {
-    font-weight: 700;
-    font-size: 18px;
-    margin-bottom: 20px;
-  }
-
-  .online-users {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .follow-button {
-    background-color: #16a34a;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    margin: 10px 0;
-    cursor: pointer;
-    transition: background-color 0.3s;
-
-    &:hover {
-      background-color: #15803d;
-    }
-  }
-
-  .user-info {
-    margin-bottom: 30px;
-
-    .info-item {
-      margin-bottom: 10px;
-
-      span:first-child {
-        font-weight: 600;
-        margin-right: 15px;
-        color: gray;
-      }
-    }
-  }
-
-  .friends-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    flex-direction: column;
     gap: 16px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+}
 
-    .friend-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+.rightbar-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 
-      .friend-img {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border-radius: 8px;
-      }
-
-      span {
-        margin-top: 8px;
-        font-size: 14px;
-        text-align: center;
-      }
-    }
+  &--compact {
+    gap: 10px;
   }
 
-  // Hide the rightbar on tablets/phones to avoid cramped 3-column layouts
-  @include respond(tablet) {
+  &--media {
+    padding: 10px;
+  }
+}
+
+.rightbar-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rightbar-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.rightbar-counter {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border));
+}
+
+.section-title-sm {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.birthday-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.birthday-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+
+.birthday-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.birthday-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.advert-image {
+  width: 100%;
+  display: block;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+/* Follow button */
+.follow-button {
+  width: 100%;
+  min-height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.18s ease,
+    opacity 0.2s ease;
+
+  &:hover {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+/* User info */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
+}
+
+.info-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+}
+
+/* Online list */
+.online-users {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rightbar-status,
+.rightbar-empty {
+  padding: 10px 2px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* Friends grid */
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.friend-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.friend-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
+  transition:
+    transform 0.18s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-soft));
+    border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+  }
+}
+
+.friend-img {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+}
+
+.friend-name {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-text);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+@include respond(tablet) {
+  .rightbar {
     display: none;
   }
 }

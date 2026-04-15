@@ -1,17 +1,63 @@
-@use './variables' as *;
-@use './mixins' as *;
+@use "./variables" as *;
+@use "./mixins" as *;
 
-// Глобальные стили
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-accent: #06b6d4;
+
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f1f5f9;
+
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  --shadow-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"] {
+  --color-primary: #818cf8;
+  --color-primary-hover: #6366f1;
+  --color-accent: #22d3ee;
+
+  --color-bg: #0f172a;
+  --color-surface: #111827;
+  --color-surface-soft: #1e293b;
+
+  --color-text: #e5e7eb;
+  --color-text-muted: #94a3b8;
+  --color-border: #334155;
+
+  --shadow-color: rgba(2, 6, 23, 0.35);
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
   font-family: $font-main;
-  background-color: $background-color;
-  color: $text-color;
+  background: $color-bg;
+  color: $color-text;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 a {
@@ -21,4 +67,42 @@ a {
 
 ul {
   list-style: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+input,
+textarea {
+  background: $color-surface;
+  color: $color-text;
+  border: 1px solid $color-border;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: $color-primary;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
 }

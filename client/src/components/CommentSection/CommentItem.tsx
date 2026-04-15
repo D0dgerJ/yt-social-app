@@ -8,7 +8,6 @@ import { reportComment } from "../../utils/api/comment.api";
 interface Props {
   comment: Comment;
   currentUserId?: number | null;
-
   onReply: (parentId: number, content: string) => void;
   onLike: (commentId: number) => void;
   onDelete: (commentId: number) => void;
@@ -24,17 +23,24 @@ const REPORT_REASONS = [
   { value: "OTHER", label: "Other" },
 ] as const;
 
-const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike, onDelete, onUpdate }) => {
+const CommentItem: React.FC<Props> = ({
+  comment,
+  currentUserId,
+  onReply,
+  onLike,
+  onDelete,
+  onUpdate,
+}) => {
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const [showReplies, setShowReplies] = useState(false);
-
   const [menuOpen, setMenuOpen] = useState(false);
 
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState<(typeof REPORT_REASONS)[number]["value"]>("SPAM");
+  const [reportReason, setReportReason] =
+    useState<(typeof REPORT_REASONS)[number]["value"]>("SPAM");
   const [reportDetails, setReportDetails] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
@@ -43,7 +49,6 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
   const isAuthed = !!currentUserId;
   const isOwnComment = !!currentUserId && currentUserId === comment.userId;
 
-  // если бэк вернул status — используем, иначе фоллбек по контенту
   const isDeleted = comment.status === "DELETED" || comment.content === "(deleted)";
   const isHidden = comment.status === "HIDDEN";
   const isActive = !isDeleted && !isHidden && (comment.status ? comment.status === "ACTIVE" : true);
@@ -58,23 +63,17 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
   const canDelete = isAuthed && isOwnComment;
   const canReply = canInteract;
   const canLike = canInteract;
-
-  const canReport = useMemo(() => {
-    // нельзя репортить свой коммент + нужно быть залогиненым
-    return isAuthed && !isOwnComment;
-  }, [isAuthed, isOwnComment]);
+  const canReport = isAuthed && !isOwnComment;
 
   const handleReply = () => {
-    if (!canReply) return;
-    if (!replyText.trim()) return;
+    if (!canReply || !replyText.trim()) return;
     onReply(comment.id, replyText.trim());
     setReplyText("");
     setReplying(false);
   };
 
   const handleUpdate = () => {
-    if (!canEdit) return;
-    if (!editedContent.trim()) return;
+    if (!canEdit || !editedContent.trim()) return;
     onUpdate(comment.id, editedContent.trim());
     setEditing(false);
   };
@@ -140,11 +139,15 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
 
   return (
     <div
-      className={`comment-item
-        ${comment.parentId ? "reply-item" : ""}
-        ${comment.status === "DELETED" ? "deleted" : ""}
-        ${comment.status === "HIDDEN" ? "hidden" : ""} `}>
-      <img src={comment.user.profilePicture || "/default-avatar.png"} alt="user" className="avatar" />
+      className={`comment-item ${comment.parentId ? "reply-item" : ""} ${
+        comment.status === "DELETED" ? "deleted" : ""
+      } ${comment.status === "HIDDEN" ? "hidden" : ""}`}
+    >
+      <img
+        src={comment.user.profilePicture || "/default-avatar.png"}
+        alt={comment.user.username}
+        className="avatar"
+      />
 
       <div className="comment-content">
         <div className="comment-header">
@@ -156,13 +159,21 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               disabled={!canEdit}
+              className="comment-inline-input"
             />
           ) : (
             <span className="text">{formatContent(comment.content)}</span>
           )}
 
           <div className="comment-menu">
-            <FiMoreHorizontal className="more-icon" onClick={() => setMenuOpen((v) => !v)} />
+            <button
+              type="button"
+              className="comment-menu-trigger"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Open comment menu"
+            >
+              <FiMoreHorizontal className="more-icon" />
+            </button>
 
             {menuOpen && (
               <div className="comment-menu-dropdown">
@@ -187,32 +198,30 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
           </div>
         </div>
 
-        {comment.images?.length ? (
+        {!!comment.images?.length && (
           <div className="comment-images">
             {comment.images.map((img, idx) => (
               <img key={idx} src={img} alt="attachment" className="comment-img" />
             ))}
           </div>
-        ) : null}
+        )}
 
         <div className="comment-meta">
           <span className="time">{moment(comment.createdAt).fromNow()}</span>
 
-          <span
+          <button
+            type="button"
             className={`like-btn ${likedByMe ? "liked" : ""} ${!canLike ? "disabled" : ""}`}
             onClick={() => canLike && onLike(comment.id)}
             title={!isAuthed ? "Login to like" : !isActive ? "Unavailable" : ""}
+            disabled={!canLike}
           >
             ❤️ {comment._count?.likes || 0}
-          </span>
+          </button>
 
-          {canReply && (
-            <button onClick={() => setReplying(!replying)} disabled={!canReply}>
-              Reply
-            </button>
-          )}
-
-          {!canReply && <button disabled>Reply</button>}
+          <button type="button" onClick={() => setReplying(!replying)} disabled={!canReply}>
+            Reply
+          </button>
         </div>
 
         {editing && (
@@ -235,13 +244,13 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
                 if (e.key === "Enter") handleReply();
               }}
             />
-            <button onClick={handleReply} disabled={!canReply}>
+            <button type="button" onClick={handleReply} disabled={!canReply}>
               <IoMdSend size={18} />
             </button>
           </div>
         )}
 
-        {comment.replies?.length ? (
+        {!!comment.replies?.length && (
           <>
             {!showReplies && (
               <button className="view-replies" onClick={() => setShowReplies(true)}>
@@ -271,16 +280,19 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
               </>
             )}
           </>
-        ) : null}
+        )}
       </div>
 
-      {/* -------- Report Modal -------- */}
       {reportOpen && (
         <div className="modal-overlay" onClick={() => !reportLoading && setReportOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Report comment</h3>
-              <button className="modal-close" disabled={reportLoading} onClick={() => setReportOpen(false)}>
+              <button
+                className="modal-close"
+                disabled={reportLoading}
+                onClick={() => setReportOpen(false)}
+              >
                 ✕
               </button>
             </div>
@@ -288,7 +300,10 @@ const CommentItem: React.FC<Props> = ({ comment, currentUserId, onReply, onLike,
             <div className="modal-body">
               <label>
                 Reason
-                <select value={reportReason} onChange={(e) => setReportReason(e.target.value as any)}>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value as any)}
+                >
                   {REPORT_REASONS.map((r) => (
                     <option key={r.value} value={r.value}>
                       {r.label}

@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import usePostLikes from "../../hooks/usePostLike";
 
@@ -40,11 +40,21 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
     currentUserId: currentUser?.id,
   });
 
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [onClose]);
+
   return (
     <div
       className="post-modal-overlay"
       role="dialog"
       aria-modal="true"
+      aria-label="Post details"
       onClick={onClose}
     >
       <div className="post-modal" onClick={(e) => e.stopPropagation()}>
@@ -62,7 +72,13 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
         <div className="post-modal-right">
           <div className="modal-header">
             <span className="modal-username">{post.user?.username}</span>
-            <button className="modal-close" onClick={onClose} aria-label="Close">
+
+            <button
+              type="button"
+              className="modal-close"
+              onClick={onClose}
+              aria-label="Close"
+            >
               ×
             </button>
           </div>
@@ -84,7 +100,9 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
             asButton={true}
           />
 
-          <CommentSection postId={post.id} />
+          <div className="modal-comments">
+            <CommentSection postId={post.id} />
+          </div>
         </div>
       </div>
     </div>

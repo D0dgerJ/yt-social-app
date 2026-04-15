@@ -53,8 +53,8 @@ const ShortsFeed: React.FC = () => {
               (typeof p?.commentsCount === "number"
                 ? p.commentsCount
                 : typeof p?.comment === "number"
-                ? p.comment
-                : 0);
+                  ? p.comment
+                  : 0);
 
             return {
               ...p,
@@ -63,8 +63,7 @@ const ShortsFeed: React.FC = () => {
             };
           })
           .filter(
-            (p: PostType) =>
-              Array.isArray(p.videos) && p.videos.length > 0
+            (p: PostType) => Array.isArray(p.videos) && p.videos.length > 0
           );
 
         setPosts(normalized);
@@ -85,37 +84,41 @@ const ShortsFeed: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="shorts-feed shorts-feed--loading">
-        Загрузка шортов...
+      <div className="shorts-feed-state">
+        <div className="shorts-feed-state__card">Загрузка шортов...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="shorts-feed shorts-feed--error">
-        {error}
+      <div className="shorts-feed-state">
+        <div className="shorts-feed-state__card shorts-feed-state__card--error">
+          {error}
+        </div>
       </div>
     );
   }
 
   if (!posts.length) {
     return (
-      <div className="shorts-feed shorts-feed--empty">
-        Пока нет шортов с видео. Попробуй загрузить первый короткий
-        ролик через обычный пост с видео.
+      <div className="shorts-feed-state">
+        <div className="shorts-feed-state__card">
+          Пока нет шортов с видео. Попробуй загрузить первый короткий ролик через
+          обычный пост с видео.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="shorts-feed">
+    <section className="shorts-feed">
       {posts.map((post) => (
         <div key={post.id} className="shorts-feed__item">
           <Post post={post} />
         </div>
       ))}
-    </div>
+    </section>
   );
 };
 

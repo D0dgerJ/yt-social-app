@@ -7,7 +7,7 @@ type Props = {
   maxCount?: number;
 };
 
-const MediaPicker: React.FC<Props> = ({ onPick, accept, maxCount }) => {
+const MediaPicker: React.FC<Props> = ({ onPick, accept }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     onPick(e.target.files);
@@ -16,8 +16,9 @@ const MediaPicker: React.FC<Props> = ({ onPick, accept, maxCount }) => {
 
   return (
     <label htmlFor="upload-media-input" className="upload-post__option">
-      <MdPermMedia className="upload-post__icon upload-post__icon--orange" />
-      <span>Photo / Video / File</span>
+      <MdPermMedia className="upload-post__icon" />
+      <span>Media</span>
+
       <input
         type="file"
         id="upload-media-input"

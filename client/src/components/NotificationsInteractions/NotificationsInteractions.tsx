@@ -79,10 +79,19 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
 
   return (
     <div className="notifications-interactions">
+      <div className="notifications-interactions__header">
+        <span className="notifications-interactions__title">
+          Запросы в друзья
+        </span>
+        <span className="notifications-interactions__count">
+          {requests.length}
+        </span>
+      </div>
+
       {loading ? (
-        <p>Загрузка...</p>
+        <p className="notifications-interactions__info">Загрузка...</p>
       ) : requests.length === 0 ? (
-        <p>Нет новых запросов</p>
+        <p className="notifications-interactions__info">Нет новых запросов</p>
       ) : (
         <ul className="friend-requests-list">
           {requests.map(({ id, sender }) => (
@@ -93,24 +102,27 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                   className="friend-avatar"
                   alt={sender.username}
                 />
-                <span className="friend-username">
-                  Запрос в друзья от {sender.username}
-                </span>
+                <div className="friend-request-user">
+                  <span className="friend-username">{sender.username}</span>
+                  <span className="friend-subtitle">Отправил запрос в друзья</span>
+                </div>
               </div>
+
               <div className="friend-request-bottom">
                 <button
+                  type="button"
                   onClick={() => handleAccept(id)}
-                  className="btn btn-success btn-11"
+                  className="friend-request-btn friend-request-btn--accept"
                 >
                   Принять
-                  <div className="dot"></div>
                 </button>
+
                 <button
+                  type="button"
                   onClick={() => handleReject(id)}
-                  className="btn btn-danger btn-11"
+                  className="friend-request-btn friend-request-btn--reject"
                 >
                   Отклонить
-                  <div className="dot"></div>
                 </button>
               </div>
             </li>

@@ -29,7 +29,14 @@ const ACTION_TYPES: ModerationActionType[] = [
   "BOT_AUTO_ACTION",
 ];
 
-const TARGET_TYPES: ModerationTargetType[] = ["POST", "COMMENT", "USER", "STORY", "MESSAGE", "OTHER"];
+const TARGET_TYPES: ModerationTargetType[] = [
+  "POST",
+  "COMMENT",
+  "USER",
+  "STORY",
+  "MESSAGE",
+  "OTHER",
+];
 
 function clip(text: string, max = 80) {
   const t = (text ?? "").trim();
@@ -96,173 +103,235 @@ export default function ModerationHistory() {
   return (
     <>
       <Navbar />
-      <div className={styles.container}>
-        <Sidebar />
 
-        <div className={styles.main}>
-          <div className={styles.top}>
-            <h2 className={styles.title}>Moderation History</h2>
+      <div className={styles.layout}>
+        <div className={styles.sidebarWrapper}>
+          <Sidebar />
+        </div>
 
-            <button className={styles.btn} type="button" onClick={() => navigate("/moderation")}>
-              ← Back
-            </button>
-
-            <div className={styles.meta}>
-              {loading ? "Loading..." : `Total: ${total} · Page ${page}/${pages}`}
+        <main className={styles.main}>
+          <section className={styles.hero}>
+            <div className={styles.heroText}>
+              <h1 className={styles.title}>Moderation history</h1>
+              <p className={styles.subtitle}>
+                Отслеживай действия модераторов, системные события и изменения по
+                постам, комментариям и пользователям в единой истории.
+              </p>
             </div>
-          </div>
 
-          <div className={styles.filters}>
-            <input
-              className={styles.input}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search in reason / targetId..."
-            />
+            <div className={styles.heroActions}>
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={() => navigate("/moderation")}
+              >
+                Posts
+              </button>
 
-            <button
-              className={styles.btn}
-              type="button"
-              onClick={() => {
-                setSkip(0);
-                void load();
-              }}
-            >
-              Search
-            </button>
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={() => navigate("/moderation/comments")}
+              >
+                Comments
+              </button>
 
-            <select
-              className={styles.select}
-              value={actionType}
-              onChange={(e) => {
-                setSkip(0);
-                setActionType(e.target.value as any);
-              }}
-            >
-              <option value="">All action types</option>
-              {ACTION_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+              <button
+                className={styles.secondaryBtn}
+                type="button"
+                onClick={() => navigate("/moderation/users")}
+              >
+                Users
+              </button>
+            </div>
+          </section>
 
-            <select
-              className={styles.select}
-              value={targetType}
-              onChange={(e) => {
-                setSkip(0);
-                setTargetType(e.target.value as any);
-              }}
-            >
-              <option value="">All target types</option>
-              {TARGET_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+          <section className={styles.filtersCard}>
+            <div className={styles.topRow}>
+              <input
+                className={styles.input}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search in reason / targetId..."
+              />
 
-            <select
-              className={styles.select}
-              value={take}
-              onChange={(e) => {
-                setSkip(0);
-                setTake(Number(e.target.value));
-              }}
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
+              <button
+                className={styles.primaryBtn}
+                type="button"
+                onClick={() => {
+                  setSkip(0);
+                  void load();
+                }}
+              >
+                Search
+              </button>
 
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Actor</th>
-                  <th>Action</th>
-                  <th>Target</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
+              <div className={styles.meta}>
+                {loading ? "Loading..." : `Total: ${total} · Page ${page}/${pages}`}
+              </div>
+            </div>
 
-              <tbody>
-                {items.map((a) => {
-                  const subjectId = a.subjectUserId ?? null;
+            <div className={styles.filters}>
+              <select
+                className={styles.select}
+                value={actionType}
+                onChange={(e) => {
+                  setSkip(0);
+                  setActionType(e.target.value as any);
+                }}
+              >
+                <option value="">All action types</option>
+                {ACTION_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
 
-                  const targetUserId = a.targetType === "USER" ? toPositiveInt(a.targetId) : null;
+              <select
+                className={styles.select}
+                value={targetType}
+                onChange={(e) => {
+                  setSkip(0);
+                  setTargetType(e.target.value as any);
+                }}
+              >
+                <option value="">All target types</option>
+                {TARGET_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
 
-                  const userIdForLink = subjectId ?? targetUserId;
+              <select
+                className={styles.select}
+                value={take}
+                onChange={(e) => {
+                  setSkip(0);
+                  setTake(Number(e.target.value));
+                }}
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
+          </section>
 
-                  return (
-                    <tr
-                      key={a.id}
-                      className={styles.rowClickable}
-                      onClick={() => setSelectedActionId(a.id)}
-                      title="Open evidence"
-                    >
-                      <td className={styles.nowrap}>{new Date(a.createdAt).toLocaleString()}</td>
+          <section className={styles.card}>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
 
-                      <td>{a.actor?.username ? `@${a.actor.username}` : a.actorId ? `#${a.actorId}` : "system"}</td>
+                <tbody>
+                  {items.map((a) => {
+                    const subjectId = a.subjectUserId ?? null;
+                    const targetUserId =
+                      a.targetType === "USER" ? toPositiveInt(a.targetId) : null;
 
-                      <td>
-                        <b>{a.actionType}</b>
-                      </td>
+                    const userIdForLink = subjectId ?? targetUserId;
 
-                      <td>
-                        {userIdForLink ? (
-                          <button
-                            type="button"
-                            className={styles.userLink}
-                            title="Open user moderation"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              navigate(`/moderation/users?open=${userIdForLink}`);
-                            }}
-                          >
-                            USER #{userIdForLink}
-                          </button>
-                        ) : (
-                          <span>
-                            {a.targetType} #{a.targetId}
-                          </span>
-                        )}
-                      </td>
+                    return (
+                      <tr
+                        key={a.id}
+                        className={styles.rowClickable}
+                        onClick={() => setSelectedActionId(a.id)}
+                        title="Open evidence"
+                      >
+                        <td className={styles.nowrap}>
+                          {new Date(a.createdAt).toLocaleString()}
+                        </td>
 
-                      <td className={styles.reason}>
-                        {a.reason ? clip(a.reason, 120) : <span className={styles.muted}>—</span>}
+                        <td>
+                          {a.actor?.username
+                            ? `@${a.actor.username}`
+                            : a.actorId
+                              ? `#${a.actorId}`
+                              : "system"}
+                        </td>
+
+                        <td>
+                          <span className={styles.actionBadge}>{a.actionType}</span>
+                        </td>
+
+                        <td>
+                          {userIdForLink ? (
+                            <button
+                              type="button"
+                              className={styles.userLink}
+                              title="Open user moderation"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigate(`/moderation/users?open=${userIdForLink}`);
+                              }}
+                            >
+                              USER #{userIdForLink}
+                            </button>
+                          ) : (
+                            <span>
+                              {a.targetType} #{a.targetId}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className={styles.reason}>
+                          {a.reason ? (
+                            clip(a.reason, 120)
+                          ) : (
+                            <span className={styles.muted}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {!loading && items.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className={styles.empty}>
+                        No actions
                       </td>
                     </tr>
-                  );
-                })}
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-                {!loading && items.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className={styles.empty}>
-                      No actions
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+            <div className={styles.pager}>
+              <button
+                className={styles.pageBtn}
+                onClick={() => setSkip(Math.max(0, skip - take))}
+                disabled={skip === 0}
+              >
+                Prev
+              </button>
 
-          <div className={styles.pager}>
-            <button className={styles.btn} onClick={() => setSkip(Math.max(0, skip - take))} disabled={skip === 0}>
-              Prev
-            </button>
-            <button className={styles.btn} onClick={() => setSkip(skip + take)} disabled={skip + take >= total}>
-              Next
-            </button>
-          </div>
-        </div>
+              <button
+                className={styles.pageBtn}
+                onClick={() => setSkip(skip + take)}
+                disabled={skip + take >= total}
+              >
+                Next
+              </button>
+            </div>
+          </section>
+        </main>
       </div>
 
-      <ModerationActionModal open={selectedActionId !== null} actionId={selectedActionId} onClose={() => setSelectedActionId(null)} />
+      <ModerationActionModal
+        open={selectedActionId !== null}
+        actionId={selectedActionId}
+        onClose={() => setSelectedActionId(null)}
+      />
     </>
   );
 }

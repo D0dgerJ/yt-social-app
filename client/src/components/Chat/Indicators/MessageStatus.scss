@@ -1,9 +1,32 @@
 .msg-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  margin-top: 4px;
   font-size: 11px;
-  color: #888;
-  margin-left: 8px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-text-muted);
+  opacity: 0.9;
 }
-.msg-status--sending { opacity: .7; }
-.msg-status--delivered { color: #666; }
-.msg-status--read { color: #0a84ff; }
-.msg-status--failed { color: #d93025; }
+
+.msg-status--sending {
+  color: var(--color-text-muted);
+  opacity: 0.75;
+}
+
+.msg-status--sent {
+  color: var(--color-text-muted);
+}
+
+.msg-status--delivered {
+  color: #2563eb;
+}
+
+.msg-status--read {
+  color: var(--color-primary);
+}
+
+.msg-status--failed {
+  color: #dc2626;
+}

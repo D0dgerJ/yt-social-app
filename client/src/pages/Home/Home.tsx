@@ -17,9 +17,11 @@ const Home: React.FC<HomeProps> = ({ feedMode = "home" }) => {
         <div className="sidebar-wrapper">
           <Sidebar />
         </div>
-        <div className="newsfeed-wrapper">
+
+        <main className="newsfeed-wrapper">
           <NewsFeed mode={feedMode} />
-        </div>
+        </main>
+
         <div className="rightbar-wrapper">
           <Rightbar />
         </div>

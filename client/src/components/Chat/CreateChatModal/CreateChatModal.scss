@@ -1,71 +1,200 @@
 .modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  padding: 16px;
+  z-index: 1200;
 }
 
 .modal {
-  background-color: #1dcc66;
-  padding: 24px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  text-align: left;
+  width: min(100%, 460px);
+  max-height: min(80vh, 720px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  padding: 20px;
+  color: var(--color-text);
 
   h2 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 20px;
+    margin: 0 0 16px;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--color-text);
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+
+  .error {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, #ef4444 26%, var(--color-border));
+    background: color-mix(in srgb, #ef4444 8%, var(--color-surface));
+    color: #dc2626;
+    font-weight: 600;
   }
 
   .friend-list {
     list-style: none;
     padding: 0;
-    margin: 0 0 16px;
+    margin: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    li {
-      margin-bottom: 10px;
+  .friend-list li {
+    margin: 0;
+  }
 
-      label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-      }
+  .friend-list label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 62px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-soft);
+    cursor: pointer;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease,
+      box-shadow 0.18s ease;
 
-      input[type="checkbox"] {
-        accent-color: #4caf50;
-      }
+    &:hover {
+      background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-soft));
+      border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
     }
   }
 
-  button {
-    padding: 8px 16px;
-    margin-right: 10px;
-    border: none;
-    border-radius: 4px;
+  .friend-list input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
     cursor: pointer;
+    flex-shrink: 0;
+  }
 
-    &:first-of-type {
-      background-color: #4caf50;
-      color: white;
-    }
+  .friend-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--color-surface);
+  }
 
-    &:last-of-type {
-      background-color: #e0e0e0;
+  .friend-list span {
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .modal-actions button {
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.18s ease,
+      opacity 0.2s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
     }
 
     &:disabled {
-      background-color: #ccc;
+      opacity: 0.6;
       cursor: not-allowed;
+      transform: none;
+    }
+
+    &:first-of-type {
+      background: var(--color-primary);
+      color: #fff;
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+      }
+    }
+
+    &:last-of-type {
+      background: var(--color-surface-soft);
+      border-color: var(--color-border);
+      color: var(--color-text);
+
+      &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-soft));
+        border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .modal {
+    border-radius: 18px;
+    padding: 16px;
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+
+    .friend-list label {
+      min-height: 58px;
+      padding: 10px 12px;
+      border-radius: 16px;
+    }
+
+    .friend-avatar {
+      width: 38px;
+      height: 38px;
+    }
+
+    .modal-actions {
+      flex-direction: column-reverse;
+    }
+
+    .modal-actions button {
+      width: 100%;
     }
   }
 }

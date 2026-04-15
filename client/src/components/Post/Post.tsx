@@ -57,8 +57,8 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
 
   const [showPostModal, setShowPostModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const isOwner = currentUser?.id === post.userId;
@@ -120,8 +120,8 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
     (typeof (post as any).commentsCount === "number"
       ? (post as any).commentsCount
       : typeof (post as any).comment === "number"
-      ? (post as any).comment
-      : 0);
+        ? (post as any).comment
+        : 0);
 
   const handleReport = async () => {
     if (!currentUser?.id) {
@@ -182,7 +182,7 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
   };
 
   return (
-    <div className="post-container" style={{ breakInside: "avoid" }}>
+    <article className="post-container" style={{ breakInside: "avoid" }}>
       <div className="post-top">
         <div className="post-user">
           <img
@@ -190,24 +190,31 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
             alt="Profile"
             className="post-avatar"
           />
-          <Link to={`/profile/${author?.username}`}>
-            <span className="post-username">{author?.username}</span>
-          </Link>
-          <span className="post-time">{moment(post.createdAt).fromNow()}</span>
+
+          <div className="post-user-meta">
+            <Link to={`/profile/${author?.username}`} className="post-username-link">
+              <span className="post-username">{author?.username}</span>
+            </Link>
+            <span className="post-time">{moment(post.createdAt).fromNow()}</span>
+          </div>
         </div>
 
         <div className="post-options" ref={menuRef}>
-          <MdOutlineMoreVert
-            className="options-icon"
+          <button
+            type="button"
+            className="options-trigger"
             onClick={() => setIsMenuOpen((v) => !v)}
-          />
+            aria-label="Post options"
+          >
+            <MdOutlineMoreVert className="options-icon" />
+          </button>
 
           {isMenuOpen && (
             <div className="post-options-menu">
               {isOwner ? (
                 <button
                   type="button"
-                  className="post-options-item"
+                  className="post-options-item danger"
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
@@ -228,7 +235,7 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
       </div>
 
       <div className="post-content">
-        {post.desc && <span>{post.desc}</span>}
+        {post.desc && <p className="post-text">{post.desc}</p>}
 
         <PostGallery
           images={post.images}
@@ -252,22 +259,26 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
           likes={likeCount}
           onToggle={handleLike}
           loading={isLiking}
-          rootClassName="post-bottom"
+          rootClassName="post-bottom-meta"
           timeClassName="post-time"
           likesClassName="like-section"
           showTime={false}
           asButton={false}
         />
 
-        <div className="comment-section" onClick={() => setShowPostModal(true)}>
+        <button
+          type="button"
+          className="comment-section"
+          onClick={() => setShowPostModal(true)}
+        >
           <span>{commentsCount} comments</span>
-        </div>
-
-        {showPostModal && (
-          <PostModal post={post} onClose={() => setShowPostModal(false)} />
-        )}
+        </button>
       </div>
-    </div>
+
+      {showPostModal && (
+        <PostModal post={post} onClose={() => setShowPostModal(false)} />
+      )}
+    </article>
   );
 };
 

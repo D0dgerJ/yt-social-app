@@ -11,23 +11,22 @@ const relToText = (r?: number) =>
 
 const UserInfo: React.FC<{ user: User }> = ({ user }) => {
   return (
-    <>
-      <h1 className="user-info-title">User Information</h1>
-      <div className="user-info">
-        <div className="info-item">
-          <span>City:</span>
-          <span>{user?.city || "—"}</span>
-        </div>
-        <div className="info-item">
-          <span>From:</span>
-          <span>{user?.from || "—"}</span>
-        </div>
-        <div className="info-item">
-          <span>Relationship:</span>
-          <span>{relToText(user?.relationship)}</span>
-        </div>
+    <div className="user-info">
+      <div className="info-item">
+        <span className="info-label">City</span>
+        <span className="info-value">{user?.city || "—"}</span>
       </div>
-    </>
+
+      <div className="info-item">
+        <span className="info-label">From</span>
+        <span className="info-value">{user?.from || "—"}</span>
+      </div>
+
+      <div className="info-item">
+        <span className="info-label">Relationship</span>
+        <span className="info-value">{relToText(user?.relationship)}</span>
+      </div>
+    </div>
   );
 };
 

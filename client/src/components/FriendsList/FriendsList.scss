@@ -1,19 +1,45 @@
+@use "../../styles/variables" as *;
+
 .friend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+  list-style: none;
+}
+
+.friend-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--color-text);
+  transition:
+    background-color 0.2s ease,
+    transform 0.18s ease;
+
+  &:hover {
+    background: var(--color-surface-soft);
+    transform: translateX(2px);
   }
-  
-  .friend-image {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-  
-  .friend-name {
-    font-weight: 500;
-    font-size: 14px;
-  }
-  
+}
+
+.friend-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.friend-image {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.friend-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

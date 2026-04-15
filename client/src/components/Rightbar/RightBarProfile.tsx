@@ -43,7 +43,9 @@ const RightBarProfile: React.FC<Props> = ({ user, friends }) => {
 
   const handleFollowToggle = async () => {
     if (!user?.id || loadingFollow) return;
+
     setLoadingFollow(true);
+
     try {
       if (isFollowed) {
         await unfollowUser(user.id);
@@ -62,19 +64,31 @@ const RightBarProfile: React.FC<Props> = ({ user, friends }) => {
 
   return (
     <>
-      {user.username !== currentUser?.username && (
-        <FollowButton
-          className="follow-button"
-          isFollowed={isFollowed}
-          loading={loadingFollow}
-          onClick={handleFollowToggle}
-        />
-      )}
+      <section className="rightbar-card">
+        <div className="rightbar-section-header">
+          <h3 className="rightbar-title">Profile</h3>
+        </div>
 
-      <UserInfo user={user} />
+        {user.username !== currentUser?.username && (
+          <FollowButton
+            className="follow-button"
+            isFollowed={isFollowed}
+            loading={loadingFollow}
+            onClick={handleFollowToggle}
+          />
+        )}
 
-      <h1 className="friends-title">Friends</h1>
-      <FriendsGrid friends={friends} fallbackAvatar={profilePic} />
+        <UserInfo user={user} />
+      </section>
+
+      <section className="rightbar-card">
+        <div className="rightbar-section-header">
+          <h3 className="rightbar-title">Friends</h3>
+          <span className="rightbar-counter">{friends.length}</span>
+        </div>
+
+        <FriendsGrid friends={friends} fallbackAvatar={profilePic} />
+      </section>
     </>
   );
 };

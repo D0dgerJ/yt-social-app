@@ -79,20 +79,33 @@ export default function ModerationTable() {
   return (
     <div className="mod-table">
       <div className="mod-table__top">
-        <h2 className="mod-table__title">Moderation</h2>
+        <div className="mod-table__toolbar">
+          <select
+            className="mod-table__select"
+            value={status}
+            onChange={(e) => {
+              setSkip(0);
+              setStatus(e.target.value as ReportStatus);
+            }}
+          >
+            <option value="PENDING">PENDING</option>
+            <option value="APPROVED">APPROVED</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
 
-        <select
-          className="mod-table__select"
-          value={status}
-          onChange={(e) => {
-            setSkip(0);
-            setStatus(e.target.value as ReportStatus);
-          }}
-        >
-          <option value="PENDING">PENDING</option>
-          <option value="APPROVED">APPROVED</option>
-          <option value="REJECTED">REJECTED</option>
-        </select>
+          <select
+            className="mod-table__select"
+            value={take}
+            onChange={(e) => {
+              setSkip(0);
+              setTake(Number(e.target.value));
+            }}
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+          </select>
+        </div>
 
         <div className="mod-table__meta">
           {loading ? "Loading..." : `Total: ${total} · Page ${page}/${pages}`}
@@ -128,7 +141,11 @@ export default function ModerationTable() {
                     <div className="mod-table__post">
                       <div className="mod-table__preview">
                         {img ? (
-                          <img className="mod-table__previewImg" src={img} alt="post preview" />
+                          <img
+                            className="mod-table__previewImg"
+                            src={img}
+                            alt="post preview"
+                          />
                         ) : video ? (
                           <div className="mod-table__previewFallback">🎬 video</div>
                         ) : (
@@ -149,7 +166,9 @@ export default function ModerationTable() {
                         {p?.desc ? (
                           <div className="mod-table__desc">{clip(p.desc, 180)}</div>
                         ) : (
-                          <div className="mod-table__desc mod-table__desc--muted">(no text)</div>
+                          <div className="mod-table__desc mod-table__desc--muted">
+                            (no text)
+                          </div>
                         )}
 
                         <div className="mod-table__badges">
@@ -166,7 +185,9 @@ export default function ModerationTable() {
                     </div>
                   </td>
 
-                  <td className="mod-table__cell">{row.reportCount}</td>
+                  <td className="mod-table__cell">
+                    <span className="mod-table__count">{row.reportCount}</span>
+                  </td>
 
                   <td className="mod-table__cell">
                     {row.lastReport ? (
@@ -197,7 +218,9 @@ export default function ModerationTable() {
                     )}
                   </td>
 
-                  <td className="mod-table__cell">{p?.status ?? "—"}</td>
+                  <td className="mod-table__cell">
+                    <span className="mod-table__status">{p?.status ?? "—"}</span>
+                  </td>
                 </tr>
               );
             })}
@@ -229,19 +252,6 @@ export default function ModerationTable() {
         >
           Next
         </button>
-
-        <select
-          className="mod-table__select"
-          value={take}
-          onChange={(e) => {
-            setSkip(0);
-            setTake(Number(e.target.value));
-          }}
-        >
-          <option value={10}>10</option>
-          <option value={20}>20</option>
-          <option value={50}>50</option>
-        </select>
       </div>
     </div>
   );

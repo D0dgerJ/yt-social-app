@@ -15,21 +15,33 @@ const ChatListHeader: React.FC<ChatListHeaderProps> = ({
 
   return (
     <div className="chat-list-header">
-      <button
-        onClick={() => setShowModal(true)}
-        className="create-chat-btn"
-        type="button"
-      >
-        ➕ Создать чат
-      </button>
+      <div className="chat-list-header__top">
+        <div className="chat-list-header__title-block">
+          <h2 className="chat-list-header__title">Чаты</h2>
+          <p className="chat-list-header__subtitle">
+            Найди беседу или начни новую
+          </p>
+        </div>
 
-      <input
-        type="text"
-        placeholder="Поиск чатов и участников..."
-        value={value}
-        onChange={(e) => onSearchChange?.(e.target.value)}
-        className="chat-search"
-      />
+        <button
+          onClick={() => setShowModal(true)}
+          className="chat-list-header__create-btn"
+          type="button"
+        >
+          <span>＋</span>
+          <span>Создать чат</span>
+        </button>
+      </div>
+
+      <div className="chat-list-header__search-wrap">
+        <input
+          type="text"
+          placeholder="Поиск чатов и участников..."
+          value={value}
+          onChange={(e) => onSearchChange?.(e.target.value)}
+          className="chat-list-header__search"
+        />
+      </div>
 
       {showModal && (
         <CreateChatModal

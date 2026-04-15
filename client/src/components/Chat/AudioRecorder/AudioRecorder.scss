@@ -1,7 +1,9 @@
 .audio-recorder {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 0;
 
   &__controls {
     display: flex;
@@ -11,54 +13,151 @@
   }
 
   .ar-btn {
-    padding: 6px 10px;
-    border: 1px solid #d0d0d0;
-    background: #fff;
-    border-radius: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease,
+      opacity 0.2s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+      border-color: color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     &--start {
-      border-color: #f2b3b3;
-      background: #ffeaea;
+      background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+      border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+      color: var(--color-primary);
     }
+
     &--stop {
-      border-color: #f2b3b3;
+      background: color-mix(in srgb, #ef4444 8%, var(--color-surface));
+      border-color: color-mix(in srgb, #ef4444 22%, var(--color-border));
+      color: #dc2626;
     }
+
     &--send {
-      border-color: #b3d6f2;
-      background: #eaf4ff;
+      background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+      border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+      color: var(--color-primary);
     }
+
     &--ghost {
       background: transparent;
     }
   }
 
   &__player {
-    display: inline-block;
-    min-width: 260px;
+    display: block;
+    width: min(100%, 320px);
+    min-width: 220px;
+    height: 38px;
+    border-radius: 12px;
   }
 
   &__timer {
+    min-width: 54px;
+    padding: 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
-    opacity: 0.7;
+    text-align: center;
   }
 
   &__error {
-    color: #c50000;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, #ef4444 24%, var(--color-border));
+    background: color-mix(in srgb, #ef4444 8%, var(--color-surface));
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 600;
   }
 
   &__wave {
     width: 100%;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-soft);
     display: flex;
     align-items: center;
   }
 }
 
 .audio-waveform--live {
-  height: 40px;
+  width: 100%;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.audio-waveform__placeholder {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.12);
 }
 
 .audio-waveform__bar--live {
-  background: #16a34a;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  opacity: 0.92;
+}
+
+@media (max-width: 640px) {
+  .audio-recorder {
+    &__controls {
+      gap: 6px;
+    }
+
+    .ar-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    &__player {
+      width: 100%;
+      min-width: 0;
+    }
+
+    &__timer {
+      min-width: auto;
+    }
+
+    &__wave {
+      padding: 8px 10px;
+      border-radius: 14px;
+    }
+  }
+
+  .audio-waveform--live {
+    height: 36px;
+  }
+
+  .audio-waveform__bar--live {
+    width: 2px;
+  }
 }

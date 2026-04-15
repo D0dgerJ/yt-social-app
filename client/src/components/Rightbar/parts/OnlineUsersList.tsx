@@ -7,19 +7,27 @@ type Friend = {
   profilePicture: string;
 };
 
-type Props = {
+interface OnlineUsersListProps {
   friends: Friend[];
   loading?: boolean;
   error?: boolean;
-};
+}
 
-const OnlineUsersList: React.FC<Props> = ({ friends, loading, error }) => {
+const OnlineUsersList: React.FC<OnlineUsersListProps> = ({
+  friends,
+  loading,
+  error,
+}) => {
   return (
     <ul className="online-users">
-      {loading && <li>Loading...</li>}
-      {error && <li>Failed to load friends</li>}
-      {friends.map((f) => (
-        <OnlineUsers key={f.id} user={f} />
+      {loading && <li className="rightbar-status">Loading...</li>}
+      {error && <li className="rightbar-status">Failed to load friends</li>}
+      {!loading && !error && friends.length === 0 && (
+        <li className="rightbar-empty">Сейчас никто не онлайн</li>
+      )}
+
+      {friends.map((friend) => (
+        <OnlineUsers key={friend.id} user={friend} />
       ))}
     </ul>
   );

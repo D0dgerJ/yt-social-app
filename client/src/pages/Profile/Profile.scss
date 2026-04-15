@@ -1,78 +1,231 @@
-.home {
-  display: flex;
-  width: 100%;
-}
+@use "../../styles/mixins" as *;
+@use "../../styles/variables" as *;
 
 .layout {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
   width: 100%;
-  background-color: #f0f2f5;
+  min-height: calc(100vh - #{$navbar-height});
+  background: var(--color-bg);
+  padding: 20px 20px 0;
+}
+
+.sidebar-wrapper {
+  flex: 0 0 auto;
 }
 
 .newsfeed-wrapper {
-  width: 600px;
-  padding: 0px 20px 0 20px;
-  min-height: calc(100vh - 50px);
+  width: min(100%, 720px);
+  flex: 1 1 720px;
+  min-width: 0;
+  padding: 0 0 24px;
 }
 
+.rightbar-wrapper {
+  flex: 0 0 auto;
+}
+
+.profile-hero {
+  margin-bottom: 20px;
+}
 
 .profile-top {
-  height: 350px;
+  height: 320px;
   position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
 .profile-cover-img {
   width: 100%;
-  height: 250px;
+  height: 220px;
   object-fit: cover;
   display: block;
 }
 
 .profile-user-img {
-  width: 150px;
-  height: 150px;
+  width: 148px;
+  height: 148px;
   border-radius: 50%;
   object-fit: cover;
   position: absolute;
-  left: 0;
-  right: 0;
-  margin: auto;
-  top: 150px;
-  border: 3px solid white;
+  left: 32px;
+  bottom: 24px;
+  border: 4px solid var(--color-surface);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  background: var(--color-surface-soft);
+}
+
+.profile-info-card {
+  margin-top: 16px;
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  padding: 22px 22px 20px;
 }
 
 .profile-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.profile-username { font-weight: bold; font-size: 24px; }
-.profile-desc { font-size: 16px; color: #555; }
+.profile-username {
+  margin: 0;
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.profile-desc {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
 
 .profile-edit-btn,
 .profile-save-btn,
 .profile-cancel-btn {
-  margin-top: 6px;
-  padding: 10px 20px;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.18s ease,
+    opacity 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .profile-edit-btn,
-.profile-save-btn { background-color: #059669; }
-.profile-edit-btn:hover,
-.profile-save-btn:hover { background-color: #047857; }
+.profile-save-btn {
+  background: var(--color-primary);
+  color: #fff;
 
-.profile-cancel-btn { background-color: #ef4444; }
-.profile-cancel-btn:hover { background-color: #dc2626; }
+  &:hover {
+    background: var(--color-primary-hover);
+  }
+}
 
-@media (max-width: 700px) {
-  .newsfeed-wrapper { width: 100%; padding: 12px 12px 0; }
+.profile-cancel-btn {
+  background: color-mix(in srgb, #ef4444 12%, var(--color-surface));
+  color: #dc2626;
+  border-color: color-mix(in srgb, #ef4444 22%, var(--color-border));
+
+  &:hover {
+    background: color-mix(in srgb, #ef4444 16%, var(--color-surface));
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+@include respond(tablet) {
+  .layout {
+    gap: 16px;
+    padding: 16px 14px 0;
+  }
+
+  .rightbar-wrapper {
+    display: none;
+  }
+
+  .newsfeed-wrapper {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
+
+@include respond(phone) {
+  .layout {
+    justify-content: stretch;
+    width: 100%;
+    overflow-x: hidden;
+    gap: 0;
+    padding: 12px 12px 0;
+  }
+
+  .layout > .sidebar-wrapper {
+    width: 0;
+    flex: 0 0 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  .layout > .rightbar-wrapper {
+    display: none;
+  }
+
+  .newsfeed-wrapper {
+    width: 100%;
+    padding: 0 0 84px;
+    min-height: auto;
+  }
+
+  .profile-top {
+    height: 250px;
+    border-radius: 20px;
+  }
+
+  .profile-cover-img {
+    height: 160px;
+  }
+
+  .profile-user-img {
+    width: 110px;
+    height: 110px;
+    left: 18px;
+    bottom: 16px;
+  }
+
+  .profile-info-card {
+    margin-top: 14px;
+    border-radius: 18px;
+    padding: 18px 16px;
+  }
+
+  .profile-username {
+    font-size: 22px;
+  }
+
+  .profile-desc {
+    font-size: 14px;
+  }
+
+  .profile-actions {
+    gap: 8px;
+  }
+
+  .profile-edit-btn,
+  .profile-save-btn,
+  .profile-cancel-btn {
+    min-height: 40px;
+    width: 100%;
+  }
 }

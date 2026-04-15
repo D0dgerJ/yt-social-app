@@ -1,21 +1,229 @@
-@use '../../styles/mixins' as *;
+@use "../../styles/mixins" as *;
+@use "../../styles/variables" as *;
 
 .post-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.75);
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1200;
 }
 
-// Phones: stack media + comments vertically and use full screen
+.post-modal {
+  display: flex;
+  width: min(1180px, 100%);
+  height: min(88vh, 860px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.28);
+}
+
+.post-modal-left {
+  flex: 1.05;
+  min-width: 0;
+  background: color-mix(in srgb, var(--color-surface-soft) 70%, #000 30%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 16px;
+
+  img,
+  video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 18px;
+  }
+}
+
+.post-modal-right {
+  flex: 0.95;
+  min-width: 360px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 18px;
+  overflow: hidden;
+  position: relative;
+  background: var(--color-surface);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-username {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.modal-close {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.18s ease;
+
+  &:hover {
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-soft));
+    border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+    transform: translateY(-1px);
+  }
+}
+
+.modal-description {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-bottom: 10px;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .post-tag {
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border));
+    text-decoration: none;
+  }
+}
+
+.modal-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-time {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.modal-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.18s ease;
+
+  &:hover {
+    color: var(--color-text);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .like-icon {
+    width: 18px;
+    height: 18px;
+    transition: filter 0.2s ease, transform 0.2s ease;
+    filter: grayscale(100%) brightness(0.68);
+
+    &:hover {
+      filter: grayscale(60%) brightness(0.88);
+    }
+
+    &.liked {
+      filter: none;
+    }
+  }
+}
+
+.modal-comments {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Gallery inside modal */
+.modal-image-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 18px;
+}
+
+.modal-no-image {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface-soft);
+}
+
 @include respond(phone) {
   .post-modal-overlay {
+    padding: 0;
     align-items: stretch;
   }
 
@@ -25,142 +233,33 @@
     max-width: none;
     border-radius: 0;
     flex-direction: column;
+    border: none;
   }
 
   .post-modal-left {
     flex: 0 0 auto;
-    height: 45vh;
+    height: 42vh;
+    padding: 10px;
   }
 
   .post-modal-right {
     flex: 1;
-    padding: 12px;
-  }
-}
-
-.post-modal {
-  display: flex;
-  width: 95%;
-  max-width: 1000px;
-  height: 90vh;
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.post-modal-left {
-  flex: 1;
-  background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-
-  img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    cursor: pointer;
+    min-width: 0;
+    padding: 14px;
   }
 
-  video {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-}
-
-.post-modal-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  overflow: hidden;
-  position: relative;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-
-  .modal-username {
-    font-weight: 600;
-    font-size: 16px;
-    color: #262626;
+  .modal-header {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
   }
 
-  .modal-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #999;
-    cursor: pointer;
-    transition: color 0.2s;
-
-    &:hover {
-      color: #000;
-    }
+  .modal-description {
+    font-size: 14px;
+    line-height: 1.55;
   }
-}
 
-.modal-description {
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-.modal-tags {
-  margin-bottom: 8px;
-
-  .modal-tag {
-    color: #00376b;
-    margin-right: 6px;
-    font-weight: 500;
-    font-size: 13px;
-    cursor: pointer;
-
-    &:hover {
-      text-decoration: underline;
-    }
+  .modal-meta {
+    flex-wrap: wrap;
+    align-items: center;
   }
-}
-
-.modal-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: #8e8e8e;
-  margin-bottom: 12px;
-
-  .modal-likes {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  .like-icon {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    transition: filter 0.2s ease, transform 0.2s ease;
-    filter: grayscale(100%) brightness(0.65);
-
-    &:hover {
-      filter: grayscale(60%) brightness(0.85);
-    }
-
-    &.liked {
-      filter: none;
-    }
-   }
- }
-}
-.comment-section {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 6px;
 }

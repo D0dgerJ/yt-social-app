@@ -9,25 +9,30 @@ const ChatHeader = () => {
 
   return (
     <div className="chat-header">
-      <div className="chat-title">Переписка</div>
+      <div className="chat-header__left">
+        <div className="chat-header__eyebrow">Активный чат</div>
+        <div className="chat-header__title">Переписка</div>
+      </div>
 
-      <div className="chat-header-buttons">
+      <div className="chat-header__buttons">
         <button
-          className="chat-popout-btn"
+          className="chat-header__icon-btn"
           onClick={() => {
             if (currentConversationId) {
               openFloating(currentConversationId);
             }
           }}
           aria-label="Открыть в отдельном окне"
+          type="button"
         >
           ↗
         </button>
 
         <button
-          className="chat-close-btn"
+          className="chat-header__icon-btn chat-header__icon-btn--danger"
           onClick={() => setCurrentConversationId(null)}
           aria-label="Закрыть чат"
+          type="button"
         >
           ×
         </button>

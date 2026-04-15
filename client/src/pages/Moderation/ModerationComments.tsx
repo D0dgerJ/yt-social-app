@@ -20,16 +20,25 @@ export default function ModerationComments() {
   return (
     <>
       <Navbar />
-      <div className={styles.container}>
-        <Sidebar />
 
-        <div className={styles.main}>
-          <div className={styles.header}>
-            <h2 className={styles.title}>Moderation</h2>
+      <div className={styles.layout}>
+        <div className={styles.sidebarWrapper}>
+          <Sidebar />
+        </div>
+
+        <main className={styles.main}>
+          <section className={styles.hero}>
+            <div className={styles.heroText}>
+              <h1 className={styles.title}>Comments moderation</h1>
+              <p className={styles.subtitle}>
+                Просматривай жалобы на комментарии, оценивай контекст и переходи
+                к детальному разбору каждого кейса.
+              </p>
+            </div>
 
             <div className={styles.actions}>
               <button
-                className={styles.usersBtn}
+                className={styles.secondaryBtn}
                 type="button"
                 onClick={() => navigate("/moderation")}
               >
@@ -37,7 +46,7 @@ export default function ModerationComments() {
               </button>
 
               <button
-                className={styles.usersBtn}
+                className={styles.secondaryBtn}
                 type="button"
                 onClick={() => navigate("/moderation/users")}
               >
@@ -45,17 +54,19 @@ export default function ModerationComments() {
               </button>
 
               <button
-                className={styles.historyBtn}
+                className={styles.primaryBtn}
                 type="button"
                 onClick={() => navigate("/moderation/history")}
               >
                 Open history
               </button>
             </div>
-          </div>
+          </section>
 
-          <ModerationCommentsTable />
-        </div>
+          <section className={styles.contentCard}>
+            <ModerationCommentsTable />
+          </section>
+        </main>
       </div>
     </>
   );

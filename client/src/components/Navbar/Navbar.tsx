@@ -1,11 +1,18 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
-import { IoSearch, IoPersonSharp, IoChatboxEllipses } from "react-icons/io5";
+import {
+  IoSearch,
+  IoPersonSharp,
+  IoChatboxEllipses,
+  IoMoon,
+  IoSunny,
+} from "react-icons/io5";
 import { IoIosNotifications } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 
 import Logo from "../Logo/Logo";
 import noProfile from "../../assets/profile/user.png";
 import { AuthContext } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 
 import NotificationsInteractions from "../NotificationsInteractions/NotificationsInteractions";
 import ChatNotificationsDropdown from "../ChatNotificationsDropdown/ChatNotificationsDropdown";
@@ -38,6 +45,7 @@ type SearchPost = {
 
 const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const [showFriendRequests, setShowFriendRequests] = useState(false);
@@ -204,11 +212,12 @@ const Navbar: React.FC = () => {
   };
 
   const isHashtagSearch = searchQuery.trim().startsWith("#");
+  const isHomeActive = true;
 
   return (
-    <div className="navbar">
+    <header className="navbar">
       <div className="navbar-left">
-        <Link to="/">
+        <Link to="/" className="navbar-logo-link">
           <div className="logo-div">
             <Logo />
           </div>
@@ -311,12 +320,23 @@ const Navbar: React.FC = () => {
       </div>
 
       <div className="navbar-right">
-        <div className="tab-links">
-          <span>Home</span>
-          <span>Timeline</span>
-        </div>
+        <nav className="tab-links">
+          <Link to="/" className={`nav-pill ${isHomeActive ? "active" : ""}`}>
+            Home
+          </Link>
+        </nav>
 
         <div className="tab-icons">
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Переключить тему"
+            title={theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"}
+          >
+            {theme === "light" ? <IoMoon /> : <IoSunny />}
+          </button>
+
           <div className="tab-icon" onClick={toggleFriends}>
             <IoPersonSharp />
             {friendRequestsCount > 0 && (
@@ -372,13 +392,13 @@ const Navbar: React.FC = () => {
           <Link to={`/profile/${user?.username}`}>
             <img
               src={user?.profilePicture || noProfile}
-              alt="A user Profile Picture"
+              alt="User profile"
               className="profile-pic"
             />
           </Link>
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 

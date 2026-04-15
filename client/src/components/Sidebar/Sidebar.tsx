@@ -1,15 +1,19 @@
 import React, { useContext } from "react";
 import { NavLink } from "react-router-dom";
 import { SiFeedly } from "react-icons/si";
-import { BiSolidVideos, BiCalendar, BiCompass } from "react-icons/bi";
-import { MdGroups } from "react-icons/md";
 import {
-  IoChatboxEllipsesSharp,
-  IoBookmarks,
-} from "react-icons/io5";
+  BiSolidVideos,
+  BiCalendar,
+  BiCompass,
+  BiShieldQuarter,
+} from "react-icons/bi";
+import { MdGroups } from "react-icons/md";
+import { IoChatboxEllipsesSharp, IoBookmarks } from "react-icons/io5";
+
 import FriendsList from "../FriendsList/FriendsList";
 import { AuthContext } from "../../context/AuthContext";
 import useFriends from "../../hooks/useFriends";
+
 import "./Sidebar.scss";
 
 const Sidebar: React.FC = () => {
@@ -20,106 +24,105 @@ const Sidebar: React.FC = () => {
   );
 
   const role = (user as any)?.role;
-  const canModerate = role === "MODERATOR" || role === "ADMIN" || role === "OWNER";
+  const canModerate =
+    role === "MODERATOR" || role === "ADMIN" || role === "OWNER";
+
+  const navItems = [
+    {
+      to: "/",
+      label: "Home",
+      icon: <SiFeedly className="sidebar-icon" />,
+    },
+    {
+      to: "/explore",
+      label: "Explore",
+      icon: <BiCompass className="sidebar-icon" />,
+    },
+    {
+      to: "/shorts",
+      label: "Videos",
+      icon: <BiSolidVideos className="sidebar-icon" />,
+    },
+    {
+      to: "/groups",
+      label: "Groups",
+      icon: <MdGroups className="sidebar-icon" />,
+    },
+    {
+      to: "/chat",
+      label: "Chat",
+      icon: <IoChatboxEllipsesSharp className="sidebar-icon" />,
+    },
+    {
+      to: "/bookmarks",
+      label: "Bookmarks",
+      icon: <IoBookmarks className="sidebar-icon" />,
+    },
+    {
+      to: "/events",
+      label: "Events",
+      icon: <BiCalendar className="sidebar-icon" />,
+    },
+  ];
 
   return (
-    <div className="sidebar">
+    <aside className="sidebar">
       <div className="sidebar-wrapper">
-        <ul className="sidebar-list">
-          <li className="sidebar-list-item">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "active" : ""}`
-              }
-            >
-              <SiFeedly className="sidebar-icon" />
-              <span>Home</span>
-            </NavLink>
-          </li>
+        <nav className="sidebar-nav">
+          <ul className="sidebar-list">
+            {navItems.map((item) => (
+              <li key={item.to} className="sidebar-list-item">
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `sidebar-link ${isActive ? "active" : ""}`
+                  }
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </NavLink>
+              </li>
+            ))}
 
-          <li className="sidebar-list-item">
-            <NavLink
-              to="/explore"
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "active" : ""}`
-              }
-            >
-              <BiCompass className="sidebar-icon" />
-              <span>Explore</span>
-            </NavLink>
-          </li>
-
-          <li className="sidebar-list-item">
-            <NavLink
-              to="/shorts"
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "active" : ""}`
-              }
-            >
-              <BiSolidVideos className="sidebar-icon" />
-              <span>Videos</span>
-            </NavLink>
-          </li>
-
-          <li className="sidebar-list-item">
-            <NavLink to="" className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
-              <MdGroups className="sidebar-icon" />
-              <span>Groups</span>
-            </NavLink>
-          </li>
-
-          <li className="sidebar-list-item">
-            <NavLink
-              to="/chat"
-              className={({ isActive }) =>
-                `sidebar-link ${isActive ? "active" : ""}`
-              }
-            >
-              <IoChatboxEllipsesSharp className="sidebar-icon" />
-              <span>Chat</span>
-            </NavLink>
-          </li>
-
-          <li className="sidebar-list-item">
-            <IoBookmarks className="sidebar-icon" />
-            <span>Bookmarks</span>
-          </li>
-
-          <li className="sidebar-list-item">
-            <NavLink to="/events" className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}>
-              <BiCalendar className="sidebar-icon" />
-              <span>Events</span>
-            </NavLink>
-          </li>
-
-          {canModerate && (
-            <li className="sidebar-list-item">
-              <NavLink
-                to="/moderation"
-                className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
-              >
-                <span>Moderation</span>
-              </NavLink>
-            </li>
-          )}
-        </ul>
+            {canModerate && (
+              <li className="sidebar-list-item">
+                <NavLink
+                  to="/moderation"
+                  className={({ isActive }) =>
+                    `sidebar-link ${isActive ? "active" : ""}`
+                  }
+                >
+                  <BiShieldQuarter className="sidebar-icon" />
+                  <span>Moderation</span>
+                </NavLink>
+              </li>
+            )}
+          </ul>
+        </nav>
 
         <div className="sidebar-button">
-          <button>See More</button>
+          <button type="button">See More</button>
         </div>
 
         <hr className="sidebar-hr" />
 
-        <ul className="sidebar-friends-list">
-          {loading && <li>Loading...</li>}
-          {Boolean(error) && <li>Error loading friends</li>}
-          {friends.map((friend) => (
-            <FriendsList key={friend.id} friend={friend} />
-          ))}
-        </ul>
+        <div className="sidebar-friends-block">
+          <div className="sidebar-section-title">Friends</div>
+
+          <ul className="sidebar-friends-list">
+            {loading && <li className="sidebar-status">Loading...</li>}
+            {Boolean(error) && (
+              <li className="sidebar-status">Error loading friends</li>
+            )}
+            {!loading &&
+              !error &&
+              friends.map((friend) => (
+                <FriendsList key={friend.id} friend={friend} />
+              ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 };
 

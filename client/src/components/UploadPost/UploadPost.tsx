@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { toast } from "react-toastify";
+import { MdLabel, MdEmojiEmotions, MdLocationPin } from "react-icons/md";
 
 import useUploadPost from "../../hooks/useUploadPost";
 import { createPost } from "../../utils/api/post.api";
@@ -8,9 +9,13 @@ import MediaPicker from "./parts/MediaPicker";
 import MediaPreviewList from "./parts/MediaPreviewList";
 import TagInput from "./parts/TagInput";
 import EmojiPickerWrapper from "./parts/EmojiPickerWrapper";
-import { MdLabel, MdEmojiEmotions, MdLocationPin } from "react-icons/md";
 
-import { IMAGE_MIME, VIDEO_MIME, FILE_MIME, MAX_TOTAL_FILES } from "../../constants/mime";
+import {
+  IMAGE_MIME,
+  VIDEO_MIME,
+  FILE_MIME,
+  MAX_TOTAL_FILES,
+} from "../../constants/mime";
 
 import "./UploadPost.scss";
 
@@ -64,77 +69,97 @@ const UploadPost: React.FC = () => {
         tags: payload.tags,
         location: payload.location,
       });
+
       toast.success("Post created");
       setText("");
       clearFiles();
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || "Failed to create post";
+      const msg =
+        e?.response?.data?.message || e?.message || "Failed to create post";
       toast.error(msg);
     }
   }, [text, previews.length, submit, errors, setText, clearFiles]);
 
   return (
-    <div className="upload-post">
+    <section className="upload-post">
       <div className="upload-post__wrapper">
         <div className="upload-post__top">
           <textarea
             className="upload-post__input"
-            placeholder="What's on your mind?"
+            placeholder="Что у тебя нового?"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            rows={3}
+            rows={4}
           />
         </div>
 
-        {/* Превью медиа и список файлов */}
         {previews.length > 0 && (
           <div className="upload-post__preview-list">
             <MediaPreviewList previews={previews} onRemove={removeFile} />
           </div>
         )}
 
-        {/* Теги */}
         {showTags && (
-          <TagInput tags={tags} onAdd={addTag} onRemove={removeTag} />
+          <div className="upload-post__section">
+            <TagInput tags={tags} onAdd={addTag} onRemove={removeTag} />
+          </div>
         )}
 
-        {/* Эмодзи */}
-        <EmojiPickerWrapper
-          open={showEmoji}
-          onToggle={toggleEmoji}
-          onPick={(emoji) => setText((prev) => prev + emoji)}
-        />
+        <div className="upload-post__section upload-post__section--emoji">
+          <EmojiPickerWrapper
+            open={showEmoji}
+            onToggle={toggleEmoji}
+            onPick={(emoji) => setText((prev) => prev + emoji)}
+          />
+        </div>
 
-        {/* Локация */}
         {showLocation && (
           <div className="upload-post__location">
             <input
               type="text"
-              placeholder="Location"
+              placeholder="Добавить локацию"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
           </div>
         )}
 
-        <hr className="upload-post__divider" />
+        <div className="upload-post__divider" />
 
         <div className="upload-post__bottom">
           <div className="upload-post__options">
-            <MediaPicker onPick={addFiles} accept={accept} maxCount={MAX_TOTAL_FILES} />
+            <MediaPicker
+              onPick={addFiles}
+              accept={accept}
+              maxCount={MAX_TOTAL_FILES}
+            />
 
-            <div className="upload-post__option" onClick={toggleTags}>
-              <MdLabel className="upload-post__icon upload-post__icon--blue" />
+            <button
+              type="button"
+              className={`upload-post__option ${showTags ? "is-active" : ""}`}
+              onClick={toggleTags}
+            >
+              <MdLabel className="upload-post__icon" />
               <span>Tags</span>
-            </div>
-            <div className="upload-post__option" onClick={toggleEmoji}>
-              <MdEmojiEmotions className="upload-post__icon upload-post__icon--yellow" />
+            </button>
+
+            <button
+              type="button"
+              className={`upload-post__option ${showEmoji ? "is-active" : ""}`}
+              onClick={toggleEmoji}
+            >
+              <MdEmojiEmotions className="upload-post__icon" />
               <span>Emoji</span>
-            </div>
-            <div className="upload-post__option" onClick={toggleLocation}>
-              <MdLocationPin className="upload-post__icon upload-post__icon--green" />
+            </button>
+
+            <button
+              type="button"
+              className={`upload-post__option ${showLocation ? "is-active" : ""}`}
+              onClick={toggleLocation}
+            >
+              <MdLocationPin className="upload-post__icon" />
               <span>Location</span>
-            </div>
+            </button>
           </div>
 
           <button
@@ -143,12 +168,12 @@ const UploadPost: React.FC = () => {
             disabled={isSubmitting}
             onClick={handleSubmit}
           >
-            {isSubmitting ? "Uploading..." : "Upload"}
+            {isSubmitting ? "Uploading..." : "Publish"}
           </button>
         </div>
 
         {errors.length > 0 && (
-          <div className="upload-errors" style={{ marginTop: 8 }}>
+          <div className="upload-errors">
             {errors.map((e, i) => (
               <div className="error" key={i}>
                 {e}
@@ -157,7 +182,7 @@ const UploadPost: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 };
 

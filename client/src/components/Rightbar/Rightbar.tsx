@@ -30,6 +30,7 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
   const { user: currentUser } = useContext(AuthContext);
 
   const targetId = user?.id ?? currentUser?.id;
+
   const {
     data: friends = [],
     loading: friendsLoading,
@@ -39,15 +40,12 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
   const onlineUserIds = useOnlineUsers();
 
   const onlineFriends = useMemo<Friend[]>(
-    () =>
-      (friends as Friend[]).filter((f) =>
-        onlineUserIds.includes(f.id)
-      ),
+    () => (friends as Friend[]).filter((f) => onlineUserIds.includes(f.id)),
     [friends, onlineUserIds]
   );
 
   return (
-    <div className="rightbar">
+    <aside className="rightbar">
       <div className="rightbar-wrapper">
         {user ? (
           <RightBarProfile user={user} friends={friends as Friend[]} />
@@ -59,7 +57,7 @@ const Rightbar: React.FC<RightbarProps> = ({ user }) => {
           />
         )}
       </div>
-    </div>
+    </aside>
   );
 };
 

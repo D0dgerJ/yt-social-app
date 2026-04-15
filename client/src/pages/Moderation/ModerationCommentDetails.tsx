@@ -39,7 +39,6 @@ export default function ModerationCommentDetails() {
 
   const role = (user as any)?.role as string | undefined;
 
-  // guard
   useEffect(() => {
     if (!user || !role || !ALLOWED.has(role)) navigate("/");
   }, [user, role, navigate]);
@@ -95,10 +94,12 @@ export default function ModerationCommentDetails() {
     <>
       <Navbar />
 
-      <div className={styles.container}>
-        <Sidebar />
+      <div className={styles.layout}>
+        <div className={styles.sidebarWrapper}>
+          <Sidebar />
+        </div>
 
-        <div className={styles.main}>
+        <main className={styles.main}>
           <CaseHeader postId={commentId} navigate={navigate} styles={styles} />
 
           {error ? <div className={styles.error}>{error}</div> : null}
@@ -177,7 +178,7 @@ export default function ModerationCommentDetails() {
             isLoading={isLoadingActions}
             fmt={fmt}
           />
-        </div>
+        </main>
       </div>
     </>
   );

@@ -9,13 +9,16 @@ const Shorts: React.FC = () => {
   return (
     <>
       <Navbar />
+
       <div className="layout">
         <div className="sidebar-wrapper">
           <Sidebar />
         </div>
-        <div className="shorts-wrapper">
+
+        <main className="shorts-wrapper">
           <ShortsFeed />
-        </div>
+        </main>
+
         <div className="rightbar-wrapper">
           <Rightbar />
         </div>

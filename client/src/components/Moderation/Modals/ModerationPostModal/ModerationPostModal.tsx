@@ -7,6 +7,7 @@ import PostFiles from "@/components/Post/parts/PostFiles";
 import UserSanctionsPanel from "../../Panels/UserSanctionsPanel/UserSanctionsPanel";
 import PostModerationActions from "../../List/PostModerationActions/PostModerationActions";
 import ReportItemCard from "../../List/ReportItemCard/ReportItemCard";
+import "./ModerationPostModal.scss";
 
 type ReportItem = {
   id: number;

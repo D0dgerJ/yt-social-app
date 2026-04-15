@@ -20,24 +20,29 @@ const EmojiPickerWrapper: React.FC<Props> = ({ open, onToggle, onPick }) => {
         onToggle();
       }
     };
+
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) onToggle();
     };
+
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onEsc);
+
     return () => {
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onEsc);
     };
   }, [open, onToggle]);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!open || !mounted) return null;
 
   return (
     <div className="upload-post__emoji-picker" ref={rootRef}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="upload-post__emoji-loading">Loading emoji…</div>}>
         <EmojiPicker
           onEmojiClick={(data: EmojiClickData) => onPick(data.emoji)}
           lazyLoadEmojis
