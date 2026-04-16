@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { ZodError } from "zod";
 import { ApiError, Errors } from "../errors/ApiError.js";
 
 type PrismaLikeError = {
@@ -26,6 +27,15 @@ export const errorHandler = (
       message: err.message,
       code: err.code,
       ...(err.details !== undefined ? { details: err.details } : {}),
+    });
+    return;
+  }
+
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      message: "Validation failed",
+      code: "VALIDATION",
+      details: err.flatten(),
     });
     return;
   }
