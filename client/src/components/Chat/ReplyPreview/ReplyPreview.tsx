@@ -42,7 +42,7 @@ export const ReplyPreview: React.FC<Props> = ({ reply, onClick, className }) => 
     <button
       type="button"
       onClick={onClick}
-      className={['reply-preview', className || ''].join(' ')}
+      className={['reply-preview', className || ''].join(' ').trim()}
       title="Показать исходное сообщение"
     >
       <div className="reply-preview__content">
@@ -51,7 +51,7 @@ export const ReplyPreview: React.FC<Props> = ({ reply, onClick, className }) => 
         </div>
 
         <div className="reply-preview__text">
-          {hasText ? reply.content : (label || 'Без текста')}
+          {hasText ? reply.content : label || 'Без текста'}
         </div>
       </div>
     </button>

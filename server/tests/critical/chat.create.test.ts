@@ -42,6 +42,21 @@ describe('POST /api/v1/chat', () => {
       password: 'strong_password_123',
     });
 
+    expect(firstUser.status).toBe(201);
+    expect(firstUser.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(Number),
+        token: expect.any(String),
+      })
+    );
+
+    expect(secondUser.status).toBe(201);
+    expect(secondUser.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(Number),
+      })
+    );
+
     const token = firstUser.body.token as string;
     const secondUserId = secondUser.body.id as number;
     const firstUserId = firstUser.body.id as number;
@@ -52,6 +67,10 @@ describe('POST /api/v1/chat', () => {
       .send({
         userIds: [secondUserId],
       });
+
+    if (response.status !== 201) {
+      console.log('chat.create response.body:', response.body);
+    }
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual(
@@ -87,6 +106,13 @@ describe('POST /api/v1/chat', () => {
       email: 'dodger_chat_invalid_user@example.com',
       password: 'strong_password_123',
     });
+
+    expect(firstUser.status).toBe(201);
+    expect(firstUser.body).toEqual(
+      expect.objectContaining({
+        token: expect.any(String),
+      })
+    );
 
     const token = firstUser.body.token as string;
 

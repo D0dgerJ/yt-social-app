@@ -42,6 +42,21 @@ describe('GET /api/v1/chat/:chatId/messages', () => {
       password: 'strong_password_123',
     });
 
+    expect(firstUser.status).toBe(201);
+    expect(firstUser.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(Number),
+        token: expect.any(String),
+      })
+    );
+
+    expect(secondUser.status).toBe(201);
+    expect(secondUser.body).toEqual(
+      expect.objectContaining({
+        id: expect.any(Number),
+      })
+    );
+
     const token = firstUser.body.token as string;
     const senderId = firstUser.body.id as number;
     const secondUserId = secondUser.body.id as number;
@@ -53,6 +68,10 @@ describe('GET /api/v1/chat/:chatId/messages', () => {
         userIds: [secondUserId],
       });
 
+    if (chatResponse.status !== 201) {
+      console.log('chat.getMessages create-chat response.body:', chatResponse.body);
+    }
+
     expect(chatResponse.status).toBe(201);
 
     const chatId = chatResponse.body.id as number;
@@ -63,6 +82,10 @@ describe('GET /api/v1/chat/:chatId/messages', () => {
       .send({
         content: 'First chat message',
       });
+
+    if (sendResponse.status !== 201) {
+      console.log('chat.getMessages send-message response.body:', sendResponse.body);
+    }
 
     expect(sendResponse.status).toBe(201);
 
@@ -88,7 +111,7 @@ describe('GET /api/v1/chat/:chatId/messages', () => {
         id: expect.any(Number),
         conversationId: chatId,
         senderId,
-        encryptedContent: 'First chat message',
+        content: 'First chat message',
         sender: expect.objectContaining({
           id: senderId,
           username: 'dodger_get_messages_user_1',

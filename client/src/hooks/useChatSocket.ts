@@ -8,18 +8,14 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import type { Message as ServerMessage } from '@/utils/types/MessageTypes';
 import type { GroupedReaction } from '@/stores/messageStore';
 
-const looksEncrypted = (s?: string | null): s is string =>
-  typeof s === 'string' && s.startsWith('b64:');
-
-const safeDecrypt = (maybeEnc?: string | null): string => {
-  if (!maybeEnc) return '';
-  if (!looksEncrypted(maybeEnc)) return maybeEnc;
-  try {
-    const raw = maybeEnc.slice(4);
-    return decodeURIComponent(escape(atob(raw)));
-  } catch {
-    return '[Ошибка расшифровки]';
-  }
+type IncomingMessage = ServerMessage & {
+  content?: string | null;
+  repliedTo?: {
+    id: number;
+    senderId: number;
+    content?: string | null;
+    [k: string]: unknown;
+  } | null;
 };
 
 function hasProp<T extends object, K extends PropertyKey>(
@@ -29,40 +25,23 @@ function hasProp<T extends object, K extends PropertyKey>(
   return !!obj && typeof obj === 'object' && key in obj;
 }
 
-type IncomingMessage = ServerMessage & {
-  content?: string;
-  repliedTo?: {
-    id: number;
-    senderId: number;
-    encryptedContent?: string | null;
-    content?: string;
-    [k: string]: unknown;
-  } | null;
-};
-
-function hydrateDecrypted(msg: ServerMessage): IncomingMessage {
+function hydrateMessage(msg: ServerMessage): IncomingMessage {
   if (!msg) return msg as any;
 
-  let content: string | undefined =
+  const content =
     hasProp(msg, 'content') && typeof (msg as any).content === 'string'
       ? ((msg as any).content as string)
-      : undefined;
-
-  if (!content || looksEncrypted(content)) {
-    const enc = (hasProp(msg, 'encryptedContent')
-      ? (msg as any).encryptedContent
-      : undefined) as string | null | undefined;
-    content = enc ? safeDecrypt(enc) : safeDecrypt(content);
-  }
+      : null;
 
   let repliedTo: IncomingMessage['repliedTo'] =
     (hasProp(msg, 'repliedTo') ? (msg as any).repliedTo : undefined) as any;
 
-  if (repliedTo && !repliedTo.content) {
-    const enc = repliedTo.encryptedContent as string | null | undefined;
-    if (enc) {
-      repliedTo = { ...repliedTo, content: safeDecrypt(enc) };
-    }
+  if (repliedTo) {
+    repliedTo = {
+      ...repliedTo,
+      content:
+        typeof repliedTo.content === 'string' ? repliedTo.content : null,
+    };
   }
 
   return { ...(msg as any), content, repliedTo };
@@ -156,7 +135,7 @@ export const useChatSocket = () => {
     const onReceiveMessage = (raw: ServerMessage) => {
       if (raw.conversationId !== currentConversationId) return;
 
-      const m = hydrateDecrypted(raw);
+      const m = hydrateMessage(raw);
 
       if (m.clientMessageId && isHandled?.(m.clientMessageId)) return;
       if (m.clientMessageId) markHandled?.(m.clientMessageId);
@@ -181,7 +160,7 @@ export const useChatSocket = () => {
       if (!raw.clientMessageId || isHandled?.(raw.clientMessageId)) return;
       markHandled?.(raw.clientMessageId);
 
-      const m = hydrateDecrypted(raw);
+      const m = hydrateMessage(raw);
 
       replaceOptimistic?.(raw.clientMessageId, {
         ...(m as any),
@@ -192,7 +171,7 @@ export const useChatSocket = () => {
     const onMessageUpdated = (updated: ServerMessage | { message?: ServerMessage }) => {
       const raw = (updated as any)?.message ?? updated;
       if (!raw) return;
-      const m = hydrateDecrypted(raw);
+      const m = hydrateMessage(raw);
       updateMessage?.({ ...(m as any) });
     };
 

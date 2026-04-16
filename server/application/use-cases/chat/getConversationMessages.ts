@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.js";
 
 interface GetConversationMessagesInput {
   conversationId: number;
@@ -25,7 +26,7 @@ export const getConversationMessages = async ({
     });
 
     if (!isParticipant) {
-      throw new Error("Вы не имеете доступа к этому чату");
+      throw Errors.forbidden("Вы не имеете доступа к этому чату");
     }
 
     const whereCursor =
@@ -69,7 +70,6 @@ export const getConversationMessages = async ({
             url: true,
             type: true,
             uploadedAt: true,
-
             originalName: true,
             mime: true,
             size: true,
@@ -217,6 +217,13 @@ export const getConversationMessages = async ({
 
       return {
         ...m,
+        content: m.encryptedContent ?? null,
+        repliedTo: m.repliedTo
+          ? {
+              ...m.repliedTo,
+              content: m.repliedTo.encryptedContent ?? null,
+            }
+          : null,
         groupedReactions: grouped.map((g) => ({
           emoji: g.emoji,
           count: g.users.length,
@@ -309,7 +316,8 @@ export const getConversationMessages = async ({
     };
   } catch (error) {
     console.error("❌ Ошибка при получении сообщений чата:", error);
-    if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось получить сообщения");
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error) throw Errors.internal(error.message);
+    throw Errors.internal("Не удалось получить сообщения");
   }
 };

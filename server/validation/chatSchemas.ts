@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const MAX_ATTACHMENT_SIZE = 50 * 1024 * 1024; // 50 MB
+
 const isValidStorageUrl = (value: string): boolean => {
   if (!value || !value.trim()) return false;
 
@@ -17,6 +19,7 @@ const isValidStorageUrl = (value: string): boolean => {
 
 const StorageUrlSchema = z
   .string()
+  .trim()
   .min(1, "Storage url is required")
   .refine(isValidStorageUrl, {
     message: "Invalid storage url",
@@ -24,45 +27,42 @@ const StorageUrlSchema = z
 
 const AttachmentSchema = z.object({
   url: StorageUrlSchema,
-  mime: z.string().min(1),
-  name: z.string().optional(),
-  size: z.number().int().nonnegative().optional(),
+  mime: z.string().trim().min(1).max(255),
+  name: z.string().trim().max(255).optional(),
+  size: z.number().int().nonnegative().max(MAX_ATTACHMENT_SIZE).optional(),
   type: z.enum(["image", "video", "file", "gif", "audio"]).optional(),
+});
+
+export const createChatSchema = z.object({
+  userIds: z
+    .array(z.number().int().positive())
+    .min(1, "At least one participant is required")
+    .max(50, "Too many participants"),
+  name: z.string().trim().min(1).max(120).optional().nullable(),
 });
 
 export const sendMessageSchema = z
   .object({
-    conversationId: z
-      .number({ invalid_type_error: "conversationId must be a number" })
-      .int()
-      .positive(),
-    senderId: z
-      .number({ invalid_type_error: "senderId must be a number" })
-      .int()
-      .positive(),
-
-    encryptedContent: z.string().optional().nullable(),
-
-    attachments: z.array(AttachmentSchema).max(10).optional(),
+    content: z.string().trim().max(5000).optional().nullable(),
 
     mediaUrl: StorageUrlSchema.optional().nullable(),
     mediaType: z
       .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
       .optional()
       .nullable(),
-    fileName: z.string().optional(),
+    fileName: z.string().trim().max(255).optional().nullable(),
 
     gifUrl: StorageUrlSchema.optional().nullable(),
     stickerUrl: StorageUrlSchema.optional().nullable(),
 
     repliedToId: z.number().int().positive().optional().nullable(),
 
-    clientMessageId: z.string().optional().nullable(),
+    clientMessageId: z.string().trim().max(128).optional().nullable(),
+
+    attachments: z.array(AttachmentSchema).max(10).optional(),
 
     ttlSeconds: z
-      .number({
-        invalid_type_error: "ttlSeconds must be a number",
-      })
+      .number()
       .int()
       .positive()
       .max(60 * 60 * 24 * 7)
@@ -70,9 +70,7 @@ export const sendMessageSchema = z
       .nullable(),
 
     maxViewsPerUser: z
-      .number({
-        invalid_type_error: "maxViewsPerUser must be a number",
-      })
+      .number()
       .int()
       .positive()
       .max(100)
@@ -81,94 +79,37 @@ export const sendMessageSchema = z
   })
   .refine(
     (data) =>
-      !!data.encryptedContent ||
-      !!(data.attachments && data.attachments.length > 0) ||
+      !!data.content ||
+      !!data.mediaUrl ||
       !!data.gifUrl ||
       !!data.stickerUrl ||
-      !!data.mediaUrl,
-    { message: "Нельзя отправить пустое сообщение" },
+      !!(data.attachments && data.attachments.length > 0),
+    { message: "Нельзя отправить пустое сообщение" }
   );
-
-export const createChatSchema = z.object({
-  userIds: z.array(z.number()).min(1, "At least one participant is required"),
-  name: z.string().optional().nullable(),
-  creatorId: z
-    .number({ invalid_type_error: "creatorId must be a number" })
-    .int()
-    .positive(),
-});
 
 export const updateMessageSchema = z
   .object({
-    messageId: z.number().int().positive().optional(),
-
-    clientMessageId: z.string().optional().nullable(),
-    conversationId: z.number().int().positive().optional(),
-
-    userId: z.number().int().positive(),
-
-    encryptedContent: z.string().optional().nullable(),
+    content: z.string().trim().max(5000).optional().nullable(),
     mediaUrl: StorageUrlSchema.optional().nullable(),
     mediaType: z
       .enum(["image", "video", "file", "gif", "audio", "text", "sticker"])
       .optional()
       .nullable(),
-    fileName: z.string().optional().nullable(),
+    fileName: z.string().trim().max(255).optional().nullable(),
     gifUrl: StorageUrlSchema.optional().nullable(),
     stickerUrl: StorageUrlSchema.optional().nullable(),
     repliedToId: z.number().int().positive().optional().nullable(),
+    clientMessageId: z.string().trim().max(128).optional().nullable(),
   })
   .refine(
-    (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
-    { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
+    (data) =>
+      data.content !== undefined ||
+      data.mediaUrl !== undefined ||
+      data.mediaType !== undefined ||
+      data.fileName !== undefined ||
+      data.gifUrl !== undefined ||
+      data.stickerUrl !== undefined ||
+      data.repliedToId !== undefined ||
+      data.clientMessageId !== undefined,
+    { message: "At least one field must be provided" }
   );
-
-export const pinConversationSchema = z.object({
-  conversationId: z
-    .number({ invalid_type_error: "conversationId must be a number" })
-    .int()
-    .positive(),
-  userId: z
-    .number({ invalid_type_error: "userId must be a number" })
-    .int()
-    .positive(),
-});
-
-export const unpinConversationSchema = z.object({
-  conversationId: z
-    .number({ invalid_type_error: "conversationId must be a number" })
-    .int()
-    .positive(),
-  userId: z
-    .number({ invalid_type_error: "userId must be a number" })
-    .int()
-    .positive(),
-});
-
-export const pinMessageSchema = z
-  .object({
-    messageId: z.number().int().positive().optional(),
-
-    clientMessageId: z.string().optional().nullable(),
-    conversationId: z.number().int().positive().optional(),
-
-    userId: z.number().int().positive(),
-  })
-  .refine(
-    (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
-    { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
-  );
-
-export const unpinMessageSchema = z
-  .object({
-    messageId: z.number().int().positive().optional(),
-
-    clientMessageId: z.string().optional().nullable(),
-    conversationId: z.number().int().positive().optional(),
-
-    userId: z.number().int().positive(),
-  })
-  .refine(
-    (data) => !!data.messageId || (!!data.clientMessageId && !!data.conversationId),
-    { message: "Нужно указать messageId или пару clientMessageId + conversationId" },
-  );  

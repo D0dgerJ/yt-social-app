@@ -11,6 +11,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - yt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -18,7 +23,8 @@ services:
     container_name: yt-backend
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${PORT}
@@ -37,8 +43,8 @@ services:
       SEED_USERNAME: ${SEED_USERNAME}
       SEED_PASSWORD: ${SEED_PASSWORD}
       SEED_ROLE: ${SEED_ROLE}
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     volumes:
       - backend_uploads:/app/uploads
     networks:
@@ -48,9 +54,9 @@ services:
     build:
       context: ./client
       args:
-        VITE_SERVER_ORIGIN: http://192.168.1.102:5000
-        VITE_SOCKET_URL: http://192.168.1.102:5000
-        VITE_GIPHY_API_KEY: LIxsrrfSsnZMnx0bblBxWLYwaPs8oT
+        VITE_SERVER_ORIGIN: ${VITE_SERVER_ORIGIN}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL}
+        VITE_GIPHY_API_KEY: ${VITE_GIPHY_API_KEY}
     container_name: yt-frontend
     restart: unless-stopped
     depends_on:

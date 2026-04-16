@@ -10,6 +10,7 @@ import mime from "mime-types";
 import routes from "./routes/routes.js";
 import { errorHandler } from "../infrastructure/middleware/errorHandler.js";
 import { env } from "../config/env.js";
+import { apiLimiter } from "../infrastructure/middleware/rateLimit.js";
 import {
   fixLatin1ToUtf8,
   encodeRFC5987,
@@ -27,7 +28,7 @@ if (!env.isTest) {
 
 const app: Express = express();
 
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 if (env.STORAGE_PROVIDER === "local") {
   app.use(
@@ -108,6 +109,7 @@ app.use(
 app.use(compression());
 app.use(express.json({ limit: "2mb" }));
 
+app.use("/api/v1", apiLimiter);
 app.use("/api/v1", routes);
 
 app.use(errorHandler);

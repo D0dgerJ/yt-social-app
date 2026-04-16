@@ -20,18 +20,35 @@ import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.j
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
 import { getUserPostsFlexible } from "../controllers/post.controller.js";
 import prisma from "../../infrastructure/database/prismaClient.js";
-
-import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.js";
+import {
+  enforceSanctions,
+  requireNotRestricted,
+} from "../../infrastructure/middleware/enforceSanctions.js";
+import { reportLimiter } from "../../infrastructure/middleware/rateLimit.js";
+import { validate } from "../../infrastructure/middleware/validate.js";
+import {
+  createPostSchema,
+  updatePostSchema,
+  reportPostSchema,
+} from "../../validation/postSchemas.js";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, enforceSanctions, requireNotRestricted, create);
+router.post(
+  "/",
+  authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
+  validate(createPostSchema),
+  create
+);
 
 router.put(
   "/:id",
   authMiddleware,
   enforceSanctions,
   requireNotRestricted,
+  validate(updatePostSchema),
   checkOwnership(async (req: express.Request): Promise<number | undefined> => {
     const post = await prisma.post.findUnique({
       where: { id: Number(req.params.id) },
@@ -64,7 +81,15 @@ router.get("/user", getUserPostsFlexible);
 router.get("/user/:userId", getUser);
 router.get("/username/:username", getByUsername);
 
-router.post("/:id/report", authMiddleware, enforceSanctions, requireNotRestricted, report);
+router.post(
+  "/:id/report",
+  authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
+  reportLimiter,
+  validate(reportPostSchema),
+  report
+);
 
 router.get("/:id", getById);
 

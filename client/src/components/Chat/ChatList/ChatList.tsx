@@ -5,7 +5,6 @@ import {
   unpinConversation,
 } from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
-import { decryptText } from "@/utils/crypto";
 import "./ChatList.scss";
 
 interface ChatListProps {
@@ -26,7 +25,7 @@ type ConversationLike = {
   participants?: ParticipantLike[];
   lastMessage?: {
     id: number;
-    encryptedContent?: string | null;
+    content?: string | null;
     mediaType?:
       | "image"
       | "video"
@@ -73,8 +72,9 @@ const mediaPreview = (m?: ConversationLike["lastMessage"]) => {
 
 const getAvatarFromConv = (conv?: ConversationLike): string => {
   const first = Array.isArray(conv?.participants)
-    ? conv!.participants![0]
+    ? conv.participants[0]
     : undefined;
+
   const avatar =
     first?.user?.profilePicture ??
     first?.profilePicture ??
@@ -85,7 +85,7 @@ const getAvatarFromConv = (conv?: ConversationLike): string => {
 
 const getParticipantNames = (conv: ConversationLike) => {
   const parts: ParticipantLike[] = Array.isArray(conv?.participants)
-    ? conv.participants!
+    ? conv.participants
     : [];
 
   return parts
@@ -121,12 +121,15 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
 
   const getTitle = useCallback((conv: ConversationLike) => {
     if (conv?.name) return conv.name;
+
     const parts: ParticipantLike[] = Array.isArray(conv?.participants)
-      ? conv.participants!
+      ? conv.participants
       : [];
+
     const names = parts
       .map((p) => p?.user?.username ?? p?.username)
       .filter(Boolean) as string[];
+
     return names.length ? names.join(", ") : "Без названия";
   }, []);
 
@@ -181,14 +184,13 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
               : null);
 
           const mediaShort = mediaPreview(lastMsg as any);
-
-          const decrypted =
-            !mediaShort && lastMsg?.encryptedContent
-              ? decryptText(lastMsg.encryptedContent)
+          const textPreview =
+            !mediaShort && typeof lastMsg?.content === "string"
+              ? lastMsg.content
               : "";
 
           const lastMessage =
-            (mediaShort || decrypted || "").trim() || "Нет сообщений";
+            (mediaShort || textPreview || "").trim() || "Нет сообщений";
 
           const time = lastMsg?.createdAt
             ? new Date(lastMsg.createdAt).toLocaleTimeString([], {

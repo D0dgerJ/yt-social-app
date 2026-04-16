@@ -33,8 +33,7 @@ interface MessageItemProps {
   displayName?: string;
   isOwnMessage?: boolean;
 
-  content?: string;
-  encryptedContent?: string | null;
+  content?: string | null;
 
   mediaUrl?: string | null;
   mediaType?:
@@ -78,13 +77,13 @@ interface MessageItemProps {
 const API_BASE = env.SERVER_ORIGIN;
 
 function toAbsoluteUrl(url?: string | null): string {
-  if (!url) return "";
+  if (!url) return '';
 
   try {
     return new URL(url).toString();
   } catch {
-    const base = String(API_BASE).replace(/\/+$/, "");
-    const rel = String(url).replace(/^\/+/, "");
+    const base = String(API_BASE).replace(/\/+$/, '');
+    const rel = String(url).replace(/^\/+/, '');
     return `${base}/${rel}`;
   }
 }
@@ -245,7 +244,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
   displayName,
 
   content,
-  encryptedContent,
 
   mediaUrl,
   mediaType,
@@ -302,7 +300,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-    const normalizeTime = (sec: number): number => {
+  const normalizeTime = (sec: number): number => {
     if (!Number.isFinite(sec) || Number.isNaN(sec) || sec < 0) {
       return 0;
     }
@@ -401,16 +399,16 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
   const replyData: RepliedToLite | null = useMemo(() => {
     if (repliedTo) return repliedTo;
+
     if (conversationId && repliedToId) {
       const original = getById(conversationId, repliedToId);
       if (original) {
         return {
           id: original.id,
           senderId: original.senderId,
-          encryptedContent: original.encryptedContent ?? null,
-          content: original.content,
+          content: original.content ?? null,
           mediaUrl: original.mediaUrl ?? null,
-          mediaType: (original.mediaType as any) ?? null,
+          mediaType: original.mediaType ?? null,
           fileName: original.fileName ?? null,
           isDeleted: false,
           sender: original.sender
@@ -423,6 +421,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         };
       }
     }
+
     return null;
   }, [repliedTo, conversationId, repliedToId, getById]);
 
@@ -476,12 +475,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
     e.preventDefault();
     void openReactionsPopup();
   };
+
   const handleTouchStart = () => {
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
     longPressTimer.current = window.setTimeout(() => {
       void openReactionsPopup();
     }, 450) as unknown as number;
   };
+
   const handleTouchEnd = () => {
     if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
     longPressTimer.current = null;
@@ -662,7 +663,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <ReplyPreview reply={replyData} onClick={handleJumpToOriginal} />
       )}
 
-      {/* 🔹 заглушка для эфемерных, пока не раскрыты */}
       {isEphemeralActive && !revealed && (
         <button
           type="button"
@@ -683,7 +683,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </button>
       )}
 
-      {/* текст показываем только если не эфемерное или уже раскрыто */}
       {!isEphemeralActive && content && (
         <div className="message-content">{content}</div>
       )}
@@ -697,7 +696,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
 
-      {/* мультивложения */}
       {(!isEphemeralActive || revealed) && mediaFiles && mediaFiles.length > 0 && (
         <MediaGrid
           items={mediaFiles}
@@ -705,7 +703,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
         />
       )}
 
-      {/* одиночное изображение */}
       {(!isEphemeralActive || revealed) &&
         isSingleImage &&
         !mediaFiles?.length && (
@@ -727,7 +724,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         )}
 
-      {/* видео / аудио / файл / стикер — тоже прячем, пока эфемерное не раскрыто */}
       {(!isEphemeralActive || revealed) &&
         !mediaFiles?.length &&
         mediaType === 'video' &&
@@ -848,7 +844,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
           />
         )}
 
-      {/* реакции */}
       {reactions.length > 0 && (
         <div className="message-reactions-static" aria-label="Реакции к сообщению">
           {reactions.map((r) => {

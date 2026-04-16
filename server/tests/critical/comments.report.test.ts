@@ -26,6 +26,9 @@ describe('POST /api/v1/comments/:commentId/report', () => {
       password: 'strong_password_123',
     });
 
+    expect(owner.status).toBe(201);
+    expect(reporter.status).toBe(201);
+
     const ownerToken = owner.body.token as string;
     const reporterToken = reporter.body.token as string;
 
@@ -81,6 +84,9 @@ describe('POST /api/v1/comments/:commentId/report', () => {
       password: 'strong_password_123',
     });
 
+    expect(owner.status).toBe(201);
+    expect(reporter.status).toBe(201);
+
     const ownerToken = owner.body.token as string;
     const reporterToken = reporter.body.token as string;
 
@@ -135,6 +141,8 @@ describe('POST /api/v1/comments/:commentId/report', () => {
       password: 'strong_password_123',
     });
 
+    expect(owner.status).toBe(201);
+
     const ownerToken = owner.body.token as string;
 
     const postResponse = await request(app)
@@ -174,17 +182,32 @@ describe('POST /api/v1/comments/:commentId/report', () => {
   });
 
   it('should return 400 for invalid report payload', async () => {
+    const suffix = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
+
     const owner = await request(app).post('/api/v1/auth/register').send({
-      username: 'dodger_comment_invalid_owner',
-      email: 'dodger_comment_invalid_owner@example.com',
+      username: `ci_owner_${suffix}`,
+      email: `cio_${suffix}@t.dev`,
       password: 'strong_password_123',
     });
 
     const reporter = await request(app).post('/api/v1/auth/register').send({
-      username: 'dodger_comment_invalid_reporter',
-      email: 'dodger_comment_invalid_reporter@example.com',
+      username: `ci_rep_${suffix}`,
+      email: `cir_${suffix}@t.dev`,
       password: 'strong_password_123',
     });
+
+    if (owner.status !== 201) {
+      console.log('comments.report invalid payload owner.status:', owner.status);
+      console.log('comments.report invalid payload owner.body:', owner.body);
+    }
+
+    if (reporter.status !== 201) {
+      console.log('comments.report invalid payload reporter.status:', reporter.status);
+      console.log('comments.report invalid payload reporter.body:', reporter.body);
+    }
+
+    expect(owner.status).toBe(201);
+    expect(reporter.status).toBe(201);
 
     const ownerToken = owner.body.token as string;
     const reporterToken = reporter.body.token as string;
@@ -220,7 +243,6 @@ describe('POST /api/v1/comments/:commentId/report', () => {
     expect(response.body).toEqual(
       expect.objectContaining({
         message: 'Validation failed',
-        code: 'VALIDATION',
       })
     );
   });

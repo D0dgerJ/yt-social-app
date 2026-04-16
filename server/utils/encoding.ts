@@ -2,17 +2,7 @@ export function fixLatin1ToUtf8(input: string): string {
   if (!input) return "";
 
   try {
-    const buf = Buffer.from(input, "latin1");
-    const decoded = buf.toString("utf8");
-
-    const nonAsciiOriginal = (input.match(/[^\x00-\x7F]/g) || []).length;
-    const nonAsciiDecoded = (decoded.match(/[^\x00-\x7F]/g) || []).length;
-
-    if (nonAsciiDecoded > nonAsciiOriginal) {
-      return decoded;
-    }
-
-    return input;
+    return Buffer.from(input, "latin1").toString("utf8");
   } catch {
     return input;
   }

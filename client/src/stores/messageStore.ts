@@ -31,8 +31,7 @@ export interface MediaFileLite {
   id: number;
   url: string;
   type: Exclude<MediaType, 'text' | 'sticker' | null>;
-  uploadedAt: string; // ISO
-
+  uploadedAt: string;
   originalName?: string | null;
   mime?: string | null;
   size?: number | null;
@@ -41,14 +40,10 @@ export interface MediaFileLite {
 export type RepliedToLite = {
   id: number;
   senderId: number;
-
-  encryptedContent?: string | null;
-  content?: string;
-
+  content?: string | null;
   mediaUrl?: string | null;
   mediaType?: MediaType;
   fileName?: string | null;
-
   isDeleted?: boolean;
   sender?: UserLite | null;
 };
@@ -59,8 +54,7 @@ export interface Message {
   clientMessageId?: string | null;
   senderId: number;
 
-  content?: string;
-  encryptedContent?: string | null;
+  content?: string | null;
 
   mediaUrl?: string | null;
   mediaType?: MediaType;
@@ -98,7 +92,7 @@ export interface Message {
   remainingViewsForMe?: number | null;
 }
 
-function mergePreserveDecrypted(
+function mergePreserveContent(
   prev: Message | undefined,
   nextPartial: Partial<Message>
 ): Message {
@@ -107,9 +101,9 @@ function mergePreserveDecrypted(
     ...nextPartial,
   };
 
-  if (nextPartial.content && typeof nextPartial.content === 'string') {
+  if (nextPartial.content !== undefined) {
     merged.content = nextPartial.content;
-  } else if (prev?.content && !nextPartial.content) {
+  } else if (prev?.content !== undefined) {
     merged.content = prev.content;
   }
 
@@ -118,14 +112,18 @@ function mergePreserveDecrypted(
     const nextReply = nextPartial.repliedTo;
 
     if (nextReply || prevReply) {
+      if (!nextReply?.id && !prevReply?.id) return merged;
+
       const mergedReply: RepliedToLite = {
         ...(prevReply || {}),
         ...(nextReply || {}),
+        id: nextReply?.id ?? prevReply!.id,
+        senderId: nextReply?.senderId ?? prevReply!.senderId,
       };
 
-      if (nextReply?.content && typeof nextReply.content === 'string') {
+      if (nextReply?.content !== undefined) {
         mergedReply.content = nextReply.content;
-      } else if (prevReply?.content && !nextReply?.content) {
+      } else if (prevReply?.content !== undefined) {
         mergedReply.content = prevReply.content;
       }
 
@@ -163,18 +161,17 @@ const upsertWithDedupe = (list: Message[], incoming: Message): Message[] => {
 
   if (idx >= 0) {
     const next = [...list];
-
     const prevMsg = next[idx];
-    const merged = mergePreserveDecrypted(prevMsg, {
+
+    next[idx] = mergePreserveContent(prevMsg, {
       ...incoming,
       localStatus: incoming.localStatus ?? prevMsg.localStatus,
     });
 
-    next[idx] = merged;
     return sortByCreatedAtAsc(next);
   }
 
-  const mergedNew = mergePreserveDecrypted(undefined, incoming);
+  const mergedNew = mergePreserveContent(undefined, incoming);
   return sortByCreatedAtAsc([...list, mergedNew]);
 };
 
@@ -191,12 +188,12 @@ const mergeUnique = (a: Message[], b: Message[]): Message[] => {
 
     if (i >= 0) {
       const prevMsg = out[i];
-      out[i] = mergePreserveDecrypted(prevMsg, {
+      out[i] = mergePreserveContent(prevMsg, {
         ...incoming,
         localStatus: incoming.localStatus ?? prevMsg.localStatus,
       });
     } else {
-      out.push(mergePreserveDecrypted(undefined, incoming));
+      out.push(mergePreserveContent(undefined, incoming));
     }
   };
 
@@ -210,7 +207,6 @@ type MessageMap = Record<number, Message[]>;
 
 interface MessageState {
   byConv: MessageMap;
-
   activeConversationId: number | null;
   messages: Message[];
 
@@ -219,9 +215,7 @@ interface MessageState {
   markHandled: (clientMessageId?: string | null) => void;
 
   setActiveConversation: (conversationId: number | null) => void;
-
   setMessages: (msgs: Message[]) => void;
-
   addMessage: (msg: Message) => void;
 
   loadHistory: (
@@ -246,7 +240,6 @@ interface MessageState {
   ) => void;
 
   removeMessage: (id: number) => void;
-
   clearMessages: () => void;
 
   updateMessageReactions: (
@@ -273,10 +266,12 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   messages: [],
 
   handled: new Set<string>(),
+
   isHandled: (clientMessageId) => {
     if (!clientMessageId) return false;
     return get().handled.has(clientMessageId);
   },
+
   markHandled: (clientMessageId) => {
     if (!clientMessageId) return;
     set((state) => {
@@ -301,9 +296,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       if (convId == null) {
         return { activeConversationId: null, messages: [] };
       }
-      const prepared = msgs.map((m) =>
-        mergePreserveDecrypted(undefined, m)
-      );
+
+      const prepared = msgs.map((m) => mergePreserveContent(undefined, m));
       const sorted = sortByCreatedAtAsc(prepared);
 
       return {
@@ -318,24 +312,21 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const listForConv = state.byConv[msg.conversationId] ?? [];
       const updatedForConv = upsertWithDedupe(listForConv, msg);
 
-      const shouldUpdateFlat =
-        state.activeConversationId === msg.conversationId;
-
       return {
         byConv: {
           ...state.byConv,
           [msg.conversationId]: updatedForConv,
         },
-        messages: shouldUpdateFlat
-          ? [...updatedForConv]
-          : state.messages,
+        messages:
+          state.activeConversationId === msg.conversationId
+            ? [...updatedForConv]
+            : state.messages,
       };
     }),
 
   loadHistory: (conversationId, older, prepend = true) =>
     set((state) => {
       const current = state.byConv[conversationId] ?? [];
-
       const merged = prepend
         ? mergeUnique(older, current)
         : mergeUnique(current, older);
@@ -352,18 +343,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   replaceOptimistic: (clientId, serverMsg) =>
     set((state) => {
       const list = state.byConv[serverMsg.conversationId] ?? [];
-      const idx = list.findIndex(
-        (m) => m.clientMessageId === clientId
-      );
+      const idx = list.findIndex((m) => m.clientMessageId === clientId);
 
       let nextList: Message[];
 
       if (idx >= 0) {
         const prevMsg = list[idx];
-        const preservedClientId =
-          prevMsg.clientMessageId ?? clientId;
+        const preservedClientId = prevMsg.clientMessageId ?? clientId;
 
-        const merged = mergePreserveDecrypted(prevMsg, {
+        const merged = mergePreserveContent(prevMsg, {
           ...serverMsg,
           clientMessageId: preservedClientId,
           localStatus: 'sent',
@@ -402,14 +390,8 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       );
       if (idx < 0) return state;
 
-      const prevMsg = list[idx];
-      const merged = {
-        ...prevMsg,
-        ...patch,
-      };
-
       const next = [...list];
-      next[idx] = merged;
+      next[idx] = { ...next[idx], ...patch };
 
       return {
         byConv: { ...state.byConv, [conversationId]: next },
@@ -448,7 +430,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       if (idx < 0) return state;
 
       const prevMsg = list[idx];
-      const merged = mergePreserveDecrypted(prevMsg, patch);
+      const merged = mergePreserveContent(prevMsg, patch);
 
       const next = [...list];
       next[idx] = merged;
@@ -467,37 +449,34 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   removeMessage: (id) =>
     set((state) => {
       let foundConv: number | null = null;
+
       for (const [cidStr, arr] of Object.entries(state.byConv)) {
         if (arr.some((m) => m.id === id)) {
           foundConv = Number(cidStr);
           break;
         }
       }
+
       if (foundConv == null) return state;
 
-      const nextList = (state.byConv[foundConv] ?? []).filter(
-        (m) => m.id !== id
-      );
+      const nextList = (state.byConv[foundConv] ?? []).filter((m) => m.id !== id);
       const nextByConv = {
         ...state.byConv,
         [foundConv]: nextList,
       };
-      const nextFlat =
-        state.activeConversationId === foundConv
-          ? [...nextList]
-          : state.messages;
 
-      return { byConv: nextByConv, messages: nextFlat };
+      return {
+        byConv: nextByConv,
+        messages:
+          state.activeConversationId === foundConv
+            ? [...nextList]
+            : state.messages,
+      };
     }),
 
   clearMessages: () => set(() => ({ messages: [] })),
 
-  updateMessageReactions: (
-    conversationId,
-    messageId,
-    grouped,
-    meId
-  ) =>
+  updateMessageReactions: (conversationId, messageId, grouped, meId) =>
     set((state) => {
       const list = state.byConv[conversationId] ?? [];
       const idx = list.findIndex((m) => m.id === messageId);
@@ -517,9 +496,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       if (typeof meId === 'number') {
         msg.myReactions = msg.groupedReactions
-          ?.filter((gr) =>
-            gr.users?.some((u) => u.id === meId)
-          )
+          ?.filter((gr) => gr.users?.some((u) => u.id === meId))
           .map((gr) => gr.emoji);
       }
 
@@ -535,13 +512,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       };
     }),
 
-  toggleReaction: (
-    conversationId,
-    messageId,
-    emoji,
-    userId,
-    toggledOn
-  ) =>
+  toggleReaction: (conversationId, messageId, emoji, userId, toggledOn) =>
     set((state) => {
       const list = state.byConv[conversationId] ?? [];
       const idx = list.findIndex((m) => m.id === messageId);
@@ -550,73 +521,52 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const prevMsg = list[idx];
       const msg: Message = { ...prevMsg };
 
-      const old = Array.isArray(msg.reactions)
-        ? [...msg.reactions]
-        : [];
-      const oldIdx = old.findIndex(
-        (r) => r.emoji === emoji && r.userId === userId
-      );
+      const old = Array.isArray(msg.reactions) ? [...msg.reactions] : [];
+      const oldIdx = old.findIndex((r) => r.emoji === emoji && r.userId === userId);
 
       const shouldAddOld =
-        typeof toggledOn === 'boolean'
-          ? toggledOn
-          : oldIdx < 0;
+        typeof toggledOn === 'boolean' ? toggledOn : oldIdx < 0;
 
       if (shouldAddOld) {
         if (oldIdx < 0) old.push({ emoji, userId });
       } else if (oldIdx >= 0) {
         old.splice(oldIdx, 1);
       }
+
       msg.reactions = old;
 
       const grouped = Array.isArray(msg.groupedReactions)
         ? [...msg.groupedReactions]
         : [];
-      const gi = grouped.findIndex(
-        (g) => g.emoji === emoji
-      );
+      const gi = grouped.findIndex((g) => g.emoji === emoji);
 
       const ensureUser = (arr: UserLite[]) =>
-        arr.some((u) => u.id === userId)
-          ? arr
-          : [...arr, { id: userId }];
+        arr.some((u) => u.id === userId) ? arr : [...arr, { id: userId }];
 
       const existsUser =
-        gi >= 0 &&
-        grouped[gi].users?.some((u) => u.id === userId);
+        gi >= 0 && grouped[gi].users?.some((u) => u.id === userId);
 
       const shouldAdd =
-        typeof toggledOn === 'boolean'
-          ? toggledOn
-          : !existsUser;
+        typeof toggledOn === 'boolean' ? toggledOn : !existsUser;
 
       if (gi === -1) {
-        if (shouldAdd)
+        if (shouldAdd) {
           grouped.push({
             emoji,
             count: 1,
             users: [{ id: userId }],
           });
+        }
       } else {
         const g = { ...grouped[gi] };
-        const users = Array.isArray(g.users)
-          ? [...g.users]
-          : [];
+        const users = Array.isArray(g.users) ? [...g.users] : [];
 
         if (shouldAdd) {
           g.users = ensureUser(users);
-          g.count = Math.max(
-            1,
-            (g.count || 0) + (existsUser ? 0 : 1)
-          );
+          g.count = Math.max(1, (g.count || 0) + (existsUser ? 0 : 1));
         } else {
-          g.users = users.filter(
-            (u) => u.id !== userId
-          );
-          g.count = Math.max(
-            0,
-            (g.count || 0) - (existsUser ? 1 : 0)
-          );
+          g.users = users.filter((u) => u.id !== userId);
+          g.count = Math.max(0, (g.count || 0) - (existsUser ? 1 : 0));
         }
 
         if (g.count === 0) {

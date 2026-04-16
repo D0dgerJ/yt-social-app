@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.js";
 
 export const getUserConversations = async (userId: number) => {
   try {
@@ -8,7 +9,7 @@ export const getUserConversations = async (userId: number) => {
     });
 
     if (!userExists) {
-      throw new Error("Пользователь не найден");
+      throw Errors.notFound("Пользователь не найден");
     }
 
     const pinnedConversations = await prisma.pinnedConversation.findMany({
@@ -48,6 +49,7 @@ export const getUserConversations = async (userId: number) => {
             encryptedContent: true,
             mediaUrl: true,
             mediaType: true,
+            fileName: true,
             createdAt: true,
             isDeleted: true,
             sender: {
@@ -87,13 +89,13 @@ export const getUserConversations = async (userId: number) => {
                 id: conv.lastMessage.id,
                 sender: conv.lastMessage.sender,
                 mediaType: conv.lastMessage.mediaType,
-                encryptedContent: conv.lastMessage.encryptedContent,
                 mediaUrl: conv.lastMessage.mediaUrl,
+                fileName: conv.lastMessage.fileName,
+                content: conv.lastMessage.encryptedContent ?? null,
                 createdAt: conv.lastMessage.createdAt,
               }
             : null,
         updatedAt: conv.updatedAt,
-
         isPinned,
         pinnedAt,
       };
@@ -106,7 +108,7 @@ export const getUserConversations = async (userId: number) => {
       if (a.isPinned && b.isPinned) {
         const aTime = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
         const bTime = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
-        return bTime - aTime; 
+        return bTime - aTime;
       }
 
       const aUpdated = new Date(a.updatedAt).getTime();
@@ -117,7 +119,8 @@ export const getUserConversations = async (userId: number) => {
     return sorted;
   } catch (error) {
     console.error("❌ Ошибка при получении бесед пользователя:", error);
-    if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось получить список бесед");
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error) throw Errors.internal(error.message);
+    throw Errors.internal("Не удалось получить список бесед");
   }
 };

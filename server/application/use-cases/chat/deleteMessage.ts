@@ -1,6 +1,6 @@
 import prisma from "../../../infrastructure/database/prismaClient.js";
 import { getIO } from "../../../infrastructure/websocket/socket.js";
-import { Errors } from "../../../infrastructure/errors/ApiError.js";
+import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.js";
 import { assertActionAllowed } from "../../services/abuse/antiAbuse.js";
 
 interface DeleteMessageInput {
@@ -13,23 +13,28 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
     if (!Number.isFinite(messageId) || messageId <= 0) {
       throw Errors.validation("Invalid messageId");
     }
+
     if (!Number.isFinite(userId) || userId <= 0) {
       throw Errors.validation("Invalid userId");
     }
 
-    // Anti-abuse: санкции + лимит удалений
     await assertActionAllowed({ actorId: userId, action: "MESSAGE_DELETE" });
 
     const message = await prisma.message.findUnique({
       where: { id: messageId },
+      select: {
+        id: true,
+        senderId: true,
+        conversationId: true,
+      },
     });
 
     if (!message) {
-      throw new Error("Сообщение не найдено");
+      throw Errors.notFound("Сообщение не найдено");
     }
 
     if (message.senderId !== userId) {
-      throw new Error("Вы не можете удалить это сообщение");
+      throw Errors.forbidden("Вы не можете удалить это сообщение");
     }
 
     const softDeleted = await prisma.message.update({
@@ -60,6 +65,7 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
           id: { lt: messageId },
         },
         orderBy: { id: "desc" },
+        select: { id: true },
       });
 
       await prisma.conversation.update({
@@ -79,9 +85,8 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
     return softDeleted;
   } catch (error) {
     console.error("❌ Ошибка при удалении сообщения:", error);
-    if (error instanceof Error) {
-      throw new Error(error.message);
-    }
-    throw new Error("Не удалось удалить сообщение");
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error) throw Errors.internal(error.message);
+    throw Errors.internal("Не удалось удалить сообщение");
   }
 };

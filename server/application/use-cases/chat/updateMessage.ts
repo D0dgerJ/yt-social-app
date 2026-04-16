@@ -10,7 +10,7 @@ interface UpdateMessageInput {
 
   userId: number;
 
-  encryptedContent?: string;
+  content?: string | null;
   mediaUrl?: string | null;
   mediaType?:
     | "image"
@@ -34,7 +34,7 @@ export const updateMessage = async (data: UpdateMessageInput) => {
       clientMessageId,
       conversationId,
       userId,
-      encryptedContent,
+      content,
       mediaUrl,
       mediaType,
       fileName,
@@ -67,7 +67,11 @@ export const updateMessage = async (data: UpdateMessageInput) => {
       throw Errors.notFound("Message not found");
     }
 
-    if (clientMessageId && conversationId && existingMessage.conversationId !== conversationId) {
+    if (
+      clientMessageId &&
+      conversationId &&
+      existingMessage.conversationId !== conversationId
+    ) {
       throw Errors.validation("Invalid conversation for this clientMessageId");
     }
 
@@ -90,9 +94,7 @@ export const updateMessage = async (data: UpdateMessageInput) => {
       where: { id: existingMessage.id },
       data: {
         encryptedContent:
-          encryptedContent !== undefined
-            ? encryptedContent
-            : existingMessage.encryptedContent,
+          content !== undefined ? content : existingMessage.encryptedContent,
         mediaUrl: mediaUrl !== undefined ? mediaUrl : existingMessage.mediaUrl,
         mediaType: mediaType !== undefined ? mediaType : existingMessage.mediaType,
         fileName: fileName !== undefined ? fileName : existingMessage.fileName,
@@ -123,14 +125,35 @@ export const updateMessage = async (data: UpdateMessageInput) => {
           },
         },
         mediaFiles: {
-          select: { id: true, url: true, type: true, uploadedAt: true },
+          select: {
+            id: true,
+            url: true,
+            type: true,
+            uploadedAt: true,
+            originalName: true,
+            mime: true,
+            size: true,
+          },
         },
       },
     });
 
-    getIO().to(String(existingMessage.conversationId)).emit("messageUpdated", updated);
+    const response = {
+      ...updated,
+      content: updated.encryptedContent ?? null,
+      repliedTo: updated.repliedTo
+        ? {
+            ...updated.repliedTo,
+            content: updated.repliedTo.encryptedContent ?? null,
+          }
+        : null,
+    };
 
-    return updated;
+    getIO()
+      .to(String(existingMessage.conversationId))
+      .emit("messageUpdated", response);
+
+    return response;
   } catch (error) {
     console.error("❌ Ошибка при обновлении сообщения:", error);
     if (error instanceof ApiError) throw error;

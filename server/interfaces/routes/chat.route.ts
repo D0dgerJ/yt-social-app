@@ -17,41 +17,64 @@ import {
   unpinConversation,
   pinMessage,
   unpinMessage,
-  registerView,  
+  registerView,
 } from "../controllers/chat.controller.js";
 
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
 import { checkOwnership } from "../../infrastructure/middleware/checkOwnership.js";
 import prisma from "../../infrastructure/database/prismaClient.js";
-
-import { enforceSanctions, requireNotRestricted } from "../../infrastructure/middleware/enforceSanctions.js";
+import {
+  enforceSanctions,
+  requireNotRestricted,
+} from "../../infrastructure/middleware/enforceSanctions.js";
+import { chatLimiter } from "../../infrastructure/middleware/rateLimit.js";
+import { validate } from "../../infrastructure/middleware/validate.js";
+import {
+  createChatSchema,
+  sendMessageSchema,
+  updateMessageSchema,
+} from "../../validation/chatSchemas.js";
 
 const router = express.Router();
 
-// Чаты
-router.post("/", authMiddleware, create); // POST /api/v1/chat
-router.get("/", authMiddleware, getConversations); // GET /api/v1/chat
+router.use(chatLimiter);
 
-// 📌 Пины чатов
-router.post("/:chatId/pin", authMiddleware, pinConversation); // POST /api/v1/chat/:chatId/pin
-router.delete("/:chatId/pin", authMiddleware, unpinConversation); // DELETE /api/v1/chat/:chatId/pin
+// Чаты
+router.post("/", authMiddleware, validate(createChatSchema), create);
+router.get("/", authMiddleware, getConversations);
+
+// Пины чатов
+router.post("/:chatId/pin", authMiddleware, pinConversation);
+router.delete("/:chatId/pin", authMiddleware, unpinConversation);
 
 // Участники чата
-router.post("/:chatId/participants", authMiddleware, add); // POST /api/v1/chat/:chatId/participants
-router.delete("/:chatId/leave", authMiddleware, leave); // DELETE /api/v1/chat/:chatId/leave
+router.post("/:chatId/participants", authMiddleware, add);
+router.delete("/:chatId/leave", authMiddleware, leave);
 
 // Сообщения
-router.get("/:chatId/messages", authMiddleware, getConversationMessages); // GET /api/v1/chat/:chatId/messages
-router.post("/:chatId/messages", authMiddleware, enforceSanctions, requireNotRestricted, send);  // POST /api/v1/chat/:chatId/messages
+router.get("/:chatId/messages", authMiddleware, getConversationMessages);
+
+router.post(
+  "/:chatId/messages",
+  authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
+  validate(sendMessageSchema),
+  send
+);
 
 router.patch(
   "/:chatId/messages/:messageId",
   authMiddleware,
+  validate(updateMessageSchema),
   checkOwnership(async (req) => {
     const messageId = Number(req.params.messageId);
 
-    if (Number.isFinite(messageId)) {
-      const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (Number.isFinite(messageId) && messageId > 0) {
+      const message = await prisma.message.findUnique({
+        where: { id: messageId },
+        select: { senderId: true },
+      });
       return message?.senderId;
     }
 
@@ -64,58 +87,51 @@ router.patch(
       where: { conversationId, clientMessageId },
       select: { senderId: true },
     });
+
     return message?.senderId;
   }),
-  update,
-); // PATCH /api/v1/chat/:chatId/messages/:messageId
+  update
+);
 
 router.delete(
   "/:chatId/messages/:messageId",
   authMiddleware,
   checkOwnership(async (req) => {
     const messageId = Number(req.params.messageId);
-    if (isNaN(messageId)) return undefined;
+    if (!Number.isFinite(messageId) || messageId <= 0) return undefined;
 
     const message = await prisma.message.findUnique({
       where: { id: messageId },
+      select: { senderId: true },
     });
+
     return message?.senderId;
   }),
-  remove,
-); // DELETE /api/v1/chat/:chatId/messages/:messageId
+  remove
+);
 
-// 📌 Пины сообщений
-router.post(
-  "/:chatId/messages/:messageId/pin",
-  authMiddleware,
-  pinMessage,
-); // POST /api/v1/chat/:chatId/messages/:messageId/pin
-
-router.delete(
-  "/:chatId/messages/:messageId/pin",
-  authMiddleware,
-  unpinMessage,
-); // DELETE /api/v1/chat/:chatId/messages/:messageId/pin
+// Пины сообщений
+router.post("/:chatId/messages/:messageId/pin", authMiddleware, pinMessage);
+router.delete("/:chatId/messages/:messageId/pin", authMiddleware, unpinMessage);
 
 // Реакции
-router.post("/messages/:messageId/react", authMiddleware, enforceSanctions, requireNotRestricted, reactToMessage); // POST /api/v1/chat/messages/:messageId/react
-router.get("/messages/:messageId/reactions", authMiddleware, getReactions); // GET /api/v1/chat/messages/:messageId/reactions
+router.post(
+  "/messages/:messageId/react",
+  authMiddleware,
+  enforceSanctions,
+  requireNotRestricted,
+  reactToMessage
+);
+router.get("/messages/:messageId/reactions", authMiddleware, getReactions);
 
 // Транскрибация голосовых
-router.post(
-  "/messages/:messageId/transcribe",
-  authMiddleware,
-  transcribeMessage,
-); // POST /api/v1/chat/messages/:messageId/transcribe
+router.post("/messages/:messageId/transcribe", authMiddleware, transcribeMessage);
 
-router.post(
-  "/messages/:messageId/view",
-  authMiddleware,
-  registerView,
-); // POST /api/v1/chat/messages/:messageId/view
+// Просмотр эфемерных
+router.post("/messages/:messageId/view", authMiddleware, registerView);
 
 // Статусы сообщений
-router.post("/:chatId/delivered", authMiddleware, markAsDelivered); // POST /api/v1/chat/:chatId/delivered
-router.post("/:chatId/read", authMiddleware, markAsRead); // POST /api/v1/chat/:chatId/read
+router.post("/:chatId/delivered", authMiddleware, markAsDelivered);
+router.post("/:chatId/read", authMiddleware, markAsRead);
 
 export default router;

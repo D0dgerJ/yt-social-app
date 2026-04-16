@@ -1,54 +1,57 @@
-  import express from "express";
-  import {
-    getById as getUserByIdController,
-    profile as getUserProfileController,
-    update as updateUserController,
-    remove as deleteUserController,
-    updateAvatar as updateProfilePictureController,
-    follow as followUserController,
-    unfollow as unfollowUserController,
-    friends as getUserFriendsController,
-    getByUsername as getUserByUsernameController,
-    searchUsers as searchUsersController,
-    getMyInterestsTags,
-    getMyInterestsAuthors,
-  } from "../controllers/user.controller.js";
-  import {
-    sendFriendRequest,
-    acceptFriendRequest,
-    rejectFriendRequest,
-    getIncomingRequests,
-    getOutgoingRequests,
-    cancelRequest,
-    getFollowing,
-    getFollowers
-  } from "../controllers/user.controller.js";
-  import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
+import express from "express";
+import {
+  getById as getUserByIdController,
+  profile as getUserProfileController,
+  update as updateUserController,
+  remove as deleteUserController,
+  updateAvatar as updateProfilePictureController,
+  follow as followUserController,
+  unfollow as unfollowUserController,
+  friends as getUserFriendsController,
+  getByUsername as getUserByUsernameController,
+  searchUsers as searchUsersController,
+  getMyInterestsTags,
+  getMyInterestsAuthors,
+  sendFriendRequest,
+  acceptFriendRequest,
+  rejectFriendRequest,
+  getIncomingRequests,
+  getOutgoingRequests,
+  cancelRequest,
+  getFollowing,
+  getFollowers,
+} from "../controllers/user.controller.js";
+import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
+import { validate } from "../../infrastructure/middleware/validate.js";
+import {
+  updateUserSchema,
+  updateProfilePictureSchema,
+} from "../../validation/userSchemas.js";
 
-  const router = express.Router();
+const router = express.Router();
 
-  router.get("/search", authMiddleware, searchUsersController);
-  router.get("/username/:username", getUserByUsernameController);
-  router.get("/profile", authMiddleware, getUserProfileController);
-  router.get("/me/interests/tags", authMiddleware, getMyInterestsTags);
-  router.get("/me/interests/authors", authMiddleware, getMyInterestsAuthors);
-  router.get("/friends/:id", authMiddleware, getUserFriendsController);
-  router.get("/:id", getUserByIdController);
+router.get("/search", authMiddleware, searchUsersController);
+router.get("/username/:username", getUserByUsernameController);
+router.get("/profile", authMiddleware, getUserProfileController);
+router.get("/me/interests/tags", authMiddleware, getMyInterestsTags);
+router.get("/me/interests/authors", authMiddleware, getMyInterestsAuthors);
+router.get("/friends/:id", authMiddleware, getUserFriendsController);
+router.get("/:id", getUserByIdController);
 
-  router.use(authMiddleware);
+router.use(authMiddleware);
 
-  router.put("/:id", updateUserController);
-  router.delete("/:id", deleteUserController);
-  router.put("/:id/profile-picture", updateProfilePictureController);
-  router.put("/:id/follow", followUserController);
-  router.put("/:id/unfollow", unfollowUserController);
-  router.post("/friend-request/:id", sendFriendRequest);
-  router.post("/friend-request/:id/accept", acceptFriendRequest);
-  router.post("/friend-request/:id/reject", rejectFriendRequest);
-  router.get("/friend-requests/incoming", getIncomingRequests);
-  router.get("/friend-requests/outgoing", getOutgoingRequests);
-  router.delete("/friend-request/:id", cancelRequest);
-  router.get("/following/:id", getFollowing);
-  router.get("/followers/:id", getFollowers);
+router.put("/:id", validate(updateUserSchema), updateUserController);
+router.delete("/:id", deleteUserController);
+router.put("/:id/profile-picture", validate(updateProfilePictureSchema), updateProfilePictureController);
+router.put("/:id/follow", followUserController);
+router.put("/:id/unfollow", unfollowUserController);
+router.post("/friend-request/:id", sendFriendRequest);
+router.post("/friend-request/:id/accept", acceptFriendRequest);
+router.post("/friend-request/:id/reject", rejectFriendRequest);
+router.get("/friend-requests/incoming", getIncomingRequests);
+router.get("/friend-requests/outgoing", getOutgoingRequests);
+router.delete("/friend-request/:id", cancelRequest);
+router.get("/following/:id", getFollowing);
+router.get("/followers/:id", getFollowers);
 
-  export default router;
+export default router;

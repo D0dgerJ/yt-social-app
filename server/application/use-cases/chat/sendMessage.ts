@@ -19,7 +19,7 @@ function mapMimeToType(mime?: string | null): MediaKind | undefined {
 
 interface SendMessageInput {
   conversationId: number;
-  encryptedContent?: string | null;
+  content?: string | null;
   senderId: number;
 
   attachments?: Array<{
@@ -32,7 +32,7 @@ interface SendMessageInput {
 
   mediaUrl?: string | null;
   mediaType?: MediaKind | "text" | "sticker" | null;
-  fileName?: string;
+  fileName?: string | null;
   gifUrl?: string | null;
   stickerUrl?: string | null;
 
@@ -45,13 +45,27 @@ interface SendMessageInput {
 
 export const sendMessage = async (rawInput: SendMessageInput) => {
   try {
-    const data = sendMessageSchema.parse(rawInput);
-    await assertActionAllowed({ actorId: data.senderId, action: "MESSAGE_SEND" });
+    const payload = sendMessageSchema.parse({
+      content: rawInput.content,
+      attachments: rawInput.attachments,
+      mediaUrl: rawInput.mediaUrl,
+      mediaType: rawInput.mediaType,
+      fileName: rawInput.fileName ?? undefined,
+      gifUrl: rawInput.gifUrl,
+      stickerUrl: rawInput.stickerUrl,
+      repliedToId: rawInput.repliedToId,
+      clientMessageId: rawInput.clientMessageId,
+      ttlSeconds: rawInput.ttlSeconds,
+      maxViewsPerUser: rawInput.maxViewsPerUser,
+    });
+
+    const senderId = rawInput.senderId;
+    const conversationId = rawInput.conversationId;
+
+    await assertActionAllowed({ actorId: senderId, action: "MESSAGE_SEND" });
 
     const {
-      conversationId,
-      senderId,
-      encryptedContent,
+      content,
       attachments: attachmentsIn,
       mediaUrl: legacyMediaUrl,
       mediaType: legacyMediaType,
@@ -61,9 +75,10 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       repliedToId,
       ttlSeconds,
       maxViewsPerUser,
-    } = data;
+    } = payload;
 
-    const clientMessageId = rawInput.clientMessageId ?? null;
+    const clientMessageId = payload.clientMessageId ?? null;
+    const encryptedContent = content ?? null;
 
     const isParticipant = await prisma.participant.findFirst({
       where: { conversationId, userId: senderId },
@@ -93,12 +108,12 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
       (attachmentsIn && attachmentsIn.length ? attachmentsIn : undefined) ?? [];
 
     if (attachments.length === 0 && legacyMediaUrl) {
-      const guessed = mapMimeToType((rawInput as any).mime ?? undefined);
+      const guessed = mapMimeToType(undefined);
       attachments = [
         {
           url: legacyMediaUrl,
           mime: "application/octet-stream",
-          name: legacyFileName,
+          name: legacyFileName ?? undefined,
           type: (legacyMediaType as MediaKind) ?? guessed ?? "file",
         },
       ];
@@ -140,7 +155,7 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
             clientMessageId,
             conversationId,
             senderId,
-            encryptedContent: encryptedContent ?? null,
+            encryptedContent,
 
             mediaUrl: messageMediaUrl,
             mediaType: messageMediaType,
@@ -201,8 +216,8 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
               messageId: created.id,
 
               originalName: messageFileName ?? null,
-              mime: (rawInput as any).mime ?? null,
-              size: (rawInput as any).size ?? null,
+              mime: null,
+              size: null,
             },
           });
         }
@@ -261,7 +276,6 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
         };
       });
 
-      // уведомления — ошибки глотаем, но не валим отправку
       try {
         const [participants, conversation] = await Promise.all([
           prisma.participant.findMany({
@@ -425,7 +439,6 @@ export const sendMessage = async (rawInput: SendMessageInput) => {
     } catch (e: any) {
       const isP2002 = typeof e?.code === "string" && e.code === "P2002";
 
-      // идемпотентность по clientMessageId
       if (isP2002 && clientMessageId) {
         const existing = await prisma.message.findUnique({
           where: { clientMessageId },

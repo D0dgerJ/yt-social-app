@@ -11,7 +11,12 @@ interface CreateChatInput {
 
 export const createChat = async (data: CreateChatInput) => {
   try {
-    const { userIds: rawUserIds, name, creatorId } = createChatSchema.parse(data);
+    const { userIds: rawUserIds, name } = createChatSchema.parse({
+      userIds: data.userIds,
+      name: data.name,
+    });
+
+    const creatorId = data.creatorId;
 
     // Anti-abuse: санкции + rate limit создания чатов
     await assertActionAllowed({ actorId: creatorId, action: "CHAT_CREATE" });

@@ -22,7 +22,6 @@ export type Attachment = {
 
 export type SendMessageBody = {
   content?: string;
-  encryptedContent?: string;
   repliedToId?: number;
   attachments?: Attachment[];
   clientMessageId?: string | null;
@@ -56,9 +55,9 @@ export const uploadFiles = async (files: File[]) =>
   });
 
 // ----------------- Чаты -----------------
-export const createChat = async (userIds: number[], creatorId: number, name?: string) =>
+export const createChat = async (userIds: number[], name?: string) =>
   handleRequest(() =>
-    axios.post('/chat', { userIds, creatorId, name }).then((res) => res.data),
+    axios.post('/chat', { userIds, name }).then((res) => res.data),
   );
 
 export const getUserConversations = async () =>

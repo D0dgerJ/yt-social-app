@@ -18,8 +18,7 @@ export type RepliedToLite = {
   id: number;
   senderId: number;
 
-  encryptedContent?: string | null;
-  content?: string; 
+  content?: string | null;
 
   mediaUrl?: string | null;
   mediaType?: MediaType;
@@ -36,7 +35,7 @@ export interface Message {
   clientMessageId?: string | null;
   senderId: number;
 
-  encryptedContent?: string | null;
+  content?: string | null;
 
   mediaUrl?: string | null;
   mediaType?: MediaType;
@@ -52,7 +51,7 @@ export interface Message {
   isEdited?: boolean;
   editedAt?: string | null;
 
-  createdAt: string;  
+  createdAt: string;
   updatedAt?: string | null;
 
   sender: UserLite;

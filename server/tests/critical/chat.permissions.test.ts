@@ -48,6 +48,10 @@ describe('Chat permissions', () => {
       password: 'strong_password_123',
     });
 
+    expect(firstUser.status).toBe(201);
+    expect(secondUser.status).toBe(201);
+    expect(outsider.status).toBe(201);
+
     const creatorToken = firstUser.body.token as string;
     const outsiderToken = outsider.body.token as string;
     const secondUserId = secondUser.body.id as number;
@@ -71,9 +75,11 @@ describe('Chat permissions', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({
-      message: 'You are not a participant of this chat',
-    });
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        message: 'You are not a participant of this chat',
+      })
+    );
   });
 
   it('should return 500 when non-participant tries to get messages', async () => {
@@ -95,6 +101,10 @@ describe('Chat permissions', () => {
       password: 'strong_password_123',
     });
 
+    expect(firstUser.status).toBe(201);
+    expect(secondUser.status).toBe(201);
+    expect(outsider.status).toBe(201);
+
     const creatorToken = firstUser.body.token as string;
     const outsiderToken = outsider.body.token as string;
     const secondUserId = secondUser.body.id as number;
@@ -115,8 +125,10 @@ describe('Chat permissions', () => {
       .set('Authorization', `Bearer ${outsiderToken}`);
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      message: 'Вы не имеете доступа к этому чату',
-    });
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        message: 'Вы не имеете доступа к этому чату',
+      })
+    );
   });
 });

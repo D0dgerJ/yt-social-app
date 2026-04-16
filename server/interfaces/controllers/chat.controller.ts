@@ -79,7 +79,7 @@ export const send = async (req: Request, res: Response) => {
     const message = await sendMessage({
       conversationId,
       senderId,
-      encryptedContent: content,
+      content,
       mediaUrl,
       mediaType,
       fileName,
@@ -91,6 +91,7 @@ export const send = async (req: Request, res: Response) => {
       ttlSeconds,
       maxViewsPerUser,
     });
+
     res.status(201).json(message);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -125,6 +126,7 @@ export const update = async (req: Request, res: Response) => {
       });
       return;
     }
+
     if (!Number.isFinite(conversationId)) {
       res.status(400).json({ message: "Некорректный chatId" });
       return;
@@ -135,7 +137,7 @@ export const update = async (req: Request, res: Response) => {
       clientMessageId,
       conversationId,
       userId,
-      encryptedContent: content,
+      content,
       mediaUrl,
       mediaType,
       fileName,
@@ -250,6 +252,7 @@ export const getConversationMessages = async (
       limit,
       markDelivered: true,
     });
+
     res.status(200).json(result);
   } catch (error: any) {
     res.status(500).json({ message: error.message || "Ошибка сервера" });

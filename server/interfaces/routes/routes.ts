@@ -29,6 +29,7 @@ router.use("/stories", storyRoutes);
 router.use("/comments", commentRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/chat", chatRoutes);
+
 router.use(
   "/events",
   authMiddleware,
@@ -46,6 +47,6 @@ router.use(
 );
 
 router.use("/download", downloadRoutes);
-router.use("/mod", modRoute);
+router.use("/mod", authMiddleware, modRoute);
 
 export default router;
