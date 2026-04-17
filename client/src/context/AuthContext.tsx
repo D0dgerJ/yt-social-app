@@ -7,7 +7,7 @@ import { setStoredUser, clearAuthStorage, getStoredUser } from '@/utils/authStor
 const INITIAL_STATE: AuthState = {
   user: getStoredUser(),
   isFetching: false,
-  error: false,
+  error: false as unknown as string | null,
 };
 
 interface AuthContextProps extends AuthState {
@@ -25,7 +25,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (state.user) {
-      setStoredUser(state.user); 
+      setStoredUser(state.user);
       setCurrentUser(state.user);
     } else {
       clearAuthStorage();

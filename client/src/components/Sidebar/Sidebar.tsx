@@ -43,21 +43,21 @@ const Sidebar: React.FC = () => {
       label: "Videos",
       icon: <BiSolidVideos className="sidebar-icon" />,
     },
-    {
+    /*{
       to: "/groups",
       label: "Groups",
       icon: <MdGroups className="sidebar-icon" />,
-    },
+    },*/
     {
       to: "/chat",
       label: "Chat",
       icon: <IoChatboxEllipsesSharp className="sidebar-icon" />,
     },
-    {
+    /*{
       to: "/bookmarks",
       label: "Bookmarks",
       icon: <IoBookmarks className="sidebar-icon" />,
-    },
+    },*/
     {
       to: "/events",
       label: "Events",

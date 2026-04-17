@@ -28,7 +28,7 @@ import { useChatSocket } from "./hooks/useChatSocket";
 import FloatingChatWindow from "@/components/Chat/FloatingChatWindow/FloatingChatWindow";
 
 const AppInner: React.FC = () => {
-  const { user } = useContext(AuthContext);
+  const { user, dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
   const [isAppReady, setIsAppReady] = useState(false);
 
@@ -38,7 +38,14 @@ const AppInner: React.FC = () => {
     const checkUser = async () => {
       try {
         if (user) {
-          await getUserProfile();
+          const profile = await getUserProfile();
+
+          if (profile) {
+            dispatch({
+              type: "UPDATE_USER",
+              payload: profile,
+            });
+          }
         }
       } catch (error) {
         console.error("❌ PROFILE ERROR:", error);
@@ -51,7 +58,7 @@ const AppInner: React.FC = () => {
     };
 
     void checkUser();
-  }, [user, navigate]);
+  }, [user?.id, dispatch, navigate]);
 
   if (!isAppReady) {
     return (

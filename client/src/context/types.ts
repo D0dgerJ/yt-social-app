@@ -11,4 +11,5 @@ export type AuthAction =
   | { type: 'LOGIN_SUCCESS'; payload: User }
   | { type: 'LOGIN_FAILURE'; payload: string }
   | { type: 'FOLLOW'; payload: number }
-  | { type: 'UNFOLLOW'; payload: number };
+  | { type: 'UNFOLLOW'; payload: number }
+  | { type: 'UPDATE_USER'; payload: Partial<User> };

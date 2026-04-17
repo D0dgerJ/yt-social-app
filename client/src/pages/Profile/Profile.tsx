@@ -9,6 +9,7 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import {
   getUserByUsername,
   updateProfilePicture,
+  uploadFile,
 } from "../../utils/api/user.api";
 import { useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -25,7 +26,7 @@ interface User {
 
 const Profile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
-  const { user: currentUser } = useContext(AuthContext);
+  const { user: currentUser, dispatch } = useContext(AuthContext);
 
   const [user, setUser] = useState<User | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -63,12 +64,32 @@ const Profile: React.FC = () => {
     setLoading(true);
 
     const formData = new FormData();
-    formData.append("profilePicture", profileImage);
+    formData.append("file", profileImage);
 
     try {
-      const res = await updateProfilePicture(formData);
+      const uploadRes = await uploadFile(formData);
+
+      const uploadedUrl = uploadRes?.url || uploadRes?.urls?.[0]?.url;
+
+      if (!uploadedUrl) {
+        throw new Error("Upload succeeded but no file URL was returned");
+      }
+
+      const res = await updateProfilePicture(user.id, uploadedUrl);
+      const nextProfilePicture = res?.profilePicture || uploadedUrl;
+
       toast.success("Profile picture updated!");
-      setUser({ ...user, profilePicture: res.profilePicture });
+
+      setUser((prev) =>
+        prev
+          ? { ...prev, profilePicture: nextProfilePicture }
+          : prev
+      );
+
+      dispatch({
+        type: "UPDATE_USER",
+        payload: { profilePicture: nextProfilePicture },
+      });
     } catch (error) {
       toast.error("Failed to update profile picture");
       console.error(error);
@@ -76,6 +97,7 @@ const Profile: React.FC = () => {
       setLoading(false);
       setEditMode(false);
       setPreviewImage(null);
+      setProfileImage(null);
     }
   };
 
