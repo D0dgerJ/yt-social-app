@@ -8,6 +8,7 @@ import type {
 } from "@/utils/types/moderation/moderationUsers.types";
 
 export type ReportStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type AssignableUserRole = "USER" | "MODERATOR" | "ADMIN";
 
 export const hidePost = async (postId: number, reason?: string) => {
   const response = await axios.post(`/mod/posts/${postId}/hide`, { reason });
@@ -133,6 +134,22 @@ export const getModerationUsers = async (params?: {
 export const getModerationUserById = async (userId: number) => {
   const response = await axios.get(`/mod/users/${userId}`);
   return response.data as GetModerationUserByIdResponse;
+};
+
+export const updateModerationUserRole = async (
+  userId: number,
+  role: AssignableUserRole
+) => {
+  const response = await axios.patch(`/mod/users/${userId}/role`, { role });
+  return response.data as {
+    ok: boolean;
+    user: {
+      id: number;
+      username: string;
+      email: string;
+      role: "USER" | "MODERATOR" | "ADMIN" | "OWNER";
+    };
+  };
 };
 
 // --- User sanctions ---

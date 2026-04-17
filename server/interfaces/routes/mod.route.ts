@@ -8,7 +8,7 @@ import { hardDeletePost } from "../../application/services/moderation/hardDelete
 
 import { logModerationAction } from "../../application/services/moderation/logModerationAction.js";
 import { authMiddleware } from "../../infrastructure/middleware/authMiddleware.js";
-import { requireModerator, requireAdmin } from "../../infrastructure/middleware/requireRole.js";
+import { requireModerator, requireAdmin, requireOwner } from "../../infrastructure/middleware/requireRole.js";
 
 import {
   ModerationActionType,
@@ -94,6 +94,21 @@ function getSanctionType(body: any): UserSanctionType {
   if (!allowed.includes(raw)) throw Errors.validation("Invalid sanction type");
 
   return raw as UserSanctionType;
+}
+
+function getAssignableRole(body: any): UserRole {
+  const raw = typeof body?.role === "string" ? body.role.trim() : "";
+  if (!raw) throw Errors.validation("role is required");
+
+  if (
+    raw !== UserRole.USER &&
+    raw !== UserRole.MODERATOR &&
+    raw !== UserRole.ADMIN
+  ) {
+    throw Errors.validation("Only USER, MODERATOR or ADMIN can be assigned");
+  }
+
+  return raw as UserRole;
 }
 
 function getEvidence(body: any): any | undefined {
@@ -989,6 +1004,67 @@ router.get("/users/:userId", authMiddleware, requireModerator, async (req, res, 
 
     res.status(200).json({ ok: true, ...data });
   } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/users/:userId/role", authMiddleware, requireOwner, async (req, res, next) => {
+  try {
+    const userId = parseId(req.params.userId, "Invalid userId");
+    const role = getAssignableRole(req.body);
+
+    if (userId === req.user!.id) {
+      throw Errors.forbidden("Forbidden: cannot change your own role");
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, username: true, email: true },
+    });
+
+    if (!targetUser) throw Errors.notFound("User not found");
+
+    if (targetUser.role === UserRole.OWNER) {
+      throw Errors.forbidden("Forbidden: cannot change OWNER role");
+    }
+
+    if (targetUser.role === role) {
+      throw Errors.conflict("User already has this role");
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+      },
+    });
+
+    await logModerationAction({
+      actorId: req.user!.id,
+      actionType: ModerationActionType.NOTE,
+      targetType: ModerationTargetType.USER,
+      targetId: String(updatedUser.id),
+      subjectUserId: updatedUser.id,
+      reason: `Role changed to ${role}`,
+      metadata: {
+        previousRole: targetUser.role,
+        newRole: role,
+      },
+    });
+
+    res.status(200).json({
+      ok: true,
+      user: updatedUser,
+    });
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      return next(Errors.conflict("Only one OWNER allowed"));
+    }
+
     next(err);
   }
 });

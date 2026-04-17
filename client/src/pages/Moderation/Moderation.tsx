@@ -11,6 +11,7 @@ const ALLOWED = new Set(["MODERATOR", "ADMIN", "OWNER"]);
 export default function Moderation() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const isOwner = (user as any)?.role === "OWNER";
 
   useEffect(() => {
     const role = (user as any)?.role;
@@ -52,6 +53,16 @@ export default function Moderation() {
               >
                 Users
               </button>
+
+              {isOwner && (
+                <button
+                  className={styles.secondaryBtn}
+                  type="button"
+                  onClick={() => navigate("/moderation/roles")}
+                >
+                  Roles
+                </button>
+              )}
 
               <button
                 className={styles.primaryBtn}

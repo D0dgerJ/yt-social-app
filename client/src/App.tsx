@@ -12,6 +12,7 @@ import ModerationPostDetails from "@/pages/Moderation/ModerationPostDetails";
 import ModerationUsers from "@/pages/Moderation/ModerationUsers";
 import ModerationComments from "./pages/Moderation/ModerationComments";
 import ModerationCommentDetails from "@/pages/Moderation/ModerationCommentDetails";
+import ModerationRoles from "@/pages/Moderation/ModerationRoles";
 
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -104,6 +105,10 @@ const AppInner: React.FC = () => {
         <Route
           path="/moderation/users"
           element={user ? <ModerationUsers /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/moderation/roles"
+          element={user ? <ModerationRoles /> : <Navigate to="/login" />}
         />
         <Route
           path="/moderation/posts/:postId"
