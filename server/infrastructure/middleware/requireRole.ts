@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
 import { UserRole } from "@prisma/client";
-import prisma from "../database/prismaClient.js";
 import { Errors } from "../errors/ApiError.js";
 
 const ROLE_RANK: Record<UserRole, number> = {
@@ -14,23 +13,9 @@ export const requireRole =
   (minRole: UserRole) =>
   async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user?.id) {
+      if (!req.user?.id || !req.user.role) {
         next(Errors.unauthorized("Unauthorized"));
         return;
-      }
-
-      if (!req.user.role) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: req.user.id },
-          select: { role: true },
-        });
-
-        if (!dbUser) {
-          next(Errors.unauthorized("Unauthorized"));
-          return;
-        }
-
-        req.user.role = dbUser.role;
       }
 
       const userRank = ROLE_RANK[req.user.role];

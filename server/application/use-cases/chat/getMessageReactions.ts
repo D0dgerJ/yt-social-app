@@ -1,4 +1,5 @@
 import prisma from "../../../infrastructure/database/prismaClient.js";
+import { Errors, ApiError } from "../../../infrastructure/errors/ApiError.js";
 
 interface GroupedReaction {
   emoji: string;
@@ -23,11 +24,25 @@ export const getMessageReactions = async ({
   try {
     const message = await prisma.message.findUnique({
       where: { id: messageId },
-      select: { id: true, isDeleted: true },
+      select: { id: true, isDeleted: true, conversationId: true },
     });
 
     if (!message || message.isDeleted) {
-      throw new Error("Сообщение не найдено или было удалено");
+      throw Errors.notFound("Message not found");
+    }
+
+    if (userId) {
+      const participant = await prisma.participant.findFirst({
+        where: {
+          conversationId: message.conversationId,
+          userId,
+        },
+        select: { id: true },
+      });
+
+      if (!participant) {
+        throw Errors.forbidden("Forbidden");
+      }
     }
 
     const reactions = await prisma.reaction.findMany({
@@ -65,17 +80,18 @@ export const getMessageReactions = async ({
         const group = groupedMap.get(emoji)!;
         group.count++;
         group.users.push(userInfo);
+
         if (userId && user.id === userId) {
           group.isMyReaction = true;
         }
       }
     }
-    const grouped = Array.from(groupedMap.values()).sort((a, b) => b.count - a.count);
 
-    return grouped;
+    return Array.from(groupedMap.values()).sort((a, b) => b.count - a.count);
   } catch (error) {
     console.error("❌ Ошибка при получении реакций:", error);
-    if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось получить реакции на сообщение");
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error) throw Errors.internal(error.message);
+    throw Errors.internal("Failed to get message reactions");
   }
 };

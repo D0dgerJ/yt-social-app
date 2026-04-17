@@ -8,17 +8,19 @@ interface LoginInput {
   password: string;
 }
 
+const INVALID_LOGIN_MESSAGE = "Invalid email or password";
+
 export const loginUser = async ({ email, password }: LoginInput) => {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(INVALID_LOGIN_MESSAGE);
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error("Invalid credentials");
+    throw new Error(INVALID_LOGIN_MESSAGE);
   }
 
   const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, {
