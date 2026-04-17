@@ -56,7 +56,7 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
     setError(null);
 
     try {
-      await createChat(selected, currentUser.id);
+      await createChat(selected);
       onCreated();
       onClose();
     } catch (e) {

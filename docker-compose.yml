@@ -43,8 +43,8 @@ services:
       SEED_USERNAME: ${SEED_USERNAME}
       SEED_PASSWORD: ${SEED_PASSWORD}
       SEED_ROLE: ${SEED_ROLE}
-    expose:
-      - "5000"
+    ports:
+      - "127.0.0.1:5000:5000"
     volumes:
       - backend_uploads:/app/uploads
     networks:
@@ -63,7 +63,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
     networks:
       - yt-network
 

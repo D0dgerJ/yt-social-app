@@ -31,9 +31,12 @@ const rawServerOrigin = getOptionalEnv("VITE_SERVER_ORIGIN");
 const rawApiUrl = getOptionalEnv("VITE_API_URL");
 const rawSocketUrl = getOptionalEnv("VITE_SOCKET_URL");
 
+const fallbackOrigin =
+  typeof window !== "undefined" ? window.location.origin : "http://localhost:5000";
+
 const serverOrigin = stripTrailingSlash(
   rawServerOrigin ??
-    (rawApiUrl ? stripApiSuffix(rawApiUrl) : "http://localhost:5000")
+    (rawApiUrl ? stripApiSuffix(rawApiUrl) : fallbackOrigin)
 );
 
 const apiBaseUrl = stripTrailingSlash(
