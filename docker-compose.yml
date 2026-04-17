@@ -55,6 +55,7 @@ services:
       context: ./client
       args:
         VITE_SERVER_ORIGIN: ${VITE_SERVER_ORIGIN}
+        VITE_API_URL: ${VITE_API_URL}
         VITE_SOCKET_URL: ${VITE_SOCKET_URL}
         VITE_GIPHY_API_KEY: ${VITE_GIPHY_API_KEY}
     container_name: yt-frontend
