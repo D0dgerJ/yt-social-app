@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Post from "../Post/Post";
-import { getFeedPosts } from "../../utils/api/post.api";
+import { getExplorePosts } from "../../utils/api/post.api";
 import "./ShortsFeed.scss";
 
 type LikeEntity = number | string | { userId: number | string };
@@ -36,7 +36,7 @@ const ShortsFeed: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const data: any[] = await getFeedPosts();
+        const data: any[] = await getExplorePosts();
 
         const normalized: PostType[] = data
           .map((p: any) => {
