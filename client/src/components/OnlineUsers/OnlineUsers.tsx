@@ -14,15 +14,16 @@ interface OnlineUserProps {
 const OnlineUsers: React.FC<OnlineUserProps> = ({ user }) => {
   return (
     <li className="online-user">
-      <Link to={`/profile/${user.id}`} className="online-user-link">
-        <div className="user-image-wrapper">
+      <Link to={`/profile/${user.username}`} className="online-user-link">
+        <div className="user-avatar-wrapper">
           <img
             src={user.profilePicture || profilePic}
-            alt="profile"
-            className="user-image"
+            alt={user.username}
+            className="user-avatar"
           />
-          <span className="online-badge"></span>
+          <span className="online-indicator" />
         </div>
+
         <span className="user-name">{user.username}</span>
       </Link>
     </li>
