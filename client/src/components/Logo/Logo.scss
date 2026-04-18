@@ -1,10 +1,11 @@
+@use "../../styles/mixins" as *;
+
 .logo {
   font-weight: 800;
   font-size: 22px;
   letter-spacing: -0.4px;
   margin-left: 24px;
 
-  /* теперь работает с темами */
   color: var(--color-text);
 
   cursor: pointer;
@@ -15,7 +16,6 @@
     transform 0.18s ease,
     opacity 0.2s ease;
 
-  /* лёгкий брендинг через градиент */
   background: linear-gradient(
     135deg,
     var(--color-primary),
@@ -32,5 +32,29 @@
   &:active {
     transform: translateY(0);
     opacity: 0.8;
+  }
+}
+
+.logo__full {
+  display: inline;
+}
+
+.logo__short {
+  display: none;
+}
+
+@include respond(phone) {
+  .logo {
+    margin-left: 0;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+  }
+
+  .logo__full {
+    display: none;
+  }
+
+  .logo__short {
+    display: inline;
   }
 }
