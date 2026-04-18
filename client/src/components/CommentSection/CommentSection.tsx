@@ -16,8 +16,14 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   const [showEmoji, setShowEmoji] = useState(false);
   const emojiRef = useRef<HTMLDivElement>(null);
 
-  const { comments, addComment, addReply, likeComment, deleteCommentById, updateCommentById } =
-    useComments(postId);
+  const {
+    comments,
+    addComment,
+    addReply,
+    likeComment,
+    deleteCommentById,
+    updateCommentById,
+  } = useComments(postId);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -60,8 +66,8 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
   };
 
   return (
-    <div className="comment-section">
-      <div className="comment-list">
+    <div className="post-comments">
+      <div className="post-comments__list">
         {comments.map((comment) => (
           <CommentItem
             key={comment.id}
@@ -76,7 +82,7 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
       </div>
 
       {!!currentUserId && (
-        <div className="comment-input">
+        <div className="post-comments__input">
           <input
             type="text"
             value={newComment}
@@ -85,10 +91,10 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
             onKeyDown={(e) => e.key === "Enter" && handleCommentSubmit()}
           />
 
-          <div ref={emojiRef} className="emoji-wrapper">
+          <div ref={emojiRef} className="post-comments__emoji-wrapper">
             <button
               type="button"
-              className="icon-button"
+              className="post-comments__icon-button"
               onClick={() => setShowEmoji((v) => !v)}
               aria-label="Open emoji picker"
             >
@@ -96,20 +102,23 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
             </button>
 
             {showEmoji && (
-              <div className="emoji-popover">
+              <div className="post-comments__emoji-popover">
                 <EmojiPicker onEmojiClick={handleEmojiClick} />
               </div>
             )}
           </div>
 
-          <label className="icon-button file-button" aria-label="Upload image">
+          <label
+            className="post-comments__icon-button post-comments__file-button"
+            aria-label="Upload image"
+          >
             <BsImage size={18} />
             <input type="file" accept="image/*" onChange={handleImageUpload} />
           </label>
 
           <button
             type="button"
-            className="send-button"
+            className="post-comments__send-button"
             onClick={handleCommentSubmit}
             aria-label="Send comment"
           >

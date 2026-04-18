@@ -4,6 +4,7 @@ import { FiMoreHorizontal } from "react-icons/fi";
 import { IoMdSend } from "react-icons/io";
 import type { Comment } from "./types";
 import { reportComment } from "../../utils/api/comment.api";
+import noProfilePic from "../../assets/profile/user.png";
 
 interface Props {
   comment: Comment;
@@ -51,7 +52,8 @@ const CommentItem: React.FC<Props> = ({
 
   const isDeleted = comment.status === "DELETED" || comment.content === "(deleted)";
   const isHidden = comment.status === "HIDDEN";
-  const isActive = !isDeleted && !isHidden && (comment.status ? comment.status === "ACTIVE" : true);
+  const isActive =
+    !isDeleted && !isHidden && (comment.status ? comment.status === "ACTIVE" : true);
 
   const likedByMe = useMemo(() => {
     if (!currentUserId) return false;
@@ -82,14 +84,14 @@ const CommentItem: React.FC<Props> = ({
     text.split(" ").map((part, i) => {
       if (part.startsWith("@")) {
         return (
-          <span key={i} className="mention">
+          <span key={i} className="post-comment__mention">
             {part}{" "}
           </span>
         );
       }
       if (part.startsWith("#")) {
         return (
-          <span key={i} className="hashtag">
+          <span key={i} className="post-comment__hashtag">
             {part}{" "}
           </span>
         );
@@ -139,19 +141,19 @@ const CommentItem: React.FC<Props> = ({
 
   return (
     <div
-      className={`comment-item ${comment.parentId ? "reply-item" : ""} ${
-        comment.status === "DELETED" ? "deleted" : ""
-      } ${comment.status === "HIDDEN" ? "hidden" : ""}`}
+      className={`post-comment ${comment.parentId ? "post-comment--reply" : ""} ${
+        comment.status === "DELETED" ? "post-comment--deleted" : ""
+      } ${comment.status === "HIDDEN" ? "post-comment--hidden" : ""}`}
     >
       <img
-        src={comment.user.profilePicture || "/default-avatar.png"}
+        src={comment.user.profilePicture || noProfilePic}
         alt={comment.user.username}
-        className="avatar"
+        className="post-comment__avatar"
       />
 
-      <div className="comment-content">
-        <div className="comment-header">
-          <span className="username">{comment.user.username}</span>
+      <div className="post-comment__content">
+        <div className="post-comment__header">
+          <span className="post-comment__username">{comment.user.username}</span>
 
           {editing ? (
             <input
@@ -159,24 +161,24 @@ const CommentItem: React.FC<Props> = ({
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               disabled={!canEdit}
-              className="comment-inline-input"
+              className="post-comment__inline-input"
             />
           ) : (
-            <span className="text">{formatContent(comment.content)}</span>
+            <span className="post-comment__text">{formatContent(comment.content)}</span>
           )}
 
-          <div className="comment-menu">
+          <div className="post-comment__menu">
             <button
               type="button"
-              className="comment-menu-trigger"
+              className="post-comment__menu-trigger"
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="Open comment menu"
             >
-              <FiMoreHorizontal className="more-icon" />
+              <FiMoreHorizontal className="post-comment__more-icon" />
             </button>
 
             {menuOpen && (
-              <div className="comment-menu-dropdown">
+              <div className="post-comment__menu-dropdown">
                 {!isOwnComment && (
                   <button disabled={!canReport} onClick={openReportModal}>
                     Report
@@ -199,19 +201,21 @@ const CommentItem: React.FC<Props> = ({
         </div>
 
         {!!comment.images?.length && (
-          <div className="comment-images">
+          <div className="post-comment__images">
             {comment.images.map((img, idx) => (
-              <img key={idx} src={img} alt="attachment" className="comment-img" />
+              <img key={idx} src={img} alt="attachment" className="post-comment__img" />
             ))}
           </div>
         )}
 
-        <div className="comment-meta">
-          <span className="time">{moment(comment.createdAt).fromNow()}</span>
+        <div className="post-comment__meta">
+          <span className="post-comment__time">{moment(comment.createdAt).fromNow()}</span>
 
           <button
             type="button"
-            className={`like-btn ${likedByMe ? "liked" : ""} ${!canLike ? "disabled" : ""}`}
+            className={`post-comment__like-btn ${likedByMe ? "liked" : ""} ${
+              !canLike ? "disabled" : ""
+            }`}
             onClick={() => canLike && onLike(comment.id)}
             title={!isAuthed ? "Login to like" : !isActive ? "Unavailable" : ""}
             disabled={!canLike}
@@ -225,7 +229,7 @@ const CommentItem: React.FC<Props> = ({
         </div>
 
         {editing && (
-          <div className="edit-box">
+          <div className="post-comment__edit-box">
             <button disabled={!canEdit} onClick={handleUpdate}>
               Save
             </button>
@@ -233,7 +237,7 @@ const CommentItem: React.FC<Props> = ({
         )}
 
         {replying && (
-          <div className="reply-box">
+          <div className="post-comment__reply-box">
             <input
               type="text"
               placeholder={isAuthed ? "Write a reply..." : "Login to reply"}
@@ -253,14 +257,17 @@ const CommentItem: React.FC<Props> = ({
         {!!comment.replies?.length && (
           <>
             {!showReplies && (
-              <button className="view-replies" onClick={() => setShowReplies(true)}>
+              <button
+                className="post-comment__view-replies"
+                onClick={() => setShowReplies(true)}
+              >
                 View replies ({comment.replies.length})
               </button>
             )}
 
             {showReplies && (
               <>
-                <div className="replies">
+                <div className="post-comment__replies">
                   {comment.replies.map((reply) => (
                     <CommentItem
                       key={reply.id}
@@ -274,7 +281,10 @@ const CommentItem: React.FC<Props> = ({
                   ))}
                 </div>
 
-                <button className="hide-replies" onClick={() => setShowReplies(false)}>
+                <button
+                  className="post-comment__hide-replies"
+                  onClick={() => setShowReplies(false)}
+                >
                   Hide replies
                 </button>
               </>
@@ -284,12 +294,15 @@ const CommentItem: React.FC<Props> = ({
       </div>
 
       {reportOpen && (
-        <div className="modal-overlay" onClick={() => !reportLoading && setReportOpen(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div
+          className="post-comment__modal-overlay"
+          onClick={() => !reportLoading && setReportOpen(false)}
+        >
+          <div className="post-comment__modal" onClick={(e) => e.stopPropagation()}>
+            <div className="post-comment__modal-header">
               <h3>Report comment</h3>
               <button
-                className="modal-close"
+                className="post-comment__modal-close"
                 disabled={reportLoading}
                 onClick={() => setReportOpen(false)}
               >
@@ -297,7 +310,7 @@ const CommentItem: React.FC<Props> = ({
               </button>
             </div>
 
-            <div className="modal-body">
+            <div className="post-comment__modal-body">
               <label>
                 Reason
                 <select
@@ -322,11 +335,13 @@ const CommentItem: React.FC<Props> = ({
                 />
               </label>
 
-              {reportError && <div className="modal-error">{reportError}</div>}
-              {reportSuccess && <div className="modal-success">{reportSuccess}</div>}
+              {reportError && <div className="post-comment__modal-error">{reportError}</div>}
+              {reportSuccess && (
+                <div className="post-comment__modal-success">{reportSuccess}</div>
+              )}
             </div>
 
-            <div className="modal-footer">
+            <div className="post-comment__modal-footer">
               <button disabled={reportLoading} onClick={() => setReportOpen(false)}>
                 Cancel
               </button>
