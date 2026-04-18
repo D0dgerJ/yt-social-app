@@ -5,6 +5,7 @@ import {
   unpinConversation,
 } from "@/utils/api/chat.api";
 import { useChatStore } from "@/stores/chatStore";
+import noProfilePic from "../../../assets/profile/user.png";
 import "./ChatList.scss";
 
 interface ChatListProps {
@@ -75,12 +76,7 @@ const getAvatarFromConv = (conv?: ConversationLike): string => {
     ? conv.participants[0]
     : undefined;
 
-  const avatar =
-    first?.user?.profilePicture ??
-    first?.profilePicture ??
-    "/default-avatar.png";
-
-  return avatar || "/default-avatar.png";
+  return first?.user?.profilePicture || first?.profilePicture || noProfilePic;
 };
 
 const getParticipantNames = (conv: ConversationLike) => {
@@ -213,8 +209,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
                   alt="avatar"
                   className="chat-avatar-img"
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      "/default-avatar.png";
+                    e.currentTarget.src = noProfilePic;
                   }}
                 />
               </div>
