@@ -18,11 +18,12 @@
 
   background: linear-gradient(
     180deg,
-    #fff8d6 0%,
-    #f6e7a3 18%,
-    #f4cf68 42%,
-    #e2a93d 68%,
-    #b87317 100%
+    #fffdf4 0%,
+    #f8efc2 14%,
+    #f2cf63 34%,
+    #e0ab36 52%,
+    #f7e08a 66%,
+    #bf8122 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -52,6 +53,19 @@
     margin-left: 0;
     font-size: 18px;
     letter-spacing: -0.3px;
+    background: linear-gradient(
+      180deg,
+      #fffef7 0%,
+      #fff4c9 16%,
+      #f8da72 36%,
+      #efc24b 56%,
+      #f8e08e 74%,
+      #d9a62f 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 0.35px rgba(255, 232, 160, 0.55);
   }
 
   .logo__full {

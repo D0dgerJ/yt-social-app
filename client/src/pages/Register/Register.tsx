@@ -75,7 +75,10 @@ const Register: React.FC = () => {
         <section className="auth-panel">
           <div className="auth-card">
             <div className="auth-card__header">
-              <h2>Register</h2>
+              <div className="auth-card__header-top">
+                <h2>Register</h2>
+                <span className="auth-mini-logo">DJS</span>
+              </div>
               <p>Заполни форму и начни пользоваться приложением.</p>
             </div>
 

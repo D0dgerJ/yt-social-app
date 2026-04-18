@@ -55,7 +55,10 @@ const Login: React.FC = () => {
         <section className="auth-panel">
           <div className="auth-card">
             <div className="auth-card__header">
-              <h2>Login</h2>
+              <div className="auth-card__header-top">
+                <h2>Login</h2>
+                <span className="auth-mini-logo">DJS</span>
+              </div>
               <p>Введи email и пароль, чтобы продолжить.</p>
             </div>
 
