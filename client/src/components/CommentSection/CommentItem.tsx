@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
 import { FiMoreHorizontal } from "react-icons/fi";
-import { IoMdSend } from "react-icons/io";
 import type { Comment } from "./types";
 import { reportComment } from "../../utils/api/comment.api";
 import noProfilePic from "../../assets/profile/user.png";
@@ -14,6 +13,7 @@ interface Props {
   onDelete: (commentId: number) => void;
   onUpdate: (commentId: number, newContent: string) => void;
   targetCommentId?: number;
+  onStartReply: (commentId: number, username: string) => void;
 }
 
 const REPORT_REASONS = [
@@ -45,9 +45,8 @@ const CommentItem: React.FC<Props> = ({
   onDelete,
   onUpdate,
   targetCommentId,
+  onStartReply,
 }) => {
-  const [replyText, setReplyText] = useState("");
-  const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
   const [showReplies, setShowReplies] = useState(false);
@@ -121,13 +120,6 @@ const CommentItem: React.FC<Props> = ({
   const canReply = canInteract;
   const canLike = canInteract;
   const canReport = isAuthed && !isOwnComment;
-
-  const handleReply = () => {
-    if (!canReply || !replyText.trim()) return;
-    onReply(comment.id, replyText.trim());
-    setReplyText("");
-    setReplying(false);
-  };
 
   const handleUpdate = () => {
     if (!canEdit || !editedContent.trim()) return;
@@ -291,7 +283,9 @@ const CommentItem: React.FC<Props> = ({
         )}
 
         <div className="post-comment__meta">
-          <span className="post-comment__time">{moment(comment.createdAt).fromNow()}</span>
+          <span className="post-comment__time">
+            {moment(comment.createdAt).fromNow()}
+          </span>
 
           <button
             type="button"
@@ -307,7 +301,9 @@ const CommentItem: React.FC<Props> = ({
 
           <button
             type="button"
-            onClick={() => setReplying(!replying)}
+            onClick={() =>
+              canReply && onStartReply(comment.id, comment.user.username)
+            }
             disabled={!canReply}
           >
             Reply
@@ -318,24 +314,6 @@ const CommentItem: React.FC<Props> = ({
           <div className="post-comment__edit-box">
             <button disabled={!canEdit} onClick={handleUpdate}>
               Save
-            </button>
-          </div>
-        )}
-
-        {replying && (
-          <div className="post-comment__reply-box">
-            <input
-              type="text"
-              placeholder={isAuthed ? "Write a reply..." : "Login to reply"}
-              value={replyText}
-              disabled={!canReply}
-              onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleReply();
-              }}
-            />
-            <button type="button" onClick={handleReply} disabled={!canReply}>
-              <IoMdSend size={18} />
             </button>
           </div>
         )}
@@ -364,6 +342,7 @@ const CommentItem: React.FC<Props> = ({
                       onDelete={onDelete}
                       onUpdate={onUpdate}
                       targetCommentId={targetCommentId}
+                      onStartReply={onStartReply}
                     />
                   ))}
                 </div>
@@ -385,7 +364,10 @@ const CommentItem: React.FC<Props> = ({
           className="post-comment__modal-overlay"
           onClick={() => !reportLoading && setReportOpen(false)}
         >
-          <div className="post-comment__modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="post-comment__modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="post-comment__modal-header">
               <h3>Report comment</h3>
               <button
