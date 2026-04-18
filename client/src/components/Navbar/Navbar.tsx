@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   IoSearch,
   IoPersonSharp,
@@ -43,6 +44,8 @@ type SearchPost = {
   };
 };
 
+const MOBILE_BREAKPOINT = 640;
+
 const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
@@ -58,8 +61,10 @@ const Navbar: React.FC = () => {
   const [postResults, setPostResults] = useState<SearchPost[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   const searchRef = useRef<HTMLDivElement | null>(null);
+  const mobilePopupRef = useRef<HTMLDivElement | null>(null);
 
   const {
     fetchNotifications,
@@ -89,6 +94,17 @@ const Navbar: React.FC = () => {
   }, [user, fetchNotifications]);
 
   useEffect(() => {
+    const handleResize = () => {
+      setIsMobileViewport(window.innerWidth <= MOBILE_BREAKPOINT);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!searchRef.current) return;
       if (!searchRef.current.contains(event.target as Node)) {
@@ -101,6 +117,37 @@ const Navbar: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (!(showFriendRequests || showChatNotifications || showNotifications)) {
+      return;
+    }
+
+    const handleOutsideMobilePopup = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (
+        mobilePopupRef.current &&
+        !mobilePopupRef.current.contains(target)
+      ) {
+        closeAll();
+      }
+    };
+
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeAll();
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideMobilePopup);
+    document.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideMobilePopup);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [showFriendRequests, showChatNotifications, showNotifications]);
 
   useEffect(() => {
     const trimmed = searchQuery.trim();
@@ -214,191 +261,220 @@ const Navbar: React.FC = () => {
   const isHashtagSearch = searchQuery.trim().startsWith("#");
   const isHomeActive = true;
 
-  return (
-    <header className="navbar">
-      <div className="navbar-left">
-        <Link to="/" className="navbar-logo-link">
-          <div className="logo-div">
-            <Logo />
-          </div>
-        </Link>
+  const activeMobilePopupContent = showFriendRequests ? (
+    <NotificationsInteractions onCountChange={setFriendRequestsCount} />
+  ) : showChatNotifications ? (
+    <ChatNotificationsDropdown />
+  ) : showNotifications ? (
+    <NotificationsDropdown onClose={closeAll} />
+  ) : null;
+
+  const renderDesktopPopup = (content: React.ReactNode) =>
+    !isMobileViewport ? (
+      <div
+        className="notifications-popup"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {content}
       </div>
+    ) : null;
 
-      <div className="navbar-center">
-        <div className="search-wrapper" ref={searchRef}>
-          <form className="search-bar" onSubmit={handleSearchSubmit}>
-            <IoSearch className="search-icon" />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Найти пользователей, посты или #хэштег"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => {
-                if (searchQuery.trim()) {
-                  setShowSearchDropdown(true);
-                }
-              }}
-            />
-          </form>
+  return (
+    <>
+      <header className="navbar">
+        <div className="navbar-left">
+          <Link to="/" className="navbar-logo-link">
+            <div className="logo-div">
+              <Logo />
+            </div>
+          </Link>
+        </div>
 
-          {showSearchDropdown && searchQuery.trim() && (
-            <div className="search-dropdown">
-              {isSearching ? (
-                <div className="search-empty">Поиск...</div>
-              ) : (
-                <>
-                  {!isHashtagSearch && (
+        <div className="navbar-center">
+          <div className="search-wrapper" ref={searchRef}>
+            <form className="search-bar" onSubmit={handleSearchSubmit}>
+              <IoSearch className="search-icon" />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Найти пользователей, посты или #хэштег"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchQuery.trim()) {
+                    setShowSearchDropdown(true);
+                  }
+                }}
+              />
+            </form>
+
+            {showSearchDropdown && searchQuery.trim() && (
+              <div className="search-dropdown">
+                {isSearching ? (
+                  <div className="search-empty">Поиск...</div>
+                ) : (
+                  <>
+                    {!isHashtagSearch && (
+                      <div className="search-section">
+                        <div className="search-section-title">Пользователи</div>
+
+                        {userResults.length > 0 ? (
+                          userResults.map((item) => (
+                            <button
+                              key={`user-${item.id}`}
+                              type="button"
+                              className="search-result-item"
+                              onClick={() => handleUserClick(item.username)}
+                            >
+                              <img
+                                src={item.profilePicture || noProfile}
+                                alt={item.username}
+                                className="search-result-avatar"
+                              />
+
+                              <div className="search-result-content">
+                                <div className="search-result-title">
+                                  @{item.username}
+                                </div>
+                                <div className="search-result-text">
+                                  {item.desc?.trim() || item.city || "Пользователь"}
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="search-empty">Пользователи не найдены</div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="search-section">
-                      <div className="search-section-title">Пользователи</div>
+                      <div className="search-section-title">
+                        {isHashtagSearch ? "Посты по хэштегу" : "Посты"}
+                      </div>
 
-                      {userResults.length > 0 ? (
-                        userResults.map((item) => (
+                      {postResults.length > 0 ? (
+                        postResults.map((item) => (
                           <button
-                            key={`user-${item.id}`}
+                            key={`post-${item.id}`}
                             type="button"
                             className="search-result-item"
-                            onClick={() => handleUserClick(item.username)}
+                            onClick={() => handlePostClick(item)}
                           >
-                            <img
-                              src={item.profilePicture || noProfile}
-                              alt={item.username}
-                              className="search-result-avatar"
-                            />
-
                             <div className="search-result-content">
-                              <div className="search-result-title">@{item.username}</div>
+                              <div className="search-result-title">
+                                {item.user?.username
+                                  ? `@${item.user.username}`
+                                  : "Пост"}
+                              </div>
+
                               <div className="search-result-text">
-                                {item.desc?.trim() || item.city || "Пользователь"}
+                                {item.desc?.trim()
+                                  ? item.desc.slice(0, 90)
+                                  : item.tags?.length
+                                    ? `#${item.tags.join(" #").slice(0, 90)}`
+                                    : "Без текста"}
                               </div>
                             </div>
                           </button>
                         ))
                       ) : (
-                        <div className="search-empty">Пользователи не найдены</div>
+                        <div className="search-empty">Посты не найдены</div>
                       )}
                     </div>
-                  )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
-                  <div className="search-section">
-                    <div className="search-section-title">
-                      {isHashtagSearch ? "Посты по хэштегу" : "Посты"}
-                    </div>
+        <div className="navbar-right">
+          <nav className="tab-links">
+            <Link to="/" className={`nav-pill ${isHomeActive ? "active" : ""}`}>
+              Home
+            </Link>
+          </nav>
 
-                    {postResults.length > 0 ? (
-                      postResults.map((item) => (
-                        <button
-                          key={`post-${item.id}`}
-                          type="button"
-                          className="search-result-item"
-                          onClick={() => handlePostClick(item)}
-                        >
-                          <div className="search-result-content">
-                            <div className="search-result-title">
-                              {item.user?.username ? `@${item.user.username}` : "Пост"}
-                            </div>
+          <div className="tab-icons">
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label="Переключить тему"
+              title={
+                theme === "light"
+                  ? "Включить тёмную тему"
+                  : "Включить светлую тему"
+              }
+            >
+              {theme === "light" ? <IoMoon /> : <IoSunny />}
+            </button>
 
-                            <div className="search-result-text">
-                              {item.desc?.trim()
-                                ? item.desc.slice(0, 90)
-                                : item.tags?.length
-                                  ? `#${item.tags.join(" #").slice(0, 90)}`
-                                  : "Без текста"}
-                            </div>
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="search-empty">Посты не найдены</div>
-                    )}
-                  </div>
-                </>
+            <div className="tab-icon" onClick={toggleFriends}>
+              <IoPersonSharp />
+              {friendRequestsCount > 0 && (
+                <span className="icon-badge">{friendRequestsCount}</span>
               )}
+
+              {showFriendRequests &&
+                renderDesktopPopup(
+                  <NotificationsInteractions
+                    onCountChange={setFriendRequestsCount}
+                  />
+                )}
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="navbar-right">
-        <nav className="tab-links">
-          <Link to="/" className={`nav-pill ${isHomeActive ? "active" : ""}`}>
-            Home
-          </Link>
-        </nav>
+            <div className="tab-icon" onClick={toggleChat}>
+              <IoChatboxEllipses />
+              {chatUnreadCount > 0 && (
+                <span className="icon-badge">{chatUnreadCount}</span>
+              )}
 
-        <div className="tab-icons">
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Переключить тему"
-            title={theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"}
-          >
-            {theme === "light" ? <IoMoon /> : <IoSunny />}
-          </button>
+              {showChatNotifications &&
+                renderDesktopPopup(<ChatNotificationsDropdown />)}
+            </div>
 
-          <div className="tab-icon" onClick={toggleFriends}>
-            <IoPersonSharp />
-            {friendRequestsCount > 0 && (
-              <span className="icon-badge">{friendRequestsCount}</span>
-            )}
+            <div className="tab-icon" onClick={toggleNotifications}>
+              <IoIosNotifications />
+              {generalUnreadCount > 0 && (
+                <span className="icon-badge">{generalUnreadCount}</span>
+              )}
 
-            {showFriendRequests && (
-              <div
-                className="notifications-popup"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <NotificationsInteractions
-                  onCountChange={setFriendRequestsCount}
-                />
-              </div>
-            )}
+              {showNotifications &&
+                renderDesktopPopup(
+                  <NotificationsDropdown onClose={closeAll} />
+                )}
+            </div>
           </div>
 
-          <div className="tab-icon" onClick={toggleChat}>
-            <IoChatboxEllipses />
-            {chatUnreadCount > 0 && (
-              <span className="icon-badge">{chatUnreadCount}</span>
-            )}
-
-            {showChatNotifications && (
-              <div
-                className="notifications-popup"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ChatNotificationsDropdown />
-              </div>
-            )}
-          </div>
-
-          <div className="tab-icon" onClick={toggleNotifications}>
-            <IoIosNotifications />
-            {generalUnreadCount > 0 && (
-              <span className="icon-badge">{generalUnreadCount}</span>
-            )}
-
-            {showNotifications && (
-              <div
-                className="notifications-popup"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <NotificationsDropdown onClose={closeAll} />
-              </div>
-            )}
+          <div className="profile-pic-div">
+            <Link to={`/profile/${user?.username}`}>
+              <img
+                src={user?.profilePicture || noProfile}
+                alt="User profile"
+                className="profile-pic"
+              />
+            </Link>
           </div>
         </div>
+      </header>
 
-        <div className="profile-pic-div">
-          <Link to={`/profile/${user?.username}`}>
-            <img
-              src={user?.profilePicture || noProfile}
-              alt="User profile"
-              className="profile-pic"
-            />
-          </Link>
-        </div>
-      </div>
-    </header>
+      {isMobileViewport &&
+        activeMobilePopupContent &&
+        createPortal(
+          <div className="navbar-mobile-popup-layer">
+            <div
+              className="notifications-popup notifications-popup--mobile"
+              ref={mobilePopupRef}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {activeMobilePopupContent}
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 };
 

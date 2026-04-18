@@ -67,7 +67,10 @@
   display: flex;
   align-items: center;
   padding: 0 14px;
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:focus-within {
     border-color: var(--color-primary);
@@ -150,7 +153,10 @@
     cursor: pointer;
     font-size: 20px;
     flex: 0 0 auto;
-    transition: transform 0.18s ease, background-color 0.2s ease, border-color 0.2s ease;
+    transition:
+      transform 0.18s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease;
 
     &:hover {
       background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-soft));
@@ -211,6 +217,13 @@
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
   padding: 12px;
   backdrop-filter: blur(16px);
+}
+
+.navbar-mobile-popup-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  pointer-events: none;
 }
 
 .search-dropdown {
@@ -298,17 +311,18 @@
 
 @include respond(phone) {
   .navbar {
-    padding: 0 10px;
-    gap: 8px;
+    padding: 0 12px;
+    gap: 10px;
 
     &-center {
       display: none;
     }
 
     &-right {
-      gap: 6px;
+      gap: 12px;
       margin-left: auto;
       min-width: 0;
+      flex-wrap: nowrap;
     }
   }
 
@@ -317,18 +331,19 @@
   }
 
   .tab-icons {
-    gap: 5px;
+    gap: 14px;
 
     .tab-icon,
     .theme-toggle {
-      width: 32px;
-      height: 32px;
-      font-size: 15px;
+      width: 42px;
+      height: 42px;
+      font-size: 20px;
+      border-width: 1.5px;
     }
 
     .icon-badge {
-      min-width: 15px;
-      height: 15px;
+      min-width: 16px;
+      height: 16px;
       padding: 0 4px;
       top: -3px;
       right: -3px;
@@ -339,14 +354,34 @@
 
   .profile-pic-div {
     .profile-pic {
-      width: 34px;
-      height: 34px;
+      width: 38px;
+      height: 38px;
       border-width: 1.5px;
     }
   }
 
-  .notifications-popup {
-    right: 0;
-    width: min(420px, calc(100vw - 16px));
+  .notifications-popup--mobile {
+    position: fixed;
+    top: calc(#{$navbar-height} + 10px);
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    z-index: 1401;
+    pointer-events: auto;
+  }
+
+  .notifications-popup--mobile.notifications-popup {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 }
