@@ -17,21 +17,25 @@
     opacity 0.2s ease;
 
   background: linear-gradient(
-    135deg,
-    var(--color-primary),
-    color-mix(in srgb, var(--color-primary) 60%, #a78bfa)
+    180deg,
+    #fff8d6 0%,
+    #f6e7a3 18%,
+    #f4cf68 42%,
+    #e2a93d 68%,
+    #b87317 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 
   &:hover {
     transform: translateY(-1px);
-    opacity: 0.9;
+    opacity: 0.92;
   }
 
   &:active {
     transform: translateY(0);
-    opacity: 0.8;
+    opacity: 0.84;
   }
 }
 
