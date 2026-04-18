@@ -100,10 +100,6 @@ const Sidebar: React.FC = () => {
           </ul>
         </nav>
 
-        <div className="sidebar-button">
-          <button type="button">See More</button>
-        </div>
-
         <hr className="sidebar-hr" />
 
         <div className="sidebar-friends-block">

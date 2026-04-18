@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "./FriendsList.scss";
+import noProfilePic from "../../assets/profile/user.png";
 
 interface Friend {
   id: number;
   username: string;
-  profilePicture: string;
+  profilePicture?: string | null;
 }
 
 interface FriendsListProps {
@@ -18,7 +19,7 @@ const FriendsList: React.FC<FriendsListProps> = ({ friend }) => {
       <Link to={`/profile/${friend.username}`} className="friend-link">
         <div className="friend-avatar-wrapper">
           <img
-            src={friend.profilePicture}
+            src={friend.profilePicture || noProfilePic}
             alt={friend.username}
             className="friend-image"
           />
