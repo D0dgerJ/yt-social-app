@@ -188,8 +188,10 @@
 .modal-comments {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 /* Gallery inside modal */
