@@ -38,11 +38,18 @@ export interface PostProps {
     user?: { username: string; profilePicture?: string };
   };
   onDeleted?: (postId: number) => void;
+  autoOpenModal?: boolean;
+  targetCommentId?: number;
 }
 
 type UserInfo = { id: number; username: string; profilePicture?: string };
 
-const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
+const Post: React.FC<PostProps> = ({
+  post,
+  onDeleted,
+  autoOpenModal = false,
+  targetCommentId,
+}) => {
   const { user: currentUser } = useContext(AuthContext);
 
   const [author, setAuthor] = useState<UserInfo | null>(
@@ -60,6 +67,7 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const didAutoOpenRef = useRef(false);
 
   const isOwner = currentUser?.id === post.userId;
 
@@ -91,6 +99,18 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [isMenuOpen]);
+
+  useEffect(() => {
+    if (!autoOpenModal || didAutoOpenRef.current) return;
+
+    didAutoOpenRef.current = true;
+
+    const timer = window.setTimeout(() => {
+      setShowPostModal(true);
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [autoOpenModal]);
 
   const {
     count: likeCount,
@@ -186,13 +206,20 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
       <div className="post-top">
         <div className="post-user">
           <img
-            src={author?.profilePicture ? toAbsoluteMediaUrl(author.profilePicture) : userPic}
+            src={
+              author?.profilePicture
+                ? toAbsoluteMediaUrl(author.profilePicture)
+                : userPic
+            }
             alt="Profile"
             className="post-avatar"
           />
 
           <div className="post-user-meta">
-            <Link to={`/profile/${author?.username}`} className="post-username-link">
+            <Link
+              to={`/profile/${author?.username}`}
+              className="post-username-link"
+            >
               <span className="post-username">{author?.username}</span>
             </Link>
             <span className="post-time">{moment(post.createdAt).fromNow()}</span>
@@ -276,7 +303,11 @@ const Post: React.FC<PostProps> = ({ post, onDeleted }) => {
       </div>
 
       {showPostModal && (
-        <PostModal post={post} onClose={() => setShowPostModal(false)} />
+        <PostModal
+          post={post}
+          onClose={() => setShowPostModal(false)}
+          targetCommentId={targetCommentId}
+        />
       )}
     </article>
   );

@@ -7,7 +7,15 @@ import { useComments } from "./utils";
 import CommentItem from "./CommentItem";
 import "./CommentSection.scss";
 
-const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
+interface CommentSectionProps {
+  postId: number;
+  targetCommentId?: number;
+}
+
+const CommentSection: React.FC<CommentSectionProps> = ({
+  postId,
+  targetCommentId,
+}) => {
   const { user: currentUser } = useContext(AuthContext);
   const currentUserId = currentUser?.id ?? null;
 
@@ -77,6 +85,7 @@ const CommentSection: React.FC<{ postId: number }> = ({ postId }) => {
             onLike={likeComment}
             onDelete={deleteCommentById}
             onUpdate={updateCommentById}
+            targetCommentId={targetCommentId}
           />
         ))}
       </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "./NotificationsDropdown.scss";
 import { useNotificationStore } from "../../stores/notificationStore";
+import noProfilePic from "../../assets/profile/user.png";
 
 interface Props {
   onClose?: () => void;
@@ -14,6 +15,18 @@ const CHAT_NOTIFICATION_TYPES = new Set<string>([
   "message_reaction",
   "message_quote",
   "added_to_conversation",
+]);
+
+const POST_RELATED_NOTIFICATION_TYPES = new Set<string>([
+  "post_like",
+  "comment_like",
+  "reply_like",
+  "comment_on_post",
+  "reply_to_comment",
+  "comment_mention",
+  "post_mention",
+  "post_reply",
+  "post_share",
 ]);
 
 const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
@@ -60,6 +73,8 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
 
     const payload = parsePayload(content);
     navigateByNotification({ type, payload, fromUsername }, navigate);
+
+    onClose?.();
   };
 
   return (
@@ -122,9 +137,12 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
                 >
                   <div className="notifications-item-main">
                     <img
-                      src={n.fromUser?.profilePicture || "/assets/user.png"}
-                      alt={n.fromUser?.username}
+                      src={n.fromUser?.profilePicture || noProfilePic}
+                      alt={n.fromUser?.username || "User"}
                       className="notifications-avatar"
+                      onError={(e) => {
+                        e.currentTarget.src = noProfilePic;
+                      }}
                     />
                     <div className="notifications-text-block">
                       <span className="notifications-text">
@@ -172,7 +190,6 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
   );
 };
 
-
 function parsePayload(raw?: string | null): any | null {
   if (!raw) return null;
   try {
@@ -193,7 +210,11 @@ function formatDate(iso: string) {
 }
 
 function navigateByNotification(
-  opts: { type: string; payload: any; fromUsername?: string },
+  opts: {
+    type: string;
+    payload: any;
+    fromUsername?: string;
+  },
   navigate: ReturnType<typeof useNavigate>
 ) {
   const { type, payload, fromUsername } = opts;
@@ -201,31 +222,20 @@ function navigateByNotification(
   const postId = payload?.postId;
   const commentId = payload?.commentId;
 
-  switch (type) {
-    case "post_like":
-    case "comment_like":
-    case "reply_like":
-    case "comment_on_post":
-    case "reply_to_comment":
-    case "comment_mention":
-    case "post_mention":
-    case "post_reply":
-    case "post_share": {
-      if (postId != null) {
-        navigate(`/post/${postId}`); 
-      }
-      break;
+  if (POST_RELATED_NOTIFICATION_TYPES.has(type) && postId != null) {
+    const search = new URLSearchParams();
+
+    if (commentId != null) {
+      search.set("commentId", String(commentId));
     }
 
-    case "follow": {
-      if (fromUsername) {
-        navigate(`/profile/${fromUsername}`);
-      }
-      break;
-    }
+    const query = search.toString();
+    navigate(`/post/${postId}${query ? `?${query}` : ""}`);
+    return;
+  }
 
-    default:
-      break;
+  if (type === "follow" && fromUsername) {
+    navigate(`/profile/${fromUsername}`);
   }
 }
 

@@ -23,9 +23,14 @@ interface PostModalProps {
     user?: { username: string };
   };
   onClose: () => void;
+  targetCommentId?: number;
 }
 
-const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
+const PostModal: React.FC<PostModalProps> = ({
+  post,
+  onClose,
+  targetCommentId,
+}) => {
   const { user: currentUser } = useContext(AuthContext);
 
   const {
@@ -101,7 +106,10 @@ const PostModal: React.FC<PostModalProps> = ({ post, onClose }) => {
           />
 
           <div className="modal-comments">
-            <CommentSection postId={post.id} />
+            <CommentSection
+              postId={post.id}
+              targetCommentId={targetCommentId}
+            />
           </div>
         </div>
       </div>

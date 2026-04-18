@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { IoMdSend } from "react-icons/io";
@@ -13,6 +13,7 @@ interface Props {
   onLike: (commentId: number) => void;
   onDelete: (commentId: number) => void;
   onUpdate: (commentId: number, newContent: string) => void;
+  targetCommentId?: number;
 }
 
 const REPORT_REASONS = [
@@ -24,6 +25,18 @@ const REPORT_REASONS = [
   { value: "OTHER", label: "Other" },
 ] as const;
 
+const containsCommentInTree = (
+  comment: Comment,
+  targetCommentId?: number
+): boolean => {
+  if (!targetCommentId) return false;
+  if (comment.id === targetCommentId) return true;
+
+  return (comment.replies ?? []).some((reply) =>
+    containsCommentInTree(reply, targetCommentId)
+  );
+};
+
 const CommentItem: React.FC<Props> = ({
   comment,
   currentUserId,
@@ -31,6 +44,7 @@ const CommentItem: React.FC<Props> = ({
   onLike,
   onDelete,
   onUpdate,
+  targetCommentId,
 }) => {
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
@@ -46,19 +60,60 @@ const CommentItem: React.FC<Props> = ({
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
   const [reportSuccess, setReportSuccess] = useState<string | null>(null);
+  const [isHighlighted, setIsHighlighted] = useState(false);
+
+  const commentRef = useRef<HTMLDivElement | null>(null);
 
   const isAuthed = !!currentUserId;
   const isOwnComment = !!currentUserId && currentUserId === comment.userId;
 
-  const isDeleted = comment.status === "DELETED" || comment.content === "(deleted)";
+  const isDeleted =
+    comment.status === "DELETED" || comment.content === "(deleted)";
   const isHidden = comment.status === "HIDDEN";
   const isActive =
-    !isDeleted && !isHidden && (comment.status ? comment.status === "ACTIVE" : true);
+    !isDeleted &&
+    !isHidden &&
+    (comment.status ? comment.status === "ACTIVE" : true);
 
   const likedByMe = useMemo(() => {
     if (!currentUserId) return false;
     return (comment.likes ?? []).some((l) => l.userId === currentUserId);
   }, [comment.likes, currentUserId]);
+
+  const shouldOpenReplies = useMemo(
+    () =>
+      (comment.replies?.length ?? 0) > 0 &&
+      containsCommentInTree(comment, targetCommentId) &&
+      comment.id !== targetCommentId,
+    [comment, targetCommentId]
+  );
+
+  useEffect(() => {
+    if (shouldOpenReplies) {
+      setShowReplies(true);
+    }
+  }, [shouldOpenReplies]);
+
+  useEffect(() => {
+    if (comment.id !== targetCommentId) return;
+
+    const timer = window.setTimeout(() => {
+      commentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setIsHighlighted(true);
+    }, 250);
+
+    const unhighlightTimer = window.setTimeout(() => {
+      setIsHighlighted(false);
+    }, 2600);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(unhighlightTimer);
+    };
+  }, [comment.id, targetCommentId]);
 
   const canInteract = isAuthed && isActive;
   const canEdit = canInteract && isOwnComment;
@@ -141,14 +196,28 @@ const CommentItem: React.FC<Props> = ({
 
   return (
     <div
+      ref={commentRef}
       className={`post-comment ${comment.parentId ? "post-comment--reply" : ""} ${
         comment.status === "DELETED" ? "post-comment--deleted" : ""
       } ${comment.status === "HIDDEN" ? "post-comment--hidden" : ""}`}
+      style={{
+        transition: "box-shadow 0.35s ease, background-color 0.35s ease",
+        boxShadow: isHighlighted
+          ? "0 0 0 2px var(--color-primary), 0 10px 30px rgba(15, 23, 42, 0.16)"
+          : undefined,
+        backgroundColor: isHighlighted
+          ? "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))"
+          : undefined,
+        borderRadius: isHighlighted ? "16px" : undefined,
+      }}
     >
       <img
         src={comment.user.profilePicture || noProfilePic}
         alt={comment.user.username}
         className="post-comment__avatar"
+        onError={(e) => {
+          e.currentTarget.src = noProfilePic;
+        }}
       />
 
       <div className="post-comment__content">
@@ -164,7 +233,9 @@ const CommentItem: React.FC<Props> = ({
               className="post-comment__inline-input"
             />
           ) : (
-            <span className="post-comment__text">{formatContent(comment.content)}</span>
+            <span className="post-comment__text">
+              {formatContent(comment.content)}
+            </span>
           )}
 
           <div className="post-comment__menu">
@@ -187,10 +258,16 @@ const CommentItem: React.FC<Props> = ({
 
                 {isOwnComment && (
                   <>
-                    <button disabled={!canEdit} onClick={() => setEditing((v) => !v)}>
+                    <button
+                      disabled={!canEdit}
+                      onClick={() => setEditing((v) => !v)}
+                    >
                       {editing ? "Cancel edit" : "Edit"}
                     </button>
-                    <button disabled={!canDelete} onClick={() => onDelete(comment.id)}>
+                    <button
+                      disabled={!canDelete}
+                      onClick={() => onDelete(comment.id)}
+                    >
                       Delete
                     </button>
                   </>
@@ -203,7 +280,12 @@ const CommentItem: React.FC<Props> = ({
         {!!comment.images?.length && (
           <div className="post-comment__images">
             {comment.images.map((img, idx) => (
-              <img key={idx} src={img} alt="attachment" className="post-comment__img" />
+              <img
+                key={idx}
+                src={img}
+                alt="attachment"
+                className="post-comment__img"
+              />
             ))}
           </div>
         )}
@@ -223,7 +305,11 @@ const CommentItem: React.FC<Props> = ({
             ❤️ {comment._count?.likes || 0}
           </button>
 
-          <button type="button" onClick={() => setReplying(!replying)} disabled={!canReply}>
+          <button
+            type="button"
+            onClick={() => setReplying(!replying)}
+            disabled={!canReply}
+          >
             Reply
           </button>
         </div>
@@ -277,6 +363,7 @@ const CommentItem: React.FC<Props> = ({
                       onLike={onLike}
                       onDelete={onDelete}
                       onUpdate={onUpdate}
+                      targetCommentId={targetCommentId}
                     />
                   ))}
                 </div>
@@ -335,14 +422,19 @@ const CommentItem: React.FC<Props> = ({
                 />
               </label>
 
-              {reportError && <div className="post-comment__modal-error">{reportError}</div>}
+              {reportError && (
+                <div className="post-comment__modal-error">{reportError}</div>
+              )}
               {reportSuccess && (
                 <div className="post-comment__modal-success">{reportSuccess}</div>
               )}
             </div>
 
             <div className="post-comment__modal-footer">
-              <button disabled={reportLoading} onClick={() => setReportOpen(false)}>
+              <button
+                disabled={reportLoading}
+                onClick={() => setReportOpen(false)}
+              >
                 Cancel
               </button>
               <button disabled={reportLoading} onClick={submitReport}>

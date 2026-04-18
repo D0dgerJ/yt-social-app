@@ -13,6 +13,7 @@ import ModerationUsers from "@/pages/Moderation/ModerationUsers";
 import ModerationComments from "./pages/Moderation/ModerationComments";
 import ModerationCommentDetails from "@/pages/Moderation/ModerationCommentDetails";
 import ModerationRoles from "@/pages/Moderation/ModerationRoles";
+import PostDetailsPage from "./pages/PostDetails/PostDetailsPage";
 
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useContext, useEffect, useState } from "react";
@@ -84,6 +85,10 @@ const AppInner: React.FC = () => {
           element={user ? <Home feedMode="explore" /> : <Navigate to="/login" />}
         />
         <Route path="/profile/:username" element={<Profile />} />
+        <Route
+          path="/post/:postId"
+          element={user ? <PostDetailsPage /> : <Navigate to="/login" />}
+        />
         <Route
           path="/shorts"
           element={user ? <Shorts /> : <Navigate to="/login" />}

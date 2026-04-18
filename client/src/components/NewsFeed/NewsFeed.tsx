@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import UploadPost from "../UploadPost/UploadPost";
 import Post from "../Post/Post";
 import {
@@ -6,7 +6,7 @@ import {
   getFeedPosts,
   getUserPostsByUsername,
 } from "../../utils/api/post.api";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import Masonry from "react-masonry-css";
 import "./NewsFeed.scss";
@@ -59,11 +59,21 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
   const [error, setError] = useState<string | null>(null);
 
   const { username } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useContext(AuthContext);
 
   const isProfile = mode === "profile";
   const isHome = mode === "home";
   const isExplore = mode === "explore";
+
+  const targetPostId = useMemo(() => {
+    if (!isProfile) return null;
+
+    const raw = searchParams.get("postId");
+    const parsed = raw ? Number(raw) : NaN;
+
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [isProfile, searchParams]);
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -161,6 +171,8 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
               key={post.id}
               post={post}
               onDeleted={handlePostDeleted}
+              isTarget={targetPostId === post.id}
+              autoOpenModal={targetPostId === post.id}
             />
           ))}
         </Masonry>
