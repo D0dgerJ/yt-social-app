@@ -16,7 +16,7 @@ const Login: React.FC = () => {
 
     try {
       const data = await loginUser({
-        email: auth.email,
+        email: auth.email.trim(),
         password: auth.password,
       });
 

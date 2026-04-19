@@ -35,7 +35,7 @@ const Register: React.FC = () => {
     try {
       const user = await registerUser({
         username: auth.username,
-        email: auth.email,
+        email: auth.email.trim(),
         password: auth.password,
       });
 
