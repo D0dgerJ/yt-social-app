@@ -9,8 +9,34 @@ interface RegisterInput {
   password: string;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_MIN_LENGTH = 3;
+const PASSWORD_MIN_LENGTH = 6;
+
 export const registerUser = async ({ username, email, password }: RegisterInput) => {
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const normalizedUsername = username.trim();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    throw new Error("Invalid email");
+  }
+
+  if (normalizedUsername.length < USERNAME_MIN_LENGTH) {
+    throw new Error(`Username must be at least ${USERNAME_MIN_LENGTH} characters`);
+  }
+
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    throw new Error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+  }
+
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: normalizedEmail },
+        { username: normalizedUsername },
+      ],
+    },
+  });
 
   if (existingUser) {
     throw new Error("User already exists");
@@ -20,8 +46,8 @@ export const registerUser = async ({ username, email, password }: RegisterInput)
 
   const newUser = await prisma.user.create({
     data: {
-      username,
-      email,
+      username: normalizedUsername,
+      email: normalizedEmail,
       password: hashedPassword,
     },
   });

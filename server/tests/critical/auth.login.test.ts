@@ -57,7 +57,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(response.status).toBe(401);
     expect(response.body).toEqual(
       expect.objectContaining({
-        message: 'Invalid credentials',
+        message: 'Invalid email or password',
       })
     );
   });
@@ -71,7 +71,7 @@ describe('POST /api/v1/auth/login', () => {
     expect(response.status).toBe(401);
     expect(response.body).toEqual(
       expect.objectContaining({
-        message: 'User not found',
+        message: 'Invalid email or password',
       })
     );
   });

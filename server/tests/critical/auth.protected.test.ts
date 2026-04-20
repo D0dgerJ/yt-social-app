@@ -38,4 +38,49 @@ describe('Protected routes auth guard', () => {
       })
     );
   });
+  
+    it('should return 400 for invalid email', async () => {
+    const response = await request(app).post('/api/v1/auth/register').send({
+      username: 'valid_username',
+      email: 'invalid-email',
+      password: 'strong_password_123',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        message: 'Invalid email',
+      })
+    );
+  });
+
+  it('should return 400 for short username', async () => {
+    const response = await request(app).post('/api/v1/auth/register').send({
+      username: 'ab',
+      email: 'valid@example.com',
+      password: 'strong_password_123',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        message: 'Username must be at least 3 characters',
+      })
+    );
+  });
+
+  it('should return 400 for short password', async () => {
+    const response = await request(app).post('/api/v1/auth/register').send({
+      username: 'valid_username',
+      email: 'valid@example.com',
+      password: '12345',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        message: 'Password must be at least 6 characters',
+      })
+    );
+  });
 });

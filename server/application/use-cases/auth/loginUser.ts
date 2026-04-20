@@ -9,9 +9,21 @@ interface LoginInput {
 }
 
 const INVALID_LOGIN_MESSAGE = "Invalid email or password";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN_LENGTH = 6;
 
 export const loginUser = async ({ email, password }: LoginInput) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    throw new Error(INVALID_LOGIN_MESSAGE);
+  }
+
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    throw new Error(INVALID_LOGIN_MESSAGE);
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
   if (!user) {
     throw new Error(INVALID_LOGIN_MESSAGE);

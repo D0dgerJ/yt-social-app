@@ -13,6 +13,10 @@ interface AuthData {
   confirmPassword: string;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_MIN_LENGTH = 3;
+const PASSWORD_MIN_LENGTH = 6;
+
 const Register: React.FC = () => {
   const [auth, setAuth] = useState<AuthData>({
     username: "",
@@ -24,18 +28,44 @@ const Register: React.FC = () => {
   const { dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const validateRegisterForm = (data: AuthData): string | null => {
+    const username = data.username.trim();
+    const email = data.email.trim().toLowerCase();
+    const password = data.password;
+
+    if (username.length < USERNAME_MIN_LENGTH) {
+      return `Username must be at least ${USERNAME_MIN_LENGTH} characters`;
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return "Invalid email";
+    }
+
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
+    }
+
+    if (data.confirmPassword !== password) {
+      return "Passwords do not match";
+    }
+
+    return null;
+  };
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (auth.confirmPassword !== auth.password) {
-      toast.error("Passwords do not match");
+    const validationError = validateRegisterForm(auth);
+
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
     try {
       const user = await registerUser({
-        username: auth.username,
-        email: auth.email.trim(),
+        username: auth.username.trim(),
+        email: auth.email.trim().toLowerCase(),
         password: auth.password,
       });
 
@@ -45,10 +75,8 @@ const Register: React.FC = () => {
       navigate("/");
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error("Registration error:", error.response?.data);
         toast.error(error.response?.data?.message || "Something went wrong");
       } else {
-        console.error("Unknown error:", error);
         toast.error("Something went wrong");
       }
     }
@@ -94,6 +122,7 @@ const Register: React.FC = () => {
                     setAuth((prev) => ({ ...prev, username: e.target.value }))
                   }
                   required
+                  minLength={USERNAME_MIN_LENGTH}
                 />
               </label>
 
@@ -122,6 +151,7 @@ const Register: React.FC = () => {
                     setAuth((prev) => ({ ...prev, password: e.target.value }))
                   }
                   required
+                  minLength={PASSWORD_MIN_LENGTH}
                 />
               </label>
 
@@ -139,6 +169,7 @@ const Register: React.FC = () => {
                     }))
                   }
                   required
+                  minLength={PASSWORD_MIN_LENGTH}
                 />
               </label>
 

@@ -2,35 +2,70 @@ import React, { useContext, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../utils/api/auth.api";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import axios from "axios";
 import "./Login.scss";
+
+const INVALID_LOGIN_MESSAGE = "Invalid email or password";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN_LENGTH = 6;
 
 const Login: React.FC = () => {
   const [auth, setAuth] = useState({ email: "", password: "" });
 
-  const { isFetching, error, dispatch } = useContext(AuthContext);
+  const { isFetching, dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const validateLoginForm = (email: string, password: string): string | null => {
+    if (!EMAIL_REGEX.test(email)) {
+      return INVALID_LOGIN_MESSAGE;
+    }
+
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return INVALID_LOGIN_MESSAGE;
+    }
+
+    return null;
+  };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const email = auth.email.trim().toLowerCase();
+    const password = auth.password;
+
+    const validationError = validateLoginForm(email, password);
+
+    if (validationError) {
+      dispatch({
+        type: "LOGIN_FAILURE",
+        payload: validationError,
+      });
+      toast.error(validationError);
+      return;
+    }
+
+    dispatch({ type: "LOGIN_START" });
+
     try {
       const data = await loginUser({
-        email: auth.email.trim(),
-        password: auth.password,
+        email,
+        password,
       });
 
       dispatch({ type: "LOGIN_SUCCESS", payload: data });
       navigate("/");
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        dispatch({
-          type: "LOGIN_FAILURE",
-          payload: err.response?.data?.message || "Login failed",
-        });
-      } else {
-        dispatch({ type: "LOGIN_FAILURE", payload: "Login failed" });
-      }
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || INVALID_LOGIN_MESSAGE
+        : INVALID_LOGIN_MESSAGE;
+
+      dispatch({
+        type: "LOGIN_FAILURE",
+        payload: message,
+      });
+
+      toast.error(message);
     }
   };
 
@@ -88,11 +123,9 @@ const Login: React.FC = () => {
                     setAuth({ ...auth, password: e.target.value })
                   }
                   required
-                  minLength={3}
+                  minLength={PASSWORD_MIN_LENGTH}
                 />
               </label>
-
-              {error && <div className="auth-error">❌ {error}</div>}
 
               <button className="auth-submit" disabled={isFetching}>
                 {isFetching ? "Logging in..." : "Login"}
