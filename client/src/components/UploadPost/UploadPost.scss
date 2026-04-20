@@ -9,6 +9,17 @@
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
   overflow: hidden;
 
+  transition:
+  border-color 0.2s ease,
+  box-shadow 0.2s ease,
+  background-color 0.2s ease;
+
+  &.is-drag-over {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent);
+    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+  }
+
   &__wrapper {
     padding: 18px;
     display: flex;
@@ -19,6 +30,16 @@
   &__top {
     display: flex;
     align-items: stretch;
+  }
+
+  &__drop-hint {
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px dashed color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-soft));
+    color: var(--color-text-muted);
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   &__input {

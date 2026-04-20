@@ -1,9 +1,13 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { MdLabel, MdEmojiEmotions, MdLocationPin } from "react-icons/md";
 
 import useUploadPost from "../../hooks/useUploadPost";
 import { createPost } from "../../utils/api/post.api";
+import {
+  hasSupportedImageDropData,
+  resolveDroppedImages,
+} from "../../utils/dropImage";
 
 import MediaPicker from "./parts/MediaPicker";
 import MediaPreviewList from "./parts/MediaPreviewList";
@@ -46,6 +50,10 @@ const UploadPost: React.FC = () => {
     submit,
   } = useUploadPost();
 
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isResolvingDrop, setIsResolvingDrop] = useState(false);
+  const dragDepthRef = useRef(0);
+
   const accept = [...IMAGE_MIME, ...VIDEO_MIME, ...FILE_MIME].join(",");
 
   const handleSubmit = useCallback(async () => {
@@ -80,8 +88,71 @@ const UploadPost: React.FC = () => {
     }
   }, [text, previews.length, submit, errors, setText, clearFiles]);
 
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent<HTMLElement>) => {
+      if (!hasSupportedImageDropData(e.dataTransfer)) return;
+
+      e.preventDefault();
+      dragDepthRef.current += 1;
+      setIsDragOver(true);
+    },
+    []
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLElement>) => {
+    if (!hasSupportedImageDropData(e.dataTransfer)) return;
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLElement>) => {
+    if (!hasSupportedImageDropData(e.dataTransfer)) return;
+
+    e.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+
+    if (dragDepthRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent<HTMLElement>) => {
+      if (!hasSupportedImageDropData(e.dataTransfer)) return;
+
+      e.preventDefault();
+      dragDepthRef.current = 0;
+      setIsDragOver(false);
+      setIsResolvingDrop(true);
+
+      try {
+        const result = await resolveDroppedImages(e.dataTransfer);
+
+        if (result.files.length > 0) {
+          addFiles(result.files);
+        }
+
+        result.errors.forEach((message) => toast.error(message));
+
+        if (result.files.length === 0) {
+          toast.error("Не удалось добавить изображение из drop");
+        }
+      } finally {
+        setIsResolvingDrop(false);
+      }
+    },
+    [addFiles]
+  );
+
   return (
-    <section className="upload-post">
+    <section
+      className={`upload-post ${isDragOver ? "is-drag-over" : ""}`}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="upload-post__wrapper">
         <div className="upload-post__top">
           <textarea
@@ -91,6 +162,12 @@ const UploadPost: React.FC = () => {
             onChange={(e) => setText(e.target.value)}
             rows={4}
           />
+        </div>
+
+        <div className="upload-post__drop-hint">
+          {isResolvingDrop
+            ? "Загружаем картинку из внешнего источника..."
+            : "Можно перетащить сюда изображение с ПК или прямо из браузера"}
         </div>
 
         {previews.length > 0 && (
@@ -165,10 +242,10 @@ const UploadPost: React.FC = () => {
           <button
             type="button"
             className="upload-post__button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isResolvingDrop}
             onClick={handleSubmit}
           >
-            {isSubmitting ? "Uploading..." : "Publish"}
+            {isSubmitting || isResolvingDrop ? "Uploading..." : "Publish"}
           </button>
         </div>
 
