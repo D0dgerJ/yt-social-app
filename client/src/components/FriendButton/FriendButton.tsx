@@ -26,7 +26,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
   if (!status) {
     return (
       <button type="button" className="friend-btn friend-btn--ghost" disabled>
-        Загрузка...
+        Loading...
       </button>
     );
   }
@@ -39,7 +39,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--secondary"
           onClick={cancelRequest}
         >
-          Удалить из друзей
+          Remove from friends
         </button>
       );
 
@@ -50,7 +50,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--ghost"
           onClick={cancelRequest}
         >
-          Отменить запрос
+          Cancel request
         </button>
       );
 
@@ -62,14 +62,14 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
             className="friend-btn friend-btn--primary"
             onClick={acceptRequest}
           >
-            Принять
+            Accept
           </button>
           <button
             type="button"
             className="friend-btn friend-btn--danger"
             onClick={rejectRequest}
           >
-            Отклонить
+            Decline
           </button>
         </div>
       );
@@ -77,7 +77,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
     case "following":
       return (
         <button type="button" className="friend-btn friend-btn--ghost" disabled>
-          Вы подписаны
+          You are following this user
         </button>
       );
 
@@ -88,7 +88,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--secondary"
           onClick={sendRequest}
         >
-          Подписчик · добавить в друзья
+          Follower · add to friends
         </button>
       );
 
@@ -100,7 +100,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--primary"
           onClick={sendRequest}
         >
-          Добавить в друзья
+          Add to friends
         </button>
       );
   }

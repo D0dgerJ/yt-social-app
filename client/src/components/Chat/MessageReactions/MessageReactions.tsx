@@ -126,7 +126,7 @@ export const MessageReactions: React.FC<Props> = ({
   );
 
   return (
-    <div className="reactions-grid" role="listbox" aria-label="Выберите реакцию">
+    <div className="reactions-grid" role="listbox" aria-label="Choose a reaction">
       {recentEmojis.map((e) => {
         const mine = userHas.has(e);
 

@@ -37,15 +37,15 @@ const ChatNotificationsDropdown: React.FC = () => {
   if (!chatNotifications.length) {
     return (
       <div className="chat-notifications-dropdown">
-        <h4 className="chat-dropdown-title">Оповещения чатов</h4>
-        <p className="chat-dropdown-empty">Пока нет новых событий в чатах</p>
+        <h4 className="chat-dropdown-title">Chat notifications</h4>
+        <p className="chat-dropdown-empty">No new chat events yet</p>
       </div>
     );
   }
 
   return (
     <div className="chat-notifications-dropdown">
-      <h4 className="chat-dropdown-title">Оповещения чатов</h4>
+      <h4 className="chat-dropdown-title">Chat notifications</h4>
 
       <ul className="chat-notifications-list">
         {chatNotifications.map((n) => {
@@ -161,9 +161,9 @@ function renderChatNotificationText(
 ): { main: string; details?: string; snippet?: string } {
   const chatPart =
     payload?.conversationName != null
-      ? `в чате «${payload.conversationName}»`
+      ? `in chat «${payload.conversationName}»`
       : payload?.conversationId != null
-      ? `в чате #${payload.conversationId}`
+      ? `in chat #${payload.conversationId}`
       : undefined;
 
   const snippet =
@@ -174,46 +174,46 @@ function renderChatNotificationText(
   switch (type) {
     case "direct_message":
       return {
-        main: "отправил(а) вам сообщение",
+        main: "sent you a message",
         details: chatPart,
         snippet,
       };
 
     case "group_message":
       return {
-        main: "написал(а) сообщение в групповом чате",
+        main: "posted a message in the group chat",
         details: chatPart,
         snippet,
       };
 
     case "message_mention":
       return {
-        main: "упомянул(а) вас в сообщении",
+        main: "mentioned you in a message",
         details: chatPart,
         snippet,
       };
 
     case "message_reaction":
       return {
-        main: "оставил(а) реакцию на ваше сообщение",
+        main: "reacted to your message",
         details: chatPart,
       };
 
     case "message_quote":
       return {
-        main: "ответил(а), цитируя ваше сообщение",
+        main: "replied quoting your message",
         details: chatPart,
         snippet,
       };
 
     case "added_to_conversation":
       return {
-        main: "добавил(а) вас в чат",
+        main: "added you to a chat",
         details: chatPart,
       };
 
     default:
-      return { main: "совершил(а) действие в чате", details: chatPart };
+      return { main: "performed an action in chat", details: chatPart };
   }
 }
 

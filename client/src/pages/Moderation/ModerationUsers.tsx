@@ -91,8 +91,8 @@ export default function ModerationUsers() {
             <div className={styles.heroText}>
               <h1 className={styles.title}>Users moderation</h1>
               <p className={styles.subtitle}>
-                Просматривай пользователей, их санкции, статусы ограничений и
-                быстро переходи к детальной модерации конкретного аккаунта.
+                Browse users, review their sanctions and restriction statuses,
+                and quickly jump to detailed moderation for a specific account.
               </p>
             </div>
 

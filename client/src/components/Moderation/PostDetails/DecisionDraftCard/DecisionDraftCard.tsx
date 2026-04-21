@@ -63,7 +63,7 @@ export default function DecisionDraftCard({
 
       {!isPendingActive ? (
         <div className={styles.hint}>
-          Этот репорт уже рассмотрен. Выберите другой репорт со статусом <b>PENDING</b>.
+          This report has already been reviewed. Select another report with the <b>PENDING</b>.
         </div>
       ) : null}
 
@@ -154,8 +154,8 @@ export default function DecisionDraftCard({
 
       <div className={styles.mutedSmall}>
         {isPendingActive
-          ? "Сначала выбери решение и напиши обоснование — только после этого кнопки станут активны."
-          : "Решение по этому репорту уже принято. Для действий выбери другой PENDING репорт."}
+          ? "First choose a decision and write a reason — only then will the buttons become active."
+          : "A decision has already been made for this report. Select another PENDING report to take action."}
       </div>
     </div>
   );

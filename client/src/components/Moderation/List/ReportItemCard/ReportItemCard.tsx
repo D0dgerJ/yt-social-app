@@ -70,7 +70,7 @@ export default function ReportItemCard({
       {item.message ? (
         <div className="mod-post-modal__reportMsg">{item.message}</div>
       ) : (
-        <div className="mod-post-modal__muted">(без сообщения)</div>
+        <div className="mod-post-modal__muted">(no message)</div>
       )}
 
       <div className="mod-post-modal__muted">

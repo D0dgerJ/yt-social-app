@@ -112,11 +112,11 @@ async function urlToImageFile(url: string): Promise<File> {
       credentials: "omit",
     });
   } catch {
-    throw new Error("Источник запретил скачать изображение в браузере");
+    throw new Error("The source blocked downloading the image in the browser");
   }
 
   if (!response.ok) {
-    throw new Error(`Не удалось скачать изображение (${response.status})`);
+    throw new Error(`Failed to download the image (${response.status})`);
   }
 
   const headerContentType =
@@ -124,7 +124,7 @@ async function urlToImageFile(url: string): Promise<File> {
     "";
 
   if (!headerContentType.startsWith(IMAGE_CONTENT_TYPE_PREFIX)) {
-    throw new Error("Источник вернул не изображение");
+    throw new Error("The source did not return an image");
   }
 
   const blob = await response.blob();
@@ -132,7 +132,7 @@ async function urlToImageFile(url: string): Promise<File> {
     blob.type?.split(";")[0].trim().toLowerCase() || headerContentType;
 
   if (!blobType.startsWith(IMAGE_CONTENT_TYPE_PREFIX)) {
-    throw new Error("Полученные данные не являются изображением");
+    throw new Error("The received data is not an image");
   }
 
   const fileName = buildFileName(url, blobType);
@@ -165,7 +165,7 @@ export async function resolveDroppedImages(
   const nonImageFiles = droppedFiles.filter((file) => !file.type.startsWith("image/"));
 
   for (const file of nonImageFiles) {
-    errors.push(`${file.name}: можно перетаскивать только изображения`);
+    errors.push(`${file.name}: only images can be dragged here`);
   }
 
   if (imageFiles.length > 0) {
@@ -182,7 +182,7 @@ export async function resolveDroppedImages(
       const file = await urlToImageFile(url);
       files.push(file);
     } catch (error: any) {
-      errors.push(`${url}: ${error?.message || "Не удалось загрузить изображение"}`);
+      errors.push(`${url}: ${error?.message || "Failed to load image"}`);
     }
   }
 

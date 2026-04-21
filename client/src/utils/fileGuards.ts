@@ -36,10 +36,10 @@ export function assertAllowed(file: File): { ok: boolean; reason?: string; kind:
     (kind === "file"  && FILE_MIME.includes(file.type));
 
   if (!allowed) {
-    return { ok: false, kind, reason: `Недопустимый тип: ${file.type || "unknown"}` };
+    return { ok: false, kind, reason: `Unsupported type: ${file.type || "unknown"}` };
   }
   if (sizeMB > max) {
-    return { ok: false, kind, reason: `Размер ${sizeMB.toFixed(1)}MB превышает лимит ${max}MB` };
+    return { ok: false, kind, reason: `File size ${sizeMB.toFixed(1)}MB exceeds the ${max}MB limit` };
   }
   return { ok: true, kind };
 }
@@ -48,7 +48,7 @@ export function assertTotalCount(currentCount: number, incoming: number) {
   if (currentCount + incoming > MAX_TOTAL_FILES) {
     return {
       ok: false,
-      reason: `Превышен общий лимит файлов (${MAX_TOTAL_FILES}).`,
+      reason: `The total file limit (${MAX_TOTAL_FILES}) has been exceeded.`,
     };
   }
   return { ok: true };

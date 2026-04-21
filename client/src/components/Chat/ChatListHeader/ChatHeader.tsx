@@ -10,8 +10,8 @@ const ChatHeader = () => {
   return (
     <div className="chat-header">
       <div className="chat-header__left">
-        <div className="chat-header__eyebrow">Активный чат</div>
-        <div className="chat-header__title">Переписка</div>
+        <div className="chat-header__eyebrow">Active chat</div>
+        <div className="chat-header__title">Conversation</div>
       </div>
 
       <div className="chat-header__buttons">
@@ -22,7 +22,7 @@ const ChatHeader = () => {
               openFloating(currentConversationId);
             }
           }}
-          aria-label="Открыть в отдельном окне"
+          aria-label="Open in separate window"
           type="button"
         >
           ↗
@@ -31,7 +31,7 @@ const ChatHeader = () => {
         <button
           className="chat-header__icon-btn chat-header__icon-btn--danger"
           onClick={() => setCurrentConversationId(null)}
-          aria-label="Закрыть чат"
+          aria-label="Close chat"
           type="button"
         >
           ×

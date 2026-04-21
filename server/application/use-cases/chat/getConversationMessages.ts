@@ -26,7 +26,7 @@ export const getConversationMessages = async ({
     });
 
     if (!isParticipant) {
-      throw Errors.forbidden("Вы не имеете доступа к этому чату");
+      throw Errors.forbidden("You do not have access to this chat");
     }
 
     const whereCursor =
@@ -318,6 +318,6 @@ export const getConversationMessages = async ({
     console.error("❌ Ошибка при получении сообщений чата:", error);
     if (error instanceof ApiError) throw error;
     if (error instanceof Error) throw Errors.internal(error.message);
-    throw Errors.internal("Не удалось получить сообщения");
+    throw Errors.internal("Failed to get messages");
   }
 };

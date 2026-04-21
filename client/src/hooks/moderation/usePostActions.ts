@@ -77,11 +77,11 @@ export function usePostActions({
   const canHardDelete = canUsePostActions && lastState !== "DELETED" && isActionNoteValid && isAdminPlus;
 
   const postActionsHint = !hasApprovedReport
-    ? "Post actions доступны только после APPROVED report."
+    ? "Post actions are available only after an APPROVED report."
     : !isActionNoteValid
-    ? "Action note обязателен (min 10 chars)."
+    ? "Action note is required (min 10 chars)."
     : !isAdminPlus
-    ? "Soft/Hard delete доступны только ADMIN/OWNER."
+    ? "Soft/Hard delete is available only to ADMIN/OWNER."
     : "";
 
   async function handlePostAction(fn: Fn) {
@@ -117,7 +117,7 @@ export function usePostActions({
 
       if (status === 403) {
         if (includesApprovedHint(parsed.message)) {
-          setActionError("Нужно сначала одобрить жалобу (APPROVE report), затем можно выполнять действия с постом.");
+          setActionError("You must approve the report first (APPROVE report), and only then can you perform actions on the post.");
         } else {
           setActionError(parsed.message || "Forbidden");
         }

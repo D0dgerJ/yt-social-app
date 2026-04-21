@@ -58,7 +58,7 @@ const UploadPost: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (!text.trim() && previews.length === 0) {
-      toast.error("Нельзя отправить пустой пост");
+      toast.error("You cannot publish an empty post");
       return;
     }
 
@@ -136,7 +136,7 @@ const UploadPost: React.FC = () => {
         result.errors.forEach((message) => toast.error(message));
 
         if (result.files.length === 0) {
-          toast.error("Не удалось добавить изображение из drop");
+          toast.error("Failed to add image from drop");
         }
       } finally {
         setIsResolvingDrop(false);
@@ -157,7 +157,7 @@ const UploadPost: React.FC = () => {
         <div className="upload-post__top">
           <textarea
             className="upload-post__input"
-            placeholder="Что у тебя нового?"
+            placeholder="What's new?"
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}
@@ -166,8 +166,8 @@ const UploadPost: React.FC = () => {
 
         <div className="upload-post__drop-hint">
           {isResolvingDrop
-            ? "Загружаем картинку из внешнего источника..."
-            : "Можно перетащить сюда изображение с ПК или прямо из браузера"}
+            ? "Loading an image from an external source..."
+            : "You can drag an image here from your computer or directly from the browser"}
         </div>
 
         {previews.length > 0 && (
@@ -194,7 +194,7 @@ const UploadPost: React.FC = () => {
           <div className="upload-post__location">
             <input
               type="text"
-              placeholder="Добавить локацию"
+              placeholder="Add location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />

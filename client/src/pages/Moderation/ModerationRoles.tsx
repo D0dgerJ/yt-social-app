@@ -157,8 +157,8 @@ export default function ModerationRoles() {
             <div className={styles.heroText}>
               <h1 className={styles.title}>Role management</h1>
               <p className={styles.subtitle}>
-                Только owner может вручную назначать пользователям роли USER,
-                MODERATOR и ADMIN.
+                Only the owner can manually assign the USER,
+                MODERATOR, and ADMIN roles.
               </p>
             </div>
 
@@ -348,10 +348,10 @@ export default function ModerationRoles() {
           </section>
 
           <div className={styles.hint}>
-            Owner может назначать роли <span className={styles.mono}>USER</span>,{" "}
-            <span className={styles.mono}>MODERATOR</span> и{" "}
-            <span className={styles.mono}>ADMIN</span>. Роль{" "}
-            <span className={styles.mono}>OWNER</span> здесь не назначается.
+            The owner can assign the <span className={styles.mono}>USER</span>,{" "}
+            <span className={styles.mono}>MODERATOR</span> and{" "}
+            <span className={styles.mono}>ADMIN</span>. roles{" "}
+            <span className={styles.mono}>OWNER</span> role cannot be assigned here.
           </div>
         </main>
       </div>

@@ -21,9 +21,9 @@ export function useCommentDecisionDraft(params: {
   const noteLen = draftNote.trim().length;
 
   const decisionHint = useMemo((): string => {
-    if (!isPendingActive) return "Выбери PENDING репорт, чтобы принять решение.";
-    if (!draftDecision) return "Выбери решение.";
-    if (noteLen < 10) return "Напиши короткое обоснование (минимум 10 символов).";
+    if (!isPendingActive) return "Select a PENDING report to accept a decision.";
+    if (!draftDecision) return "Select a decision.";
+    if (noteLen < 10) return "Write a short reason (minimum 10 characters).";
     return "";
   }, [isPendingActive, draftDecision, noteLen]);
 

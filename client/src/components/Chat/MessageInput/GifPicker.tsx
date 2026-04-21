@@ -21,7 +21,7 @@ function mergeUniqueById(list: GifItem[], add: GifItem[]) {
 
 const GifPicker: React.FC<GifPickerProps> = ({
   onSelect,
-  placeholder = "Поиск GIF…",
+  placeholder = "Search GIF…",
 }) => {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<GifItem[]>([]);
@@ -67,7 +67,7 @@ const GifPicker: React.FC<GifPickerProps> = ({
       setOffset(curOffset + safePage.length);
       setHasMore(safePage.length === LIMIT);
     } catch (e: any) {
-      setErr(e?.message || "Не удалось загрузить GIF");
+      setErr(e?.message || "Failed to load GIFs");
     } finally {
       setLoading(false);
     }
@@ -127,8 +127,8 @@ const GifPicker: React.FC<GifPickerProps> = ({
 
   const content = useMemo(() => {
     if (err) return <div className="gif-error">{err}</div>;
-    if (!items.length && loading) return <div className="gif-loading">Загрузка…</div>;
-    if (!items.length) return <div className="gif-empty">Ничего не найдено</div>;
+    if (!items.length && loading) return <div className="gif-loading">Loading...</div>;
+    if (!items.length) return <div className="gif-empty">Nothing found</div>;
 
     return (
       <>
@@ -137,7 +137,7 @@ const GifPicker: React.FC<GifPickerProps> = ({
             <button
               key={`gif-${g.id}-${i}`}
               className="gif-thumb"
-              title="Отправить GIF"
+              title="Send GIF"
               onClick={() => pick(g)}
               type="button"
             >
@@ -172,7 +172,7 @@ const GifPicker: React.FC<GifPickerProps> = ({
             resetList(nextQuery);
             void fetchPage(nextQuery, 0, true);
           }}
-          aria-label="Искать"
+          aria-label="Search"
           type="button"
         >
           🔍

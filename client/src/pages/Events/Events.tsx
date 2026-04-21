@@ -19,8 +19,8 @@ const Events: React.FC = () => {
           <section className="events-hero">
             <h2 className="events-title">Events</h2>
             <p className="events-subtitle">
-              Здесь будут отображаться твои события, напоминания и заметки.
-              Сейчас доступен календарь, а позже добавим записи и планирование по дням.
+              Your events, reminders, and notes will appear here.
+              The calendar is available now, and daily planning and entries will be added later.
             </p>
           </section>
 

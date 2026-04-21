@@ -11,24 +11,24 @@ type Props = {
 function mediaLabel(mediaType?: MediaType, fileName?: string | null) {
   switch (mediaType) {
     case 'image':
-      return '📷 Фото';
+      return '📷 Photo';
     case 'video':
-      return '📹 Видео';
+      return '📹 Video';
     case 'audio':
-      return '🎵 Аудио';
+      return '🎵 Audio';
     case 'gif':
       return 'GIF';
     case 'sticker':
-      return 'Стикер';
+      return 'Sticker';
     case 'file':
-      return fileName ? `📎 ${fileName}` : '📎 Файл';
+      return fileName ? `📎 ${fileName}` : '📎 File';
     default:
       return '';
   }
 }
 
 function authorName(sender?: UserLite | null) {
-  if (!sender) return 'Сообщение';
+  if (!sender) return 'Message';
   return sender.username || `@user_${sender.id}`;
 }
 
@@ -43,15 +43,15 @@ export const ReplyPreview: React.FC<Props> = ({ reply, onClick, className }) => 
       type="button"
       onClick={onClick}
       className={['reply-preview', className || ''].join(' ').trim()}
-      title="Показать исходное сообщение"
+      title="Show original message"
     >
       <div className="reply-preview__content">
         <div className="reply-preview__author">
-          Ответ на {authorName(reply.sender)}
+          Reply to {authorName(reply.sender)}
         </div>
 
         <div className="reply-preview__text">
-          {hasText ? reply.content : label || 'Без текста'}
+          {hasText ? reply.content : label || 'No text'}
         </div>
       </div>
     </button>

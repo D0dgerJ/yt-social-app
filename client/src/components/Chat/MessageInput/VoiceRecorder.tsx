@@ -45,13 +45,13 @@ export const VoiceRecorder: React.FC<Props> = ({
           className="composer__voice-btn"
           onClick={handleOpen}
           disabled={disabled || !canAddMoreFiles}
-          aria-label="Записать голосовое сообщение"
+          aria-label="Record voice message"
           title={
             !canAddMoreFiles
-              ? 'Нельзя добавить больше вложений'
+              ? 'Cannot add more attachments'
               : disabled
-              ? 'Сейчас запись недоступна'
-              : 'Записать голосовое сообщение'
+              ? 'Recording is currently unavailable'
+              : 'Record voice message'
           }
         >
           🎤

@@ -16,7 +16,7 @@ export const pinConversation = async ({
     });
 
     if (!user) {
-      throw new Error("Пользователь не найден");
+      throw new Error("User not found");
     }
 
     const participant = await prisma.participant.findFirst({
@@ -28,7 +28,7 @@ export const pinConversation = async ({
     });
 
     if (!participant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw new Error("You are not a participant in this chat");
     }
 
     const now = new Date();
@@ -62,7 +62,7 @@ export const pinConversation = async ({
       throw new Error(error.message);
     }
 
-    throw new Error("Не удалось закрепить чат");
+    throw new Error("Failed to pin chat");
   }
 };
 
@@ -77,7 +77,7 @@ export const unpinConversation = async ({
     });
 
     if (!user) {
-      throw new Error("Пользователь не найден");
+      throw new Error("User not found");
     }
 
     const participant = await prisma.participant.findFirst({
@@ -89,7 +89,7 @@ export const unpinConversation = async ({
     });
 
     if (!participant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw new Error("You are not a participant in this chat");
     }
 
     await prisma.pinnedConversation.deleteMany({
@@ -111,6 +111,6 @@ export const unpinConversation = async ({
       throw new Error(error.message);
     }
 
-    throw new Error("Не удалось открепить чат");
+    throw new Error("Failed to unpin chat");
   }
 };

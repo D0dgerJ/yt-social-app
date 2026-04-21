@@ -183,7 +183,7 @@ export const EmojiGifPopup: React.FC<Props> = ({
         type="button"
         className="composer__emoji-btn"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Вставить эмодзи или GIF"
+        aria-label="Insert emoji or GIF"
       >
         😊
       </button>

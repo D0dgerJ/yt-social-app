@@ -33,8 +33,8 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
         const res = await getUserFriends(currentUser.id);
         setFriends(res || []);
       } catch (e) {
-        console.error("❌ Не удалось получить друзей:", e);
-        setError("Не удалось загрузить список друзей");
+        console.error("❌ Unable to get friends:", e);
+        setError("Failed to load friends list");
       } finally {
         setIsLoading(false);
       }
@@ -60,8 +60,8 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
       onCreated();
       onClose();
     } catch (e) {
-      console.error("❌ Ошибка при создании чата:", e);
-      setError("Ошибка при создании чата. Попробуйте позже.");
+      console.error("❌ Error creating chat:", e);
+      setError("Failed to create chat. Please try again later.");
     } finally {
       setIsCreating(false);
     }
@@ -70,14 +70,14 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
   return (
     <div className="modal-backdrop">
       <div className="modal">
-        <h2>Создать чат</h2>
+        <h2>Create chat</h2>
 
         {isLoading ? (
-          <p>Загрузка списка друзей...</p>
+          <p>Loading friends list...</p>
         ) : error ? (
           <p className="error">{error}</p>
         ) : friends.length === 0 ? (
-          <p>У вас пока нет друзей</p>
+          <p>No friends yet</p>
         ) : (
           <ul className="friend-list">
             {friends.map((friend) => (
@@ -105,9 +105,9 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
             onClick={handleCreate}
             disabled={selected.length === 0 || isCreating}
           >
-            {isCreating ? "Создание..." : "Создать"}
+            {isCreating ? "Creating..." : "Create"}
           </button>
-          <button onClick={onClose}>Отмена</button>
+          <button onClick={onClose}>Cancel</button>
         </div>
       </div>
     </div>

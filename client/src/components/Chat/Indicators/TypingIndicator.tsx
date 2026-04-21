@@ -34,10 +34,10 @@ function TypingIndicatorBase({ conversationId, resolveName }: Props) {
       .slice(0, 3);
 
     const base = names.join(', ');
-    if (list.length === 1) return `${base} печатает…`;
+    if (list.length === 1) return `${base} is typing`;
     return list.length > 3
-      ? `${base} и ещё ${list.length - 3} печатают…`
-      : `${base} печатают…`;
+      ? `${base} and  ${list.length - 3} more are typing…`
+      : `${base} more are typing…`;
   }, [list, resolveName]);
 
   if (!label) return null;

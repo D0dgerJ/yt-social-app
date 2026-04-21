@@ -77,22 +77,22 @@ const DayEventsModal: React.FC<Props> = ({
       <div className="day-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="day-modal-header">
           <div>
-            <h3>События</h3>
+            <h3>Events</h3>
             <div className="day-modal-date">{dateLabel}</div>
           </div>
-          <button onClick={onClose} aria-label="Закрыть">
+          <button onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>
 
         <div className="day-modal-content">
           {!hasAny && (
-            <div className="day-modal-empty">В этот день пока нет событий</div>
+            <div className="day-modal-empty">There are no events on this day yet</div>
           )}
 
           {holidays.length > 0 && (
             <div className="day-section">
-              <div className="day-section-title">Праздники</div>
+              <div className="day-section-title">Holidays</div>
 
               <div className="day-holidays-list">
                 {holidays.map((h) => {
@@ -106,7 +106,7 @@ const DayEventsModal: React.FC<Props> = ({
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      title="Открыть в Википедии"
+                      title="Open in Wikipedia"
                       onMouseDown={(e) => e.stopPropagation()} 
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -118,7 +118,7 @@ const DayEventsModal: React.FC<Props> = ({
                           <span>{h.title}</span>
                         </div>
                         <div className="day-holiday-note">
-                          Системный праздник • Wikipedia
+                          System holiday • Wikipedia
                         </div>
                       </div>
 
@@ -133,7 +133,7 @@ const DayEventsModal: React.FC<Props> = ({
           )}
           {events.length > 0 && (
             <div className="day-section">
-              <div className="day-section-title">Мои события</div>
+              <div className="day-section-title">My events</div>
 
               <div className="day-events-list">
                 {events.map((e) => (
@@ -143,17 +143,17 @@ const DayEventsModal: React.FC<Props> = ({
                         <input
                           value={title}
                           onChange={(ev) => setTitle(ev.target.value)}
-                          placeholder="Название"
+                          placeholder="Title"
                         />
                         <textarea
                           value={description}
                           onChange={(ev) => setDescription(ev.target.value)}
-                          placeholder="Описание"
+                          placeholder="Description"
                         />
 
                         <div className="day-edit-row">
                           <label className="day-color-label">
-                            Цвет
+                            Color
                             <input
                               type="color"
                               value={color}
@@ -163,8 +163,8 @@ const DayEventsModal: React.FC<Props> = ({
                         </div>
 
                         <div className="actions">
-                          <button onClick={saveEdit}>Сохранить</button>
-                          <button onClick={cancelEdit}>Отмена</button>
+                          <button onClick={saveEdit}>Save</button>
+                          <button onClick={cancelEdit}>Cancel</button>
                         </div>
                       </>
                     ) : (
@@ -181,9 +181,9 @@ const DayEventsModal: React.FC<Props> = ({
 
                         <div className="actions">
                           <button onClick={() => startEdit(e)}>
-                            Редактировать
+                            Edit
                           </button>
-                          <button onClick={() => onDelete(e.id)}>Удалить</button>
+                          <button onClick={() => onDelete(e.id)}>Delete</button>
                         </div>
                       </>
                     )}
@@ -195,14 +195,14 @@ const DayEventsModal: React.FC<Props> = ({
 
           {events.length === 0 && holidays.length > 0 && (
             <div className="day-modal-empty day-modal-empty--small">
-              В этот день нет ваших событий — можно добавить своё.
+              There are no personal events on this day yet — you can add one.
             </div>
           )}
         </div>
 
         <div className="day-modal-footer">
           <button className="primary" onClick={onCreate}>
-            + Добавить событие
+            + Add event
           </button>
         </div>
       </div>

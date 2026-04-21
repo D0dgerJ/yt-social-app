@@ -10,7 +10,7 @@ export const uploadMediaHandler = [
     const file = req.file;
 
     if (!file) {
-      res.status(400).json({ error: "Файл не был загружен" });
+      res.status(400).json({ error: "File was not uploaded" });
       return;
     }
 
@@ -27,8 +27,8 @@ export const uploadMediaHandler = [
         size: file.size,
       });
     } catch (err) {
-      console.error("Ошибка при загрузке файла:", err);
-      res.status(500).json({ error: "Ошибка при загрузке файла" });
+      console.error("Error while uploading file:", err);
+      res.status(500).json({ error: "Error while uploading file" });
     } finally {
       if (file?.path) {
         try {

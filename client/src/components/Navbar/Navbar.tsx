@@ -297,7 +297,7 @@ const Navbar: React.FC = () => {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Найти пользователей, посты или #хэштег"
+                placeholder="Search users, posts, or #hashtag"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => {
@@ -311,12 +311,12 @@ const Navbar: React.FC = () => {
             {showSearchDropdown && searchQuery.trim() && (
               <div className="search-dropdown">
                 {isSearching ? (
-                  <div className="search-empty">Поиск...</div>
+                  <div className="search-empty">Searching...</div>
                 ) : (
                   <>
                     {!isHashtagSearch && (
                       <div className="search-section">
-                        <div className="search-section-title">Пользователи</div>
+                        <div className="search-section-title">Users</div>
 
                         {userResults.length > 0 ? (
                           userResults.map((item) => (
@@ -337,20 +337,20 @@ const Navbar: React.FC = () => {
                                   @{item.username}
                                 </div>
                                 <div className="search-result-text">
-                                  {item.desc?.trim() || item.city || "Пользователь"}
+                                  {item.desc?.trim() || item.city || "User"}
                                 </div>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="search-empty">Пользователи не найдены</div>
+                          <div className="search-empty">No users found</div>
                         )}
                       </div>
                     )}
 
                     <div className="search-section">
                       <div className="search-section-title">
-                        {isHashtagSearch ? "Посты по хэштегу" : "Посты"}
+                        {isHashtagSearch ? "Posts by hashtag" : "Posts"}
                       </div>
 
                       {postResults.length > 0 ? (
@@ -365,7 +365,7 @@ const Navbar: React.FC = () => {
                               <div className="search-result-title">
                                 {item.user?.username
                                   ? `@${item.user.username}`
-                                  : "Пост"}
+                                  : "Post"}
                               </div>
 
                               <div className="search-result-text">
@@ -373,13 +373,13 @@ const Navbar: React.FC = () => {
                                   ? item.desc.slice(0, 90)
                                   : item.tags?.length
                                     ? `#${item.tags.join(" #").slice(0, 90)}`
-                                    : "Без текста"}
+                                    : "No text"}
                               </div>
                             </div>
                           </button>
                         ))
                       ) : (
-                        <div className="search-empty">Посты не найдены</div>
+                        <div className="search-empty">No posts found</div>
                       )}
                     </div>
                   </>
@@ -401,11 +401,11 @@ const Navbar: React.FC = () => {
               type="button"
               className="theme-toggle"
               onClick={toggleTheme}
-              aria-label="Переключить тему"
+              aria-label="Toggle theme"
               title={
                 theme === "light"
-                  ? "Включить тёмную тему"
-                  : "Включить светлую тему"
+                  ? "Enable dark theme"
+                  : "Enable light theme"
               }
             >
               {theme === "light" ? <IoMoon /> : <IoSunny />}

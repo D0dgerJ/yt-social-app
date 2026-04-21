@@ -114,8 +114,8 @@ export default function ModerationHistory() {
             <div className={styles.heroText}>
               <h1 className={styles.title}>Moderation history</h1>
               <p className={styles.subtitle}>
-                Отслеживай действия модераторов, системные события и изменения по
-                постам, комментариям и пользователям в единой истории.
+                Track moderator actions, system events, and changes to
+                posts, comments, and users in one unified history.
               </p>
             </div>
 

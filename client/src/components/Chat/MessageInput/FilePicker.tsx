@@ -13,7 +13,7 @@ interface FilePickerProps {
 
 const FilePicker: React.FC<FilePickerProps> = ({
   onSelect,
-  title = "Прикрепить файл",
+  title = "Attach file",
   disabled = false,
   maxFiles = 10,
   existingCount = 0,
@@ -69,9 +69,9 @@ const FilePicker: React.FC<FilePickerProps> = ({
         className={`file-picker-button ${disabled || overLimit ? "disabled" : ""}`}
         title={
           disabled
-            ? "Недоступно"
+            ? "Unavailable"
             : overLimit
-            ? `Можно прикрепить не более ${maxFiles} файлов`
+            ? `You can attach up to ${maxFiles} files`
             : title
         }
         aria-label={title}

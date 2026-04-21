@@ -162,19 +162,19 @@ const fileFilter = (
   });
 
   if (hasSuspiciousFilename(originalName)) {
-    cb(new Error("❌ Некорректное имя файла"));
+    cb(new Error("❌ Invalid file name"));
     return;
   }
 
   if (BLOCKED_EXTS.has(originalExt)) {
-    cb(new Error("❌ Недопустимый тип файла"));
+    cb(new Error("❌ Unsupported file type"));
     return;
   }
 
   const allowedMimes = ALLOWED_TYPES[ext];
 
   if (!allowedMimes) {
-    cb(new Error(`❌ Расширение файла не разрешено: ${originalExt}`));
+    cb(new Error(`❌ File extension is not allowed: ${originalExt}`));
     return;
   }
 
@@ -204,7 +204,7 @@ const fileFilter = (
       return;
     }
 
-    cb(new Error(`❌ MIME-тип файла не разрешён: ${rawMime}`));
+    cb(new Error(`❌ MIME type is not allowed: ${rawMime}`));
     return;
   }
 

@@ -58,7 +58,7 @@ const PostDetailsPage: React.FC = () => {
         setError(null);
 
         if (!Number.isFinite(numericPostId) || numericPostId <= 0) {
-          setError("Некорректный ID поста.");
+          setError("Invalid post ID.");
           return;
         }
 
@@ -93,7 +93,7 @@ const PostDetailsPage: React.FC = () => {
         setError(
           err?.response?.data?.message ||
             err?.message ||
-            "Не удалось загрузить пост"
+            "Failed to load post"
         );
       } finally {
         setLoading(false);
@@ -115,7 +115,7 @@ const PostDetailsPage: React.FC = () => {
         <main className="post-details-wrapper">
           {loading ? (
             <div className="post-details-state">
-              <div className="post-details-state__card">Загрузка поста...</div>
+              <div className="post-details-state__card">Loading post...</div>
             </div>
           ) : error ? (
             <div className="post-details-state">
@@ -131,7 +131,7 @@ const PostDetailsPage: React.FC = () => {
             />
           ) : (
             <div className="post-details-state">
-              <div className="post-details-state__card">Пост не найден.</div>
+              <div className="post-details-state__card">Post not found.</div>
             </div>
           )}
         </main>

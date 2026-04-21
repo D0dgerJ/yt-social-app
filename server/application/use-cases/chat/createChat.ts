@@ -24,7 +24,7 @@ export const createChat = async (data: CreateChatInput) => {
     const userIds = Array.from(new Set([...rawUserIds, creatorId])).sort();
 
     if (userIds.length < 2) {
-      throw new Error("Нужно как минимум два участника для создания чата");
+      throw new Error("At least two participants are required to create a chat");
     }
 
     const isGroup = userIds.length > 2 || !!name;
@@ -62,7 +62,7 @@ export const createChat = async (data: CreateChatInput) => {
     const [conversation] = await prisma.$transaction([
       prisma.conversation.create({
         data: {
-          name: isGroup ? name || "Групповой чат" : null,
+          name: isGroup ? name || "Group chat" : null,
           isGroup,
           participants: {
             create: userIds.map((userId) => ({
@@ -98,6 +98,6 @@ export const createChat = async (data: CreateChatInput) => {
   } catch (error) {
     console.error("❌ Ошибка при создании чата:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось создать чат");
+    throw new Error("Failed to create chat");
   }
 };

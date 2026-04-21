@@ -87,16 +87,16 @@ const Register: React.FC = () => {
       <div className="auth-shell">
         <section className="auth-brand">
           <div className="auth-brand__badge">DodgerJ Social</div>
-          <h1 className="auth-brand__title">Создай аккаунт</h1>
+          <h1 className="auth-brand__title">Create your account</h1>
           <p className="auth-brand__text">
-            Присоединяйся к DodgerJ Social, чтобы публиковать посты, общаться,
-            следить за друзьями и настраивать свой профиль.
+            Join DodgerJ Social to publish posts, connect with others,
+            follow your friends, and customize your profile.
           </p>
 
           <div className="auth-brand__features">
-            <div className="auth-brand__feature">Персональный профиль</div>
-            <div className="auth-brand__feature">Комментарии, реакции и друзья</div>
-            <div className="auth-brand__feature">События, explore и шорты</div>
+            <div className="auth-brand__feature">Personal profile</div>
+            <div className="auth-brand__feature">Comments, reactions, and friends</div>
+            <div className="auth-brand__feature">Events, explore, and shorts</div>
           </div>
         </section>
 
@@ -107,7 +107,7 @@ const Register: React.FC = () => {
                 <h2>Register</h2>
                 <span className="auth-mini-logo">DJS</span>
               </div>
-              <p>Заполни форму и начни пользоваться приложением.</p>
+              <p>Fill out the form and start using the app.</p>
             </div>
 
             <form onSubmit={handleRegister} className="auth-form">

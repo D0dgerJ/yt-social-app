@@ -134,7 +134,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
       setStream(s);
       return s;
     } catch (e) {
-      setError('Не удалось получить доступ к микрофону');
+      setError('Failed to access the microphone');
       throw e;
     }
   };
@@ -271,21 +271,21 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
             onClick={startRecording}
             type="button"
           >
-            ● Запись
+            ● Recording
           </button>
         )}
 
         {isRecording && !isPaused && (
           <>
             <button className="ar-btn" onClick={pauseRecording} type="button">
-              ⏸ Пауза
+              ⏸ Pause
             </button>
             <button
               className="ar-btn ar-btn--stop"
               onClick={stopRecording}
               type="button"
             >
-              ■ Стоп
+              ■ Stop
             </button>
           </>
         )}
@@ -293,14 +293,14 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
         {isRecording && isPaused && (
           <>
             <button className="ar-btn" onClick={resumeRecording} type="button">
-              ▶ Продолжить
+              ▶ Resume
             </button>
             <button
               className="ar-btn ar-btn--stop"
               onClick={stopRecording}
               type="button"
             >
-              ■ Завершить
+              ■ Finish
             </button>
           </>
         )}
@@ -317,10 +317,10 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
               onClick={handleSend}
               type="button"
             >
-              📤 Отправить
+              📤 Send
             </button>
             <button className="ar-btn" onClick={reset} type="button">
-              ↺ Перезаписать
+              ↺ Re-record
             </button>
           </>
         )}

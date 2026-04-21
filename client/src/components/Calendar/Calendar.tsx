@@ -6,7 +6,7 @@ import DayEventsModal from "./DayEventsModal";
 import { buildHolidayMapForYear } from "./holidays";
 import type { Holiday } from "./holidays";
 
-const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type ViewDate = {
   year: number;
@@ -303,7 +303,7 @@ const Calendar: React.FC = () => {
                             key={h.key}
                             className="calendar-holiday calendar-holiday--link"
                             style={{ background: h.color ?? "#16a34a" }}
-                            title="Открыть в Википедии"
+                            title="Open in Wikipedia"
                             href={buildWikiUrl(h)}
                             target="_blank"
                             rel="noreferrer"

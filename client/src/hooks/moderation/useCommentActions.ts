@@ -29,8 +29,8 @@ export function useCommentActions(params: {
   const visibility = (comment as any)?.visibility as CommentVisibility | undefined;
 
   const commentActionsHint = useMemo(() => {
-    if (!hasApprovedReport) return "Действия доступны только после APPROVED report.";
-    if (actionNoteLen < 10) return "Action note: минимум 10 символов.";
+    if (!hasApprovedReport) return "Actions are available only after an APPROVED report.";
+    if (actionNoteLen < 10) return "Action note: minimum 10 characters.";
     return null;
   }, [hasApprovedReport, actionNoteLen]);
 
@@ -43,7 +43,6 @@ export function useCommentActions(params: {
   const canRestore = Boolean(baseAllowed && comment?.status === "DELETED");
 
   // ===== SHADOW moderation =====
-  // (не имеет смысла для DELETED; для HIDDEN тоже обычно не нужно, но мы можем оставить только ACTIVE)
   const canShadowHide = Boolean(baseAllowed && comment?.status === "ACTIVE" && visibility !== "SHADOW_HIDDEN");
   const canShadowUnhide = Boolean(baseAllowed && comment?.status === "ACTIVE" && visibility === "SHADOW_HIDDEN");
 

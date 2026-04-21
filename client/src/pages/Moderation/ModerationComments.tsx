@@ -31,8 +31,8 @@ export default function ModerationComments() {
             <div className={styles.heroText}>
               <h1 className={styles.title}>Comments moderation</h1>
               <p className={styles.subtitle}>
-                Просматривай жалобы на комментарии, оценивай контекст и переходи
-                к детальному разбору каждого кейса.
+                Review comment reports, evaluate the context, and open
+                a detailed review for each case.
               </p>
             </div>
 

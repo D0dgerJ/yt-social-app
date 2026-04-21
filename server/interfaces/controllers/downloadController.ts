@@ -35,7 +35,7 @@ const downloadFile = async (req: Request, res: Response): Promise<void> => {
   const abs = path.resolve(BASE_DIR, storedFileName);
 
   if (!withinBase(abs) || !fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
-    res.status(404).json({ error: "Файл не найден" });
+    res.status(404).json({ error: "File not found" });
     return;
   }
 

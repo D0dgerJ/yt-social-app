@@ -66,7 +66,7 @@ const AppInner: React.FC = () => {
       <div className="app-loader">
         <div className="app-loader__card">
           <div className="app-loader__spinner" />
-          <div className="app-loader__text">Загрузка приложения...</div>
+          <div className="app-loader__text">Loading application...</div>
         </div>
       </div>
     );

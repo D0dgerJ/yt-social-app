@@ -26,7 +26,7 @@ export const transcribeMessage = async ({
   });
 
   if (!message || message.isDeleted) {
-    throw new Error("Сообщение не найдено");
+    throw new Error("Message not found");
   }
 
   const isParticipant = await prisma.participant.findFirst({
@@ -38,7 +38,7 @@ export const transcribeMessage = async ({
   });
 
   if (!isParticipant) {
-    throw new Error("Вы не имеете доступа к этому чату");
+    throw new Error("You do not have access to this chat");
   }
 
   if (message.audioText && message.audioText.trim()) {
@@ -56,7 +56,7 @@ export const transcribeMessage = async ({
       : null);
 
   if (!audioMedia || !audioMedia.url) {
-    throw new Error("У этого сообщения нет аудио для распознавания");
+    throw new Error("This message has no audio to transcribe");
   }
 
   const sourceUrl = audioMedia.url;
@@ -80,5 +80,5 @@ export const transcribeMessage = async ({
 // здесь потом можно подключить Whisper / внешний STT-API / свой сервис
 async function fakeSpeechToText(_sourceUrl: string): Promise<string> {
   // Сейчас — просто заглушка, чтобы фронт и весь поток работал без ошибок
-  return "🔊 Транскрибация ещё не настроена";
+  return "🔊 Transcription is not configured yet";
 }

@@ -7,11 +7,11 @@ type Props = {
 };
 
 const statusLabel: Record<NonNullable<Props['status']>, string> = {
-  sending: 'Отправка…',
-  sent: 'Отправлено',
-  delivered: 'Доставлено',
-  read: 'Прочитано',
-  failed: 'Ошибка',
+  sending: 'Sending…',
+  sent: 'Sent',
+  delivered: 'Delivered',
+  read: 'Read',
+  failed: 'Error',
 };
 
 const MessageStatus: React.FC<Props> = ({ status = 'sent' }) => {

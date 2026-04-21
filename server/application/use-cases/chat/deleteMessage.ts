@@ -30,11 +30,11 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
     });
 
     if (!message) {
-      throw Errors.notFound("Сообщение не найдено");
+      throw Errors.notFound("Message not found");
     }
 
     if (message.senderId !== userId) {
-      throw Errors.forbidden("Вы не можете удалить это сообщение");
+      throw Errors.forbidden("You cannot delete this message");
     }
 
     const softDeleted = await prisma.message.update({
@@ -87,6 +87,6 @@ export const deleteMessage = async ({ messageId, userId }: DeleteMessageInput) =
     console.error("❌ Ошибка при удалении сообщения:", error);
     if (error instanceof ApiError) throw error;
     if (error instanceof Error) throw Errors.internal(error.message);
-    throw Errors.internal("Не удалось удалить сообщение");
+    throw Errors.internal("Failed to delete message");
   }
 };

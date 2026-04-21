@@ -19,7 +19,7 @@ export const leaveConversation = async ({
     });
 
     if (!participant) {
-      throw new Error("Пользователь не является участником этого чата");
+      throw new Error("User is not a participant in this chat");
     }
 
     if (requestedById !== userId) {
@@ -28,11 +28,11 @@ export const leaveConversation = async ({
       });
 
       if (!requester || !["admin", "owner"].includes(requester.role)) {
-        throw new Error("Недостаточно прав для удаления участника");
+        throw new Error("Insufficient permissions to remove participant");
       }
 
       if (participant.role === "owner") {
-        throw new Error("Нельзя удалить владельца чата");
+        throw new Error("Cannot remove the chat owner");
       }
     }
 
@@ -67,6 +67,6 @@ export const leaveConversation = async ({
   } catch (error) {
     console.error("❌ Ошибка при выходе из чата:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось выйти из чата");
+    throw new Error("Failed to leave chat");
   }
 };

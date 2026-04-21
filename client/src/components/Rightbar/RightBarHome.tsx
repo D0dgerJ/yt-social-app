@@ -24,7 +24,7 @@ const RightBarHome: React.FC<Props> = ({ friends, loading, error }) => {
           <div className="birthday-content">
             <div className="section-title-sm">Highlights</div>
             <p className="birthday-text">
-              Проверь, кто сегодня онлайн, и не пропусти новые активности.
+              Check who is online today and do not miss new activity.
             </p>
           </div>
         </div>

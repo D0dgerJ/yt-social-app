@@ -5,7 +5,7 @@ const handleRequest = async <T>(request: () => Promise<T>): Promise<T> => {
   try {
     return await request();
   } catch (error: any) {
-    const message = error?.response?.data?.message || 'Ошибка сервера';
+    const message = error?.response?.data?.message || 'Server error';
     toast.error(message);
     throw error;
   }

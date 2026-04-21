@@ -47,14 +47,14 @@ type Props = {
 };
 
 const reasonLabel: Record<string, string> = {
-  spam: "Спам",
-  abuse: "Оскорбления",
-  harassment: "Травля",
-  hate: "Ненависть",
-  violence: "Насилие",
-  nudity: "Нагота",
-  scam: "Мошенничество",
-  other: "Другое",
+  spam: "Spam",
+  abuse: "Abuse",
+  harassment: "Harassment",
+  hate: "Hate",
+  violence: "Violence",
+  nudity: "Nudity",
+  scam: "Scam",
+  other: "Other",
 };
 
 export default function ModerationPostModal({ open, onClose, postId, status, post }: Props) {
@@ -175,7 +175,7 @@ export default function ModerationPostModal({ open, onClose, postId, status, pos
 
             <div className="mod-post-modal__reportsList">
               {!loading && reports.length === 0 && (
-                <div className="mod-post-modal__muted">Нет репортов</div>
+                <div className="mod-post-modal__muted">No reports</div>
               )}
 
               {reports.map((r) => (

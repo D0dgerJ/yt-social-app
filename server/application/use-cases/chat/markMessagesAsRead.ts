@@ -13,7 +13,7 @@ export const markMessagesAsRead = async ({ conversationId, userId }: MarkAsReadI
     });
 
     if (!participant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw new Error("You are not a participant in this chat");
     }
 
     const messages = await prisma.message.findMany({
@@ -62,6 +62,6 @@ export const markMessagesAsRead = async ({ conversationId, userId }: MarkAsReadI
   } catch (error) {
     console.error("❌ Ошибка при отметке сообщений как прочитанных:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось обновить статус прочтения");
+    throw new Error("Failed to update read status");
   }
 };

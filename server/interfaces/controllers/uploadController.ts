@@ -46,7 +46,7 @@ export const handleUpload = async (
   ];
 
   if (list.length === 0) {
-    res.status(400).json({ error: "Файлы не загружены" });
+    res.status(400).json({ error: "Files were not uploaded" });
     return;
   }
 
@@ -71,8 +71,8 @@ export const handleUpload = async (
 
     res.json({ urls: results });
   } catch (e) {
-    console.error("❌ Ошибка при загрузке файла(ов):", e);
-    res.status(500).json({ error: "Ошибка при загрузке файла(ов)" });
+    console.error("❌ Error while uploading file(s):", e);
+    res.status(500).json({ error: "Error while uploading file(s)" });
   } finally {
     await cleanupTempUploads(list);
   }
@@ -85,7 +85,7 @@ export const handleFileUpload = async (
   const f = req.file;
 
   if (!f) {
-    res.status(400).json({ error: "Файл не загружен" });
+    res.status(400).json({ error: "File was not uploaded" });
     return;
   }
 
@@ -95,7 +95,7 @@ export const handleFileUpload = async (
     const guessedType = detectMediaType(f.mimetype);
 
     res.json({
-      message: "✅ Файл успешно загружен",
+      message: "✅ File uploaded successfully",
       url: uploaded.url,
       key: uploaded.key,
       provider: uploaded.provider,
@@ -105,8 +105,8 @@ export const handleFileUpload = async (
       type: guessedType,
     });
   } catch (e) {
-    console.error("❌ Ошибка при загрузке файла:", e);
-    res.status(500).json({ error: "Ошибка при загрузке файла" });
+    console.error("❌ Error while uploading file:", e);
+    res.status(500).json({ error: "Error while uploading file" });
   } finally {
     if (env.STORAGE_PROVIDER === "s3" && f?.path) {
       try {

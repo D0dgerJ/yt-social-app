@@ -32,8 +32,8 @@ export default function Moderation() {
             <div className={styles.heroText}>
               <h1 className={styles.title}>Moderation</h1>
               <p className={styles.subtitle}>
-                Управляй жалобами, комментариями, пользователями и историей действий
-                модерации в одном месте.
+                Manage reports, comments, users, and moderation history
+                from one place.
               </p>
             </div>
 

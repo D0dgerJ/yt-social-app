@@ -30,14 +30,14 @@ type Row = {
 };
 
 const reasonLabel: Record<string, string> = {
-  spam: "Спам",
-  abuse: "Оскорбления",
-  harassment: "Травля",
-  hate: "Ненависть",
-  violence: "Насилие",
-  nudity: "Нагота",
-  scam: "Мошенничество",
-  other: "Другое",
+  spam: "Spam",
+  abuse: "Abuse",
+  harassment: "Harassment",
+  hate: "Hate",
+  violence: "Violence",
+  nudity: "Nudity",
+  scam: "Scam",
+  other: "Other",
 };
 
 function clip(text: string, max = 160) {

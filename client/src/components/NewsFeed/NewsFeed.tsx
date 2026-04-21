@@ -133,10 +133,10 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
   };
 
   const emptyText = isProfile
-    ? "У этого пользователя пока нет постов."
+    ? "This user has no posts yet."
     : isExplore
-      ? "Пока нечего показать в Explore."
-      : "Лента пока пустая.";
+      ? "There is nothing to show in Explore yet."
+      : "The feed is empty for now.";
 
   return (
     <section

@@ -26,19 +26,19 @@ export const addParticipant = async ({
     });
 
     if (!conversation) {
-      throw new Error("Чат не найден");
+      throw new Error("Chat not found");
     }
 
     const addedBy = conversation.participants.find((p) => p.userId === addedById);
     if (!addedBy || !["admin", "owner"].includes(addedBy.role)) {
-      throw new Error("У вас нет прав добавлять участников");
+      throw new Error("You do not have permission to add participants");
     }
 
     const existing = await prisma.participant.findFirst({
       where: { conversationId, userId },
     });
     if (existing) {
-      throw new Error("Пользователь уже участвует в чате");
+      throw new Error("User is already a participant in this chat");
     }
 
     const participant = await prisma.participant.create({
@@ -85,6 +85,6 @@ export const addParticipant = async ({
   } catch (error) {
     console.error("❌ Ошибка при добавлении участника:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось добавить участника");
+    throw new Error("Failed to add participant");
   }
 };

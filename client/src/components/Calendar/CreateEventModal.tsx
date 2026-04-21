@@ -39,7 +39,7 @@ const CreateEventModal: React.FC<Props> = ({
     <div className="event-modal-overlay" onMouseDown={onClose}>
       <div className="event-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="event-modal-header">
-          <div className="event-modal-title">Добавить событие</div>
+          <div className="event-modal-title">Add event</div>
           <button className="event-modal-close" onClick={onClose} type="button">
             ✕
           </button>
@@ -48,27 +48,27 @@ const CreateEventModal: React.FC<Props> = ({
         <div className="event-modal-date">{dateLabel}</div>
 
         <label className="event-modal-label">
-          Название
+          Title
           <input
             className="event-modal-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Например: день рождения"
+            placeholder="For example: birthday"
           />
         </label>
 
         <label className="event-modal-label">
-          Описание (опционально)
+          Description (optional)
           <textarea
             className="event-modal-textarea"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Например: купить торт"
+            placeholder="For example: buy a cake"
           />
         </label>
 
         <label className="event-modal-label">
-          Цвет
+          Color
           <input
             className="event-modal-color"
             type="color"
@@ -83,7 +83,7 @@ const CreateEventModal: React.FC<Props> = ({
             onClick={onClose}
             type="button"
           >
-            Отмена
+            Cancel
           </button>
 
           <button
@@ -92,7 +92,7 @@ const CreateEventModal: React.FC<Props> = ({
             type="button"
             disabled={!title.trim()}
           >
-            Сохранить
+            Save
           </button>
         </div>
       </div>

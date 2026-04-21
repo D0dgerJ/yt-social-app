@@ -80,11 +80,11 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
   return (
     <div className="notifications-dropdown">
       <div className="notifications-header">
-        <span className="notifications-title">Уведомления</span>
+        <span className="notifications-title">Notifications</span>
 
         {generalUnreadCount > 0 && (
           <span className="notifications-counter">
-            Непрочитанных: {generalUnreadCount}
+            Unread: {generalUnreadCount}
           </span>
         )}
 
@@ -100,16 +100,16 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
       </div>
 
       <div className="notifications-body">
-        {loading && <p className="notifications-info">Загрузка...</p>}
+        {loading && <p className="notifications-info">Loading...</p>}
 
         {error && !loading && (
           <p className="notifications-error">
-            Ошибка при загрузке: {error}
+            Load error: {error}
           </p>
         )}
 
         {!loading && !error && generalNotifications.length === 0 && (
-          <p className="notifications-info">Пока нет уведомлений</p>
+          <p className="notifications-info">No notifications yet</p>
         )}
 
         {!loading && !error && generalNotifications.length > 0 && (
@@ -244,10 +244,10 @@ function renderNotificationText(
   payload: any
 ): { main: string; details?: string; snippet?: string } {
   const postPart =
-    payload?.postId != null ? `к посту #${payload.postId}` : undefined;
+    payload?.postId != null ? `for post #${payload.postId}` : undefined;
   const commentPart =
     payload?.commentId != null
-      ? `к комментарию #${payload.commentId}`
+      ? `for comment #${payload.commentId}`
       : undefined;
   const snippet =
     typeof payload?.snippet === "string" && payload.snippet.trim().length > 0
@@ -257,68 +257,68 @@ function renderNotificationText(
   switch (type) {
     case "post_like":
       return {
-        main: "лайкнул(а) ваш пост",
+        main: "liked your post",
         details: postPart,
       };
 
     case "comment_like":
       return {
-        main: "лайкнул(а) ваш комментарий",
+        main: "liked your comment",
         details: commentPart || postPart,
       };
 
     case "reply_like":
       return {
-        main: "лайкнул(а) ваш ответ",
+        main: "liked your reply",
         details: commentPart || postPart,
       };
 
     case "comment_on_post":
       return {
-        main: "прокомментировал(а) ваш пост",
+        main: "commented on your post",
         details: postPart,
         snippet,
       };
 
     case "reply_to_comment":
       return {
-        main: "ответил(а) на ваш комментарий",
+        main: "replied to your comment",
         details: commentPart || postPart,
         snippet,
       };
 
     case "comment_mention":
       return {
-        main: "упомянул(а) вас в комментарии",
+        main: "mentioned you in a comment",
         details: postPart,
         snippet,
       };
 
     case "post_mention":
       return {
-        main: "упомянул(а) вас в посте",
+        main: "mentioned you in a post",
         details: postPart,
         snippet,
       };
 
     case "post_reply":
       return {
-        main: "ответил(а) на ваш пост",
+        main: "replied to your pos",
         details: postPart,
         snippet,
       };
 
     case "post_share":
       return {
-        main: "поделился(ась) вашим постом",
+        main: "shared your post",
         details: postPart,
       };
 
     case "follow":
-      return { main: "подписался(ась) на вас" };
+      return { main: "started following you" };
 
     default:
-      return { main: "совершил(а) действие" };
+      return { main: "performed an action" };
   }
 }
 

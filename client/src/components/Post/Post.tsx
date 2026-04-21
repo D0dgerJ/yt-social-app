@@ -145,13 +145,13 @@ const Post: React.FC<PostProps> = ({
 
   const handleReport = async () => {
     if (!currentUser?.id) {
-      toast.info("Нужно войти в аккаунт, чтобы отправить жалобу.");
+      toast.info("You need to sign in to submit a report.");
       return;
     }
 
     setIsMenuOpen(false);
 
-    const messageRaw = window.prompt("Опиши проблему (необязательно):");
+    const messageRaw = window.prompt("Describe the issue (optional):");
     const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
 
     try {
@@ -161,29 +161,29 @@ const Post: React.FC<PostProps> = ({
       });
 
       if (res?.alreadyReported) {
-        toast.info("Ты уже жаловался на этот пост.");
+        toast.info("You have already reported this post.");
         return;
       }
 
-      toast.success("Жалоба отправлена.");
+      toast.success("Report submitted.");
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Не удалось отправить жалобу");
+      toast.error(err?.response?.data?.message || "Failed to submit report");
     }
   };
 
   const handleDelete = async () => {
     if (!currentUser?.id) {
-      toast.info("Нужно войти в аккаунт.");
+      toast.info("You need to sign in.");
       return;
     }
 
     if (!isOwner) {
-      toast.error("Ты не можешь удалить чужой пост.");
+      toast.error("You cannot delete someone else's post.");
       return;
     }
 
-    const confirmed = window.confirm("Удалить этот пост?");
+    const confirmed = window.confirm("Delete this post?");
     if (!confirmed) return;
 
     setIsMenuOpen(false);
@@ -191,11 +191,11 @@ const Post: React.FC<PostProps> = ({
 
     try {
       await deletePost(post.id);
-      toast.success("Пост удалён.");
+      toast.success("Post deleted.");
       onDeleted?.(post.id);
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Не удалось удалить пост");
+      toast.error(err?.response?.data?.message || "Failed to delete post");
     } finally {
       setIsDeleting(false);
     }

@@ -103,7 +103,7 @@ export const initSocket = (server: http.Server) => {
       if (isParticipant) {
         socket.join(String(conversationId));
       } else {
-        socket.emit("error", "Вы не участник этого чата");
+        socket.emit("error", "You are not a participant in this chat");
       }
     });
 

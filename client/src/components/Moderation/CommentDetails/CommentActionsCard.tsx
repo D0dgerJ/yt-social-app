@@ -101,7 +101,7 @@ export function CommentActionsCard(props: {
       <div className={styles.block} style={{ marginTop: 12 }}>
         <div className={styles.k}>Shadow moderation</div>
         <div className={styles.hintMuted}>
-          Shadow hide: скрыто для всех, кроме автора и модерации. (Не меняет статус.)
+          Shadow hide: hidden from everyone except the author and moderation. (Does not change status.)
         </div>
       </div>
 

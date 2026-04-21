@@ -18,13 +18,13 @@ import './MessageInput.scss';
 const MAX_FILES_PER_MESSAGE = 10;
 
 const TTL_PRESETS = [
-  { label: '10 сек', seconds: 10 },
-  { label: '30 сек', seconds: 30 },
-  { label: '1 мин', seconds: 60 },
-  { label: '5 мин', seconds: 5 * 60 },
-  { label: '1 час', seconds: 60 * 60 },
-  { label: '1 день', seconds: 24 * 60 * 60 },
-  { label: '7 дней', seconds: 7 * 24 * 60 * 60 },
+  { label: '10 sec', seconds: 10 },
+  { label: '30 sec', seconds: 30 },
+  { label: '1 min', seconds: 60 },
+  { label: '5 min', seconds: 5 * 60 },
+  { label: '1 hour', seconds: 60 * 60 },
+  { label: '1 day', seconds: 24 * 60 * 60 },
+  { label: '7 days', seconds: 7 * 24 * 60 * 60 },
 ] as const;
 
 type EphemeralMode = 'none' | 'time' | 'views';
@@ -192,10 +192,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }`}
         title={
           isEditMode
-            ? 'Нельзя менять вложения при редактировании'
+            ? 'Attachments cannot be changed while editing'
             : canAddMoreFiles
-            ? 'Прикрепить файл'
-            : 'Лимит 10 вложений'
+            ? 'Attach file'
+            : 'Attachment limit: 10'
         }
       >
         📎
@@ -254,7 +254,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <textarea
         ref={textareaRef}
         className="composer__input"
-        placeholder={isEditMode ? 'Измени сообщение' : 'Напиши сообщение'}
+        placeholder={isEditMode ? 'Edit message' : 'Write a message'}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -270,7 +270,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <button
         className="composer__send"
         onClick={handleSend}
-        aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
+        aria-label={isEditMode ? 'Save' : 'Send'}
         disabled={isSending && isEditMode}
       >
         {isEditMode ? '💾' : '➡️'}
@@ -284,10 +284,10 @@ const MessageInput: React.FC<MessageInputProps> = ({
         }`}
         title={
           isEditMode
-            ? 'Нельзя менять вложения при редактировании'
+            ? 'Attachments cannot be changed while editing'
             : canAddMoreFiles
-            ? 'Прикрепить файл'
-            : 'Лимит 10 вложений'
+            ? 'Attach file'
+            : 'Attachment limit: 10'
         }
       >
         📎
@@ -346,7 +346,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <textarea
         ref={textareaRef}
         className="composer__input"
-        placeholder={isEditMode ? 'Измените сообщение…' : 'Напишите сообщение…'}
+        placeholder={isEditMode ? 'Edit message…' : 'Write a message…'}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
@@ -362,7 +362,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       <button
         className="composer__send"
         onClick={handleSend}
-        aria-label={isEditMode ? 'Сохранить' : 'Отправить'}
+        aria-label={isEditMode ? 'Save' : 'Send'}
         disabled={isSending && isEditMode}
       >
         {isEditMode ? '💾' : '➡️'}
@@ -376,14 +376,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
         <div className="composer__bar">
           {isReplyMode && (
             <div className="composer__reply">
-              <span className="composer__bar-title">Ответ на сообщение</span>
+              <span className="composer__bar-title">Replying to message</span>
               <span className="composer__bar-preview">
-                {(replyTarget?.content || '[медиа]')?.slice(0, 80)}
+                {(replyTarget?.content || '[media]')?.slice(0, 80)}
               </span>
               <button
                 className="composer__bar-close"
                 onClick={() => setReplyTarget(undefined)}
-                aria-label="Снять ответ"
+                aria-label="Cancel reply"
               >
                 ✕
               </button>
@@ -392,11 +392,11 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
           {isEditMode && (
             <div className="composer__edit">
-              <span className="composer__bar-title">Редактирование</span>
+              <span className="composer__bar-title">Editing</span>
               <button
                 className="composer__bar-close"
                 onClick={endEdit}
-                aria-label="Отменить редактирование"
+                aria-label="Cancel editing"
               >
                 ✕
               </button>
@@ -407,7 +407,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
       <div className="composer__ephemeral">
         <label className="composer__ephemeral-label">
-          Режим:
+          Mode:
           <select
             className="composer__ephemeral-select"
             value={ephemeralMode}
@@ -417,15 +417,15 @@ const MessageInput: React.FC<MessageInputProps> = ({
               setEphemeralMode(mode);
             }}
           >
-            <option value="none">Обычное</option>
-            <option value="time">Удалить по времени</option>
-            <option value="views">Удалить по просмотрам</option>
+            <option value="none">Normal</option>
+            <option value="time">Delete by time</option>
+            <option value="views">Delete by views</option>
           </select>
         </label>
 
         {ephemeralMode === 'time' && (
           <label className="composer__ephemeral-extra">
-            Срок жизни:
+            Lifetime:
             <select
               className="composer__ephemeral-select"
               disabled={ephemeralDisabled}
@@ -445,7 +445,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
         {ephemeralMode === 'views' && (
           <label className="composer__ephemeral-extra">
-            Просмотров на пользователя:
+            Views per user:
             <input
               type="number"
               min={1}
@@ -481,7 +481,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 type="button"
                 className="composer__preview-remove"
                 onClick={() => removeFile(i)}
-                aria-label="Убрать файл"
+                aria-label="Remove file"
               >
                 ✕
               </button>
@@ -490,8 +490,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
           <div className="composer__hint">
             {filesLeft <= 0
-              ? 'Лимит вложений: 10'
-              : `Можно добавить ещё ${filesLeft} файл(ов)`}
+              ? 'Attachment limit: 10'
+              : `You can add ${filesLeft} more file(s)`}
           </div>
         </div>
       )}

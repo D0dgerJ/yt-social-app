@@ -72,6 +72,6 @@ export async function getReactionsBulk(
   } catch (error) {
     console.error("❌ Ошибка при массовом получении реакций:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось получить реакции");
+    throw new Error("Failed to get reactions");
   }
 }

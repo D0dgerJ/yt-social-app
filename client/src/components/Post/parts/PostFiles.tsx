@@ -8,9 +8,9 @@ interface PostFilesProps {
 const getFileName = (url: string) => {
   try {
     const parsed = new URL(url);
-    return decodeURIComponent(parsed.pathname.split("/").pop() || "Файл");
+    return decodeURIComponent(parsed.pathname.split("/").pop() || "File");
   } catch {
-    return decodeURIComponent(url.split("/").pop() || "Файл");
+    return decodeURIComponent(url.split("/").pop() || "File");
   }
 };
 

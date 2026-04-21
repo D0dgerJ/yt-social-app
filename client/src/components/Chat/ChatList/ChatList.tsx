@@ -54,17 +54,17 @@ const mediaPreview = (m?: ConversationLike["lastMessage"]) => {
   const type = (m.mediaType || "").toLowerCase();
   switch (type) {
     case "image":
-      return "📷 Изображение";
+      return "📷 Image";
     case "video":
-      return "🎬 Видео";
+      return "🎬 Video";
     case "audio":
-      return "🎧 Аудио";
+      return "🎧 Audio";
     case "gif":
       return "GIF";
     case "sticker":
-      return "Стикер";
+      return "Sticker";
     case "file":
-      return m.fileName ? `📎 ${m.fileName}` : "📎 Файл";
+      return m.fileName ? `📎 ${m.fileName}` : "📎 File";
     case "text":
     default:
       return "";
@@ -126,7 +126,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
       .map((p) => p?.user?.username ?? p?.username)
       .filter(Boolean) as string[];
 
-    return names.length ? names.join(", ") : "Без названия";
+    return names.length ? names.join(", ") : "Untitled";
   }, []);
 
   const filteredChats = useMemo(() => {
@@ -160,7 +160,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
         const data = await getUserConversations();
         setChatsInStore(data as any);
       } catch (err) {
-        console.error("Ошибка при смене пина чата:", err);
+        console.error("Error changing chat pin:", err);
       }
     },
     [setChatsInStore]
@@ -186,7 +186,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
               : "";
 
           const lastMessage =
-            (mediaShort || textPreview || "").trim() || "Нет сообщений";
+            (mediaShort || textPreview || "").trim() || "No messages";
 
           const time = lastMsg?.createdAt
             ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
@@ -223,7 +223,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
                       chat.isPinned ? "chat-pin-btn--active" : ""
                     }`}
                     title={
-                      chat.isPinned ? "Открепить чат" : "Закрепить чат наверху"
+                      chat.isPinned ? "Unpin chat" : "Pin chat to top"
                     }
                     onClick={(e) => handleTogglePin(chat, e)}
                     type="button"

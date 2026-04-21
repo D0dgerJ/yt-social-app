@@ -19,7 +19,7 @@ export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReact
     });
 
     if (!message || message.isDeleted) {
-      throw new Error("Сообщение не найдено или было удалено");
+      throw new Error("Message not found or was deleted");
     }
 
     const isParticipant = await prisma.participant.findFirst({
@@ -30,7 +30,7 @@ export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReact
     });
 
     if (!isParticipant) {
-      throw new Error("Вы не можете взаимодействовать с этим сообщением");
+      throw new Error("You cannot interact with this message");
     }
 
     const existing = await prisma.reaction.findFirst({
@@ -88,6 +88,6 @@ export const addOrUpdateReaction = async ({ userId, messageId, emoji }: AddReact
   } catch (error) {
     console.error("❌ Ошибка при добавлении/обновлении реакции:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось обработать реакцию");
+    throw new Error("Failed to process reaction");
   }
 };

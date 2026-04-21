@@ -17,9 +17,9 @@ const ChatListHeader: React.FC<ChatListHeaderProps> = ({
     <div className="chat-list-header">
       <div className="chat-list-header__top">
         <div className="chat-list-header__title-block">
-          <h2 className="chat-list-header__title">Чаты</h2>
+          <h2 className="chat-list-header__title">Chats</h2>
           <p className="chat-list-header__subtitle">
-            Найди беседу или начни новую
+            Find a conversation or start a new one
           </p>
         </div>
 
@@ -29,14 +29,14 @@ const ChatListHeader: React.FC<ChatListHeaderProps> = ({
           type="button"
         >
           <span>＋</span>
-          <span>Создать чат</span>
+          <span>Create chat</span>
         </button>
       </div>
 
       <div className="chat-list-header__search-wrap">
         <input
           type="text"
-          placeholder="Поиск чатов и участников..."
+          placeholder="Search chats and participants..."
           value={value}
           onChange={(e) => onSearchChange?.(e.target.value)}
           className="chat-list-header__search"

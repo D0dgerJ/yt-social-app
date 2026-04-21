@@ -81,7 +81,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
     <div className="notifications-interactions">
       <div className="notifications-interactions__header">
         <span className="notifications-interactions__title">
-          Запросы в друзья
+          Friend requests
         </span>
         <span className="notifications-interactions__count">
           {requests.length}
@@ -89,9 +89,9 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
       </div>
 
       {loading ? (
-        <p className="notifications-interactions__info">Загрузка...</p>
+        <p className="notifications-interactions__info">Loading...</p>
       ) : requests.length === 0 ? (
-        <p className="notifications-interactions__info">Нет новых запросов</p>
+        <p className="notifications-interactions__info">No new requests</p>
       ) : (
         <ul className="friend-requests-list">
           {requests.map(({ id, sender }) => (
@@ -104,7 +104,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                 />
                 <div className="friend-request-user">
                   <span className="friend-username">{sender.username}</span>
-                  <span className="friend-subtitle">Отправил запрос в друзья</span>
+                  <span className="friend-subtitle">Sent you a friend request</span>
                 </div>
               </div>
 
@@ -114,7 +114,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                   onClick={() => handleAccept(id)}
                   className="friend-request-btn friend-request-btn--accept"
                 >
-                  Принять
+                  Accept
                 </button>
 
                 <button
@@ -122,7 +122,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                   onClick={() => handleReject(id)}
                   className="friend-request-btn friend-request-btn--reject"
                 >
-                  Отклонить
+                  Decline
                 </button>
               </div>
             </li>

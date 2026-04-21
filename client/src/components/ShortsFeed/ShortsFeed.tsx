@@ -72,7 +72,7 @@ const ShortsFeed: React.FC = () => {
         setError(
           err?.response?.data?.message ||
             err?.message ||
-            "Не удалось загрузить шорты"
+            "Failed to load shorts"
         );
       } finally {
         setLoading(false);
@@ -85,7 +85,7 @@ const ShortsFeed: React.FC = () => {
   if (loading) {
     return (
       <div className="shorts-feed-state">
-        <div className="shorts-feed-state__card">Загрузка шортов...</div>
+        <div className="shorts-feed-state__card">Loading shorts...</div>
       </div>
     );
   }
@@ -104,8 +104,8 @@ const ShortsFeed: React.FC = () => {
     return (
       <div className="shorts-feed-state">
         <div className="shorts-feed-state__card">
-          Пока нет шортов с видео. Попробуй загрузить первый короткий ролик через
-          обычный пост с видео.
+          There are no video shorts yet. Try uploading the first short clip
+          through a regular video post.
         </div>
       </div>
     );

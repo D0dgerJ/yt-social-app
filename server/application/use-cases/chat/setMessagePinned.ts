@@ -27,7 +27,7 @@ const resolveMessage = async ({
     });
 
     if (!message) {
-      throw new Error("Сообщение не найдено");
+      throw new Error("Message not found");
     }
 
     return message;
@@ -47,14 +47,14 @@ const resolveMessage = async ({
     });
 
     if (!message) {
-      throw new Error("Сообщение не найдено");
+      throw new Error("Message not found");
     }
 
     return message;
   }
 
   throw new Error(
-    "Нужно указать messageId или пару clientMessageId + conversationId",
+    "You must provide messageId or the pair clientMessageId + conversationId",
   );
 };
 
@@ -71,7 +71,7 @@ export const pinMessage = async ({
     });
 
     if (!user) {
-      throw new Error("Пользователь не найден");
+      throw new Error("User not found");
     }
 
     const resolved = await resolveMessage({
@@ -81,7 +81,7 @@ export const pinMessage = async ({
     });
 
     if (resolved.isDeleted) {
-      throw new Error("Нельзя закрепить удалённое сообщение");
+      throw new Error("Cannot pin a deleted message");
     }
 
     const convId = resolved.conversationId;
@@ -95,7 +95,7 @@ export const pinMessage = async ({
     });
 
     if (!participant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw new Error("You are not a participant in this chat");
     }
 
     const now = new Date();
@@ -132,7 +132,7 @@ export const pinMessage = async ({
       throw new Error(error.message);
     }
 
-    throw new Error("Не удалось закрепить сообщение");
+    throw new Error("Failed to pin message");
   }
 };
 
@@ -149,7 +149,7 @@ export const unpinMessage = async ({
     });
 
     if (!user) {
-      throw new Error("Пользователь не найден");
+      throw new Error("User not found");
     }
 
     const resolved = await resolveMessage({
@@ -169,7 +169,7 @@ export const unpinMessage = async ({
     });
 
     if (!participant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw new Error("You are not a participant in this chat");
     }
 
     await prisma.pinnedMessage.deleteMany({
@@ -191,6 +191,6 @@ export const unpinMessage = async ({
       throw new Error(error.message);
     }
 
-    throw new Error("Не удалось открепить сообщение");
+    throw new Error("Failed to unpin message");
   }
 };

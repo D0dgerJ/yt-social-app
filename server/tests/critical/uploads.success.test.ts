@@ -64,7 +64,7 @@ describe('POST /api/v1/upload', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
-      error: 'Файлы не загружены',
+      error: 'Files were not uploaded',
     });
   });
 });

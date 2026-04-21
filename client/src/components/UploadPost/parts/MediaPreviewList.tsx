@@ -36,7 +36,7 @@ const MediaPreviewList: React.FC<Props> = ({ previews, onRemove }) => {
                 onClick={() => onRemove(i)}
                 className="upload-post__remove"
                 type="button"
-                aria-label="Удалить изображение"
+                aria-label="Remove image"
               >
                 ✕
               </button>
@@ -58,7 +58,7 @@ const MediaPreviewList: React.FC<Props> = ({ previews, onRemove }) => {
                 onClick={() => onRemove(i)}
                 className="upload-post__remove"
                 type="button"
-                aria-label="Удалить видео"
+                aria-label="Remove video"
               >
                 ✕
               </button>
@@ -76,7 +76,7 @@ const MediaPreviewList: React.FC<Props> = ({ previews, onRemove }) => {
                 onClick={() => onRemove(i)}
                 className="upload-post__remove"
                 type="button"
-                aria-label="Удалить файл"
+                aria-label="Remove file"
               >
                 ✕
               </button>

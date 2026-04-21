@@ -155,7 +155,7 @@ const SingleFloatingChatWindow: React.FC<SingleWindowProps> = ({
         )
         .filter(Boolean)
         .join(", ")) ||
-    `Чат #${conversationId}`;
+    `Chat #${conversationId}`;
 
   const handleHeaderMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     setIsDragging(true);

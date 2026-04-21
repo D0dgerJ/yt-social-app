@@ -13,7 +13,7 @@ export const markMessagesAsDelivered = async ({ conversationId, userId }: MarkDe
     });
 
     if (!participant) {
-      throw new Error("Вы не являетесь участником этого чата");
+      throw new Error("You are not a participant in this chat");
     }
 
     const messages = await prisma.message.findMany({
@@ -57,6 +57,6 @@ export const markMessagesAsDelivered = async ({ conversationId, userId }: MarkDe
   } catch (error) {
     console.error("❌ Ошибка при обновлении delivered:", error);
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось обновить статус delivered");
+    throw new Error("Failed to update delivered status");
   }
 };

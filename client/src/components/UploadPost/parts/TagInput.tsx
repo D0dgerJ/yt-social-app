@@ -29,7 +29,7 @@ const TagInput: React.FC<Props> = ({ tags, onAdd, onRemove }) => {
         <input
           className="upload-post__tag-input"
           type="text"
-          placeholder="Добавь тег и нажми Enter"
+          placeholder="Add a tag and press Enter"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
@@ -38,7 +38,7 @@ const TagInput: React.FC<Props> = ({ tags, onAdd, onRemove }) => {
               submit();
             }
           }}
-          aria-label="Добавить тег"
+          aria-label="Add tag"
         />
       </div>
 
@@ -50,7 +50,7 @@ const TagInput: React.FC<Props> = ({ tags, onAdd, onRemove }) => {
               <button
                 type="button"
                 onClick={() => onRemove(tag)}
-                aria-label={`Удалить тег ${tag}`}
+                aria-label={`Remove tag ${tag}`}
               >
                 ×
               </button>

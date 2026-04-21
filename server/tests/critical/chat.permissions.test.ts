@@ -127,7 +127,7 @@ describe('Chat permissions', () => {
     expect(response.status).toBe(500);
     expect(response.body).toEqual(
       expect.objectContaining({
-        message: 'Вы не имеете доступа к этому чату',
+        message: 'You do not have access to this chat',
       })
     );
   });

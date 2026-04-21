@@ -74,16 +74,16 @@ const Login: React.FC = () => {
       <div className="auth-shell">
         <section className="auth-brand">
           <div className="auth-brand__badge">DodgerJ Social</div>
-          <h1 className="auth-brand__title">Вход в аккаунт</h1>
+          <h1 className="auth-brand__title">Sign in to your account</h1>
           <p className="auth-brand__text">
-            Общайся с друзьями, публикуй посты, следи за активностью и управляй
-            своим профилем в современном интерфейсе.
+            Connect with friends, publish posts, follow activity, and manage
+            your profile in a modern interface.
           </p>
 
           <div className="auth-brand__features">
-            <div className="auth-brand__feature">Лента постов и шорты</div>
-            <div className="auth-brand__feature">Комментарии и реакции</div>
-            <div className="auth-brand__feature">События, друзья и профиль</div>
+            <div className="auth-brand__feature">Feed posts and shorts</div>
+            <div className="auth-brand__feature">Comments and reactions</div>
+            <div className="auth-brand__feature">Events, friends, and profile</div>
           </div>
         </section>
 
@@ -94,7 +94,7 @@ const Login: React.FC = () => {
                 <h2>Login</h2>
                 <span className="auth-mini-logo">DJS</span>
               </div>
-              <p>Введи email и пароль, чтобы продолжить.</p>
+              <p>Enter your email and password to continue.</p>
             </div>
 
             <form onSubmit={handleLogin} className="auth-form">

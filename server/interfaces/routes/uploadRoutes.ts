@@ -17,18 +17,18 @@ router.post("/", uploadLimiter, (req, res, next) => {
       // ошибки multer (лимиты)
       if (err.code === "LIMIT_FILE_SIZE") {
         return res.status(400).json({
-          error: "Файл слишком большой (максимум 15MB)",
+          error: "File is too large (maximum 15MB)",
         });
       }
 
       if (err.code === "LIMIT_FILE_COUNT") {
         return res.status(400).json({
-          error: "Слишком много файлов",
+          error: "Too many files",
         });
       }
 
       return res.status(400).json({
-        error: "Ошибка загрузки файла",
+        error: "File upload error",
         details: err.message,
       });
     }
@@ -36,7 +36,7 @@ router.post("/", uploadLimiter, (req, res, next) => {
     if (err) {
       // наши кастомные ошибки из fileFilter
       return res.status(400).json({
-        error: err.message || "Недопустимый файл",
+        error: err.message || "Invalid file",
       });
     }
 

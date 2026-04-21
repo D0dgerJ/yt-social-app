@@ -14,7 +14,7 @@ type Props = {
 
 const FriendsGrid: React.FC<Props> = ({ friends, fallbackAvatar }) => {
   if (!friends.length) {
-    return <div className="rightbar-empty">Пока нет друзей</div>;
+    return <div className="rightbar-empty">No friends yet</div>;
   }
 
   return (

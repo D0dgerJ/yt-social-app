@@ -23,7 +23,7 @@ const OnlineUsersList: React.FC<OnlineUsersListProps> = ({
       {loading && <li className="rightbar-status">Loading...</li>}
       {error && <li className="rightbar-status">Failed to load friends</li>}
       {!loading && !error && friends.length === 0 && (
-        <li className="rightbar-empty">Сейчас никто не онлайн</li>
+        <li className="rightbar-empty">No one is online right now</li>
       )}
 
       {friends.map((friend) => (

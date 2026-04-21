@@ -124,7 +124,7 @@ export default function PostActionsCard({
       </div>
 
       {!isAdminPlus ? (
-        <div className={styles.mutedSmall}>Soft/Hard delete требуют роль ADMIN/OWNER.</div>
+        <div className={styles.mutedSmall}>Soft/Hard delete requires the ADMIN/OWNER role.</div>
       ) : null}
 
       <button type="button" className={styles.refreshBtn} onClick={onRefreshActions}>

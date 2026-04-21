@@ -18,7 +18,7 @@ describe('GET /api/v1/download/uploads/:filename (not found)', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({
-      error: 'Файл не найден',
+      error: 'File not found',
     });
   });
 });

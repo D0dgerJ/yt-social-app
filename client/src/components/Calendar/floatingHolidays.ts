@@ -17,8 +17,8 @@ const addToMap = (map: Map<string, Holiday[]>, date: Date, h: Holiday) => {
 };
 
 /**
- * Western Easter (Gregorian) — алгоритм Meeus/Jones/Butcher.
- * Возвращает Date в локальной таймзоне (нам важно только Y-M-D).
+ * Western Easter (Gregorian) — Meeus/Jones/Butcher algorithm.
+ * Returns a Date in the local timezone (only Y-M-D matters here).
  */
 const calcWesternEaster = (year: number) => {
   const a = year % 19;
@@ -40,7 +40,7 @@ const calcWesternEaster = (year: number) => {
 };
 
 /**
- * Возвращает дату n-го weekday в месяце:
+ * Returns the date of the nth weekday in a month:
  * weekday: 0=Sun ... 6=Sat
  * n: 1..5
  */
@@ -58,86 +58,86 @@ const nthWeekdayOfMonth = (
 };
 
 /**
- * Последний weekday в месяце:
+ * Returns the last weekday in a month:
  * weekday: 0=Sun ... 6=Sat
  */
 const lastWeekdayOfMonth = (year: number, month0: number, weekday: number) => {
-  const last = new Date(year, month0 + 1, 0); // последний день месяца
+  const last = new Date(year, month0 + 1, 0); // last day of the month
   const lastW = last.getDay();
   const deltaBack = (lastW - weekday + 7) % 7;
   return new Date(year, month0, last.getDate() - deltaBack);
 };
 
 /**
- * День программиста: 256-й день года (13 Sep / 12 Sep в високосный)
- * (Date сам корректно перекинет месяцы)
+ * Programmer's Day: the 256th day of the year (Sep 13 / Sep 12 in leap years)
+ * Date will handle month rollover correctly.
  */
 const programmersDay = (year: number) => new Date(year, 0, 256);
 
 export const buildFloatingHolidayMapForYear = (year: number) => {
   const map = new Map<string, Holiday[]>();
 
-  // ✅ Пасха (Western)
+  // Easter (Western)
   const easter = calcWesternEaster(year);
   addToMap(map, easter, {
     key: `easter_${year}`,
-    title: "Пасха",
+    title: "Easter",
     month: easter.getMonth(),
     day: easter.getDate(),
     color: "#dc2626",
     icon: "✝️",
-    wiki: "https://ru.wikipedia.org/wiki/Пасха",
+    wiki: "https://en.wikipedia.org/wiki/Easter",
   });
 
-  // ✅ Earth Hour — последняя суббота марта
+  // Earth Hour — last Saturday of March
   const earthHour = lastWeekdayOfMonth(year, 2, 6); // March(2), Saturday(6)
   addToMap(map, earthHour, {
     key: `earth_hour_${year}`,
-    title: "Час Земли",
+    title: "Earth Hour",
     month: earthHour.getMonth(),
     day: earthHour.getDate(),
     color: "#0f172a",
     icon: "🌍",
-    wiki: "https://ru.wikipedia.org/wiki/Час_Земли",
+    wiki: "https://en.wikipedia.org/wiki/Earth_Hour",
   });
 
-  // ✅ MLK Day — 3-й понедельник января (US)
+  // MLK Day — 3rd Monday of January (US)
   const mlk = nthWeekdayOfMonth(year, 0, 1, 3); // Jan(0), Monday(1), 3rd
   addToMap(map, mlk, {
     key: `mlk_${year}`,
-    title: "День Мартина Лютера Кинга",
+    title: "Martin Luther King Jr. Day",
     month: mlk.getMonth(),
     day: mlk.getDate(),
     color: "#0ea5e9",
     icon: "🕊️",
-    wiki: "https://ru.wikipedia.org/wiki/День_Мартина_Лютера_Кинга",
+    wiki: "https://en.wikipedia.org/wiki/Martin_Luther_King_Jr._Day",
   });
 
-  // ✅ Mother's Day — 2-е воскресенье мая (US/многие страны)
+  // Mother's Day — 2nd Sunday of May (US/many countries)
   const mothers = nthWeekdayOfMonth(year, 4, 0, 2); // May(4), Sunday(0), 2nd
   addToMap(map, mothers, {
     key: `mothers_day_${year}`,
-    title: "День матери",
+    title: "Mother's Day",
     month: mothers.getMonth(),
     day: mothers.getDate(),
     color: "#db2777",
     icon: "💐",
-    wiki: "https://ru.wikipedia.org/wiki/День_матери",
+    wiki: "https://en.wikipedia.org/wiki/Mother%27s_Day",
   });
 
-  // ✅ Programmer’s Day — 256-й день года
+  // Programmer’s Day — 256th day of the year
   const prog = programmersDay(year);
   addToMap(map, prog, {
     key: `programmers_day_${year}`,
-    title: "День программиста",
+    title: "Programmer's Day",
     month: prog.getMonth(),
     day: prog.getDate(),
     color: "#111827",
     icon: "💻",
-    wiki: "https://ru.wikipedia.org/wiki/День_программиста",
+    wiki: "https://en.wikipedia.org/wiki/Programmer%27s_Day",
   });
 
-  // ✅ Thanksgiving — 4-й четверг ноября (US)
+  // Thanksgiving — 4th Thursday of November (US)
   const thanks = nthWeekdayOfMonth(year, 10, 4, 4); // Nov(10), Thu(4), 4th
   addToMap(map, thanks, {
     key: `thanksgiving_${year}`,
@@ -149,7 +149,7 @@ export const buildFloatingHolidayMapForYear = (year: number) => {
     wiki: "https://en.wikipedia.org/wiki/Thanksgiving",
   });
 
-  // ✅ Black Friday — следующий день после Thanksgiving
+  // Black Friday — day after Thanksgiving
   const blackFriday = new Date(
     thanks.getFullYear(),
     thanks.getMonth(),

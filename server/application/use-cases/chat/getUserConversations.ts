@@ -9,7 +9,7 @@ export const getUserConversations = async (userId: number) => {
     });
 
     if (!userExists) {
-      throw Errors.notFound("Пользователь не найден");
+      throw Errors.notFound("User not found");
     }
 
     const pinnedConversations = await prisma.pinnedConversation.findMany({
@@ -80,7 +80,7 @@ export const getUserConversations = async (userId: number) => {
 
       return {
         id: conv.id,
-        name: conv.isGroup ? conv.name : participants[0]?.username || "Личный чат",
+        name: conv.isGroup ? conv.name : participants[0]?.username || "Direct chat",
         isGroup: conv.isGroup,
         participants,
         lastMessage:
@@ -121,6 +121,6 @@ export const getUserConversations = async (userId: number) => {
     console.error("❌ Ошибка при получении бесед пользователя:", error);
     if (error instanceof ApiError) throw error;
     if (error instanceof Error) throw Errors.internal(error.message);
-    throw Errors.internal("Не удалось получить список бесед");
+    throw Errors.internal("Failed to get conversation list");
   }
 };

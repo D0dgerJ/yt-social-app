@@ -206,7 +206,7 @@ const MediaGrid: React.FC<{
                 className="chat-file-bubble chat-file-bubble--grid"
                 onClick={() => handleDownload(m.url)}
                 onKeyDown={(e) => onKeyOpen(e, m.url)}
-                title={m.originalName || 'Файл'}
+                title={m.originalName || 'File'}
               >
                 <div className="chat-file-bubble__icon">
                   <div className="chat-file-bubble__icon-ext">
@@ -217,11 +217,11 @@ const MediaGrid: React.FC<{
 
                 <div className="chat-file-bubble__body">
                   <div className="chat-file-bubble__name">
-                    {m.originalName || 'Файл'}
+                    {m.originalName || 'File'}
                   </div>
 
                   <div className="chat-file-bubble__meta">
-                    {formatFileSize(m.size) || 'Документ'}
+                    {formatFileSize(m.size) || 'Document'}
                   </div>
                 </div>
               </button>
@@ -522,12 +522,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
       const text = await transcribeMessageREST(messageId);
 
-      setTranscript(text || '(пусто)');
+      setTranscript(text || '(empty)');
       setIsTranscriptVisible(true);
     } catch (err: any) {
       console.error('[transcribe] error:', err);
       setTranscribeError(
-        err?.message || 'Ошибка при расшифровке голосового сообщения',
+        err?.message || 'Failed to transcribe voice message',
       );
     } finally {
       setIsTranscribing(false);
@@ -591,17 +591,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
       data-id={messageId}
       data-message-id={messageId}
       role="article"
-      aria-label="Сообщение"
+      aria-label="Message"
     >
       <div className="message-header">
         <span className="sender">{displayNameComputed}</span>
 
         {isEphemeralActive && (
           <span className="message-ephemeral-badge">
-            Эфемерное
+            Ephemeral
             {typeof remainingViews === 'number' && (
               <span className="message-ephemeral-badge__counter">
-                · осталось {remainingViews}
+                · left {remainingViews}
               </span>
             )}
           </span>
@@ -610,7 +610,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <button
           type="button"
           className="message-actions-btn"
-          aria-label="Действия над сообщением"
+          aria-label="Message actions"
           onClick={() => setShowActions((s) => !s)}
         >
           ⋯
@@ -622,11 +622,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
             onMouseLeave={() => setShowActions(false)}
           >
             <button type="button" onClick={() => onReply?.()}>
-              Ответить
+              Reply
             </button>
             {isOwnMessage && (
               <button type="button" onClick={() => onEdit?.()}>
-                Редактировать
+                Edit
               </button>
             )}
             {isOwnMessage && (
@@ -635,7 +635,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 className="danger"
                 onClick={() => onDelete?.()}
               >
-                Удалить
+                Delete
               </button>
             )}
             <div className="message-actions-reactions">
@@ -670,15 +670,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
           onClick={() => handleOpenEphemeral()}
         >
           <span className="message-ephemeral-placeholder__title">
-            🔒 Эфемерное сообщение
+            🔒 Ephemeral message
           </span>
           {typeof remainingViews === 'number' && (
             <span className="message-ephemeral-placeholder__counter">
-              Осталось просмотров: {remainingViews}
+              Views remaining: {remainingViews}
             </span>
           )}
           <span className="message-ephemeral-placeholder__hint">
-            Нажмите, чтобы открыть
+            Click to open
           </span>
         </button>
       )}
@@ -719,7 +719,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 }}
               />
             ) : (
-              <div className="message-image-fallback">Изображение недоступно</div>
+              <div className="message-image-fallback">Image Unavailable</div>
             )}
           </div>
         )}
@@ -780,12 +780,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
               disabled={isTranscribing}
             >
               {isTranscribing
-                ? 'Расшифровка…'
+                ? 'Transcribing...'
                 : transcript
                 ? isTranscriptVisible
-                  ? 'Скрыть текст'
-                  : 'Показать текст'
-                : 'Транскрипция'}
+                  ? 'Hide text'
+                  : 'Show text'
+                : 'Transcript'}
             </button>
 
             {transcribeError && (
@@ -824,10 +824,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
             <div className="chat-file-bubble__body">
               <div className="chat-file-bubble__name">
-                {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'Файл')}
+                {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'File')}
               </div>
 
-              <div className="chat-file-bubble__meta">Файл</div>
+              <div className="chat-file-bubble__meta">File</div>
             </div>
           </a>
         )}
@@ -845,7 +845,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         )}
 
       {reactions.length > 0 && (
-        <div className="message-reactions-static" aria-label="Реакции к сообщению">
+        <div className="message-reactions-static" aria-label="Message reactions">
           {reactions.map((r) => {
             const mine = myReactions.has(r.emoji);
             return (
@@ -872,7 +872,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
             type="button"
             className="reaction-chip reaction-chip--add"
             onClick={openReactionsPopup}
-            aria-label="Добавить реакцию"
+            aria-label="Add reaction"
           >
             +
           </button>
@@ -883,7 +883,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <div
           className="reactions-popup"
           role="dialog"
-          aria-label="Выбор реакции"
+          aria-label="Reaction picker"
           onClick={() => setShowReactionsPopup(false)}
         >
           <MessageReactions
@@ -896,18 +896,18 @@ const MessageItem: React.FC<MessageItemProps> = ({
             }
           />
           {loadingReactions && (
-            <div className="reactions-loading">Загружаю…</div>
+            <div className="reactions-loading">Loading…</div>
           )}
         </div>
       )}
 
       <div className="message-status">
-        {localStatus === 'sending' && <span>Отправка…</span>}
+        {localStatus === 'sending' && <span>Sending…</span>}
         {localStatus === 'failed' && (
-          <span className="danger">Не отправлено</span>
+          <span className="danger">Not sent</span>
         )}
-        {isDelivered && <span>Доставлено</span>}
-        {isRead && <span>Прочитано</span>}
+        {isDelivered && <span>Delivered</span>}
+        {isRead && <span>Read</span>}
       </div>
     </div>
   );

@@ -27,7 +27,7 @@ export const registerMessageView = async ({
       });
 
       if (!msg || msg.isDeleted) {
-        throw new Error("Сообщение не найдено");
+        throw new Error("Message not found");
       }
 
       const participant = await tx.participant.findFirst({
@@ -36,7 +36,7 @@ export const registerMessageView = async ({
       });
 
       if (!participant) {
-        throw new Error("Нет доступа к этому сообщению");
+        throw new Error("No access to this message");
       }
 
       if (!msg.isEphemeral || msg.maxViewsPerUser == null) {
@@ -93,6 +93,6 @@ export const registerMessageView = async ({
     console.error("❌ Ошибка при регистрации просмотра сообщения:", error);
 
     if (error instanceof Error) throw new Error(error.message);
-    throw new Error("Не удалось зарегистрировать просмотр сообщения");
+    throw new Error("Failed to register message view");
   }
 };

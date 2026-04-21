@@ -74,7 +74,7 @@ export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
       const status = getHttpStatus(e);
 
       if (status === 409) {
-        setDecisionError("Этот репорт уже рассмотрен другим модератором.");
+        setDecisionError("This report has already been reviewed by another moderator.");
         await onAfterDecision(); 
         return;
       }
@@ -106,7 +106,7 @@ export function useDecisionDraft({ activeLite, onAfterDecision }: Params) {
       const status = getHttpStatus(e);
 
       if (status === 409) {
-        setDecisionError("Этот репорт уже рассмотрен другим модератором.");
+        setDecisionError("This report has already been reviewed by another moderator.");
         await onAfterDecision();
         return;
       }

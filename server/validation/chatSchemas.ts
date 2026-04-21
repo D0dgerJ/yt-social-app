@@ -84,7 +84,7 @@ export const sendMessageSchema = z
       !!data.gifUrl ||
       !!data.stickerUrl ||
       !!(data.attachments && data.attachments.length > 0),
-    { message: "Нельзя отправить пустое сообщение" }
+    { message: "You cannot send an empty message" }
   );
 
 export const updateMessageSchema = z

@@ -86,7 +86,7 @@ export async function uploadMedia(files: File[]): Promise<UploadPostMediaResult>
   const uploaded = normalizeUploadResponse(response.data);
 
   if (!uploaded.length) {
-    throw new Error("Пустой ответ от сервера при загрузке файлов");
+    throw new Error("Empty server response while uploading files");
   }
 
   const images: string[] = [];

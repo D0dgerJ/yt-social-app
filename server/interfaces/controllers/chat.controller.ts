@@ -58,7 +58,7 @@ export const send = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -122,13 +122,13 @@ export const update = async (req: Request, res: Response) => {
     if (!messageId && !clientMessageId) {
       res.status(400).json({
         message:
-          "Нужно указать messageId (в URL) или clientMessageId (в body)",
+          "You must provide messageId (in URL) or clientMessageId (in body)",
       });
       return;
     }
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -159,7 +159,7 @@ export const remove = async (req: Request, res: Response) => {
     const messageId = Number(req.params.messageId);
 
     if (!Number.isFinite(conversationId) || !Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректные параметры" });
+      res.status(400).json({ message: "Invalid parameters" });
       return;
     }
 
@@ -178,7 +178,7 @@ export const leave = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -204,7 +204,7 @@ export const add = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -232,7 +232,7 @@ export const getConversationMessages = async (
     const userId = req.user!.id;
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -255,7 +255,7 @@ export const getConversationMessages = async (
 
     res.status(200).json(result);
   } catch (error: any) {
-    res.status(500).json({ message: error.message || "Ошибка сервера" });
+    res.status(500).json({ message: error.message || "Message not found" });
   }
 };
 
@@ -265,7 +265,7 @@ export const markAsDelivered = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -286,7 +286,7 @@ export const markAsRead = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -308,7 +308,7 @@ export const reactToMessage = async (req: Request, res: Response) => {
     const { emoji } = req.body;
 
     if (!Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректный messageId" });
+      res.status(400).json({ message: "Invalid messageId" });
       return;
     }
 
@@ -329,7 +329,7 @@ export const getReactions = async (req: Request, res: Response) => {
     const messageId = Number(req.params.messageId);
 
     if (!Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректный messageId" });
+      res.status(400).json({ message: "Invalid messageId" });
       return;
     }
 
@@ -356,7 +356,7 @@ export const transcribeMessage = async (
     const userId = req.user!.id;
 
     if (!Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректный messageId" });
+      res.status(400).json({ message: "Invalid messageId" });
       return;
     }
 
@@ -371,7 +371,7 @@ export const transcribeMessage = async (
     });
 
     if (!msg) {
-      res.status(404).json({ message: "Сообщение не найдено" });
+      res.status(404).json({ message: "Message not found" });
       return;
     }
 
@@ -384,17 +384,17 @@ export const transcribeMessage = async (
     });
 
     if (!participant) {
-      res.status(403).json({ message: "Нет доступа к этому сообщению" });
+      res.status(403).json({ message: "No access to this message" });
       return;
     }
 
     if (msg.mediaType !== "audio") {
-      res.status(400).json({ message: "Сообщение не содержит аудио" });
+      res.status(400).json({ message: "Message does not contain audio" });
       return;
     }
 
     if (!msg.mediaUrl) {
-      res.status(400).json({ message: "У аудио-сообщения нет mediaUrl" });
+      res.status(400).json({ message: "Audio message has no mediaUrl" });
       return;
     }
 
@@ -405,7 +405,7 @@ export const transcribeMessage = async (
   } catch (error) {
     console.error("[transcribeMessage] error:", error);
     res.status(500).json({
-      message: "Не удалось распознать голосовое сообщение",
+      message: "Failed to transcribe voice message",
       error: error instanceof Error ? error.message : String(error),
     });
   } finally {
@@ -419,7 +419,7 @@ export const pinConversation = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -437,7 +437,7 @@ export const unpinConversation = async (req: Request, res: Response) => {
     const conversationId = Number(req.params.chatId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
@@ -456,12 +456,12 @@ export const pinMessage = async (req: Request, res: Response) => {
     const messageId = Number(req.params.messageId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
     if (!Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректный messageId" });
+      res.status(400).json({ message: "Invalid messageId" });
       return;
     }
 
@@ -484,12 +484,12 @@ export const unpinMessage = async (req: Request, res: Response) => {
     const messageId = Number(req.params.messageId);
 
     if (!Number.isFinite(conversationId)) {
-      res.status(400).json({ message: "Некорректный chatId" });
+      res.status(400).json({ message: "Invalid chatId" });
       return;
     }
 
     if (!Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректный messageId" });
+      res.status(400).json({ message: "Invalid messageId" });
       return;
     }
 
@@ -511,7 +511,7 @@ export const registerView = async (req: Request, res: Response) => {
     const messageId = Number(req.params.messageId);
 
     if (!Number.isFinite(messageId)) {
-      res.status(400).json({ message: "Некорректный messageId" });
+      res.status(400).json({ message: "Invalid messageId" });
       return;
     }
 

@@ -38,7 +38,7 @@ function formatDateLabel(iso: string) {
     tD = today.getDate();
 
   if (dY === tY && dM === tM && dD === tD) {
-    return "Сегодня";
+    return "Today";
   }
 
   const y = d.toLocaleDateString(undefined, { year: "numeric" });
@@ -251,10 +251,10 @@ const MessageList: React.FC<Props> = ({
           });
         }
       } catch (err: any) {
-        console.error("Ошибка при смене пина сообщения:", err);
+        console.error("Error changing message pin:", err);
         const msg =
           err?.response?.data?.message ||
-          "Не удалось изменить закреп сообщения";
+          "Failed to change message pin status";
         toast.error(msg);
       } finally {
         closeMenu();
@@ -340,10 +340,10 @@ const MessageList: React.FC<Props> = ({
     const Header: React.FC = () => (
       <div className="msg-loader-top">
         {isLoadingOlder
-          ? "Загружаем сообщения…"
+          ? "Loading messages…"
           : hasMoreOlder
-          ? "Прокрутите вверх для истории"
-          : "История закончилась"}
+          ? "Scroll up for history"
+          : "No more history"}
       </div>
     );
     return { Header };
@@ -357,13 +357,13 @@ const MessageList: React.FC<Props> = ({
           {pinnedMessages.map((m) => {
             const label =
               (m.content && m.content.slice(0, 40)) ||
-              (m.mediaType === "image" && "📷 Изображение") ||
-              (m.mediaType === "video" && "🎬 Видео") ||
-              (m.mediaType === "audio" && "🎧 Аудио") ||
+              (m.mediaType === "image" && "📷 Image") ||
+              (m.mediaType === "video" && "🎬 Video") ||
+              (m.mediaType === "audio" && "🎧 Audio") ||
               (m.mediaType === "gif" && "GIF") ||
-              (m.mediaType === "sticker" && "Стикер") ||
-              (m.mediaType === "file" && (m.fileName || "📎 Файл")) ||
-              `Сообщение #${m.id}`;
+              (m.mediaType === "sticker" && "Sticker") ||
+              (m.mediaType === "file" && (m.fileName || "📎 File")) ||
+              `Message #${m.id}`;
 
             return (
               <button
@@ -401,38 +401,38 @@ const MessageList: React.FC<Props> = ({
           items={[
             {
               key: "reply",
-              label: "Ответить",
+              label: "Reply",
               onClick: () => onReply?.(menu.m),
             },
             {
               key: "edit",
-              label: "Редактировать",
+              label: "Edit",
               onClick: () => onEdit?.(menu.m),
             },
             {
               key: "del",
-              label: "Удалить",
+              label: "Delete",
               onClick: () => onDelete?.(menu.m),
               danger: true,
             },
             {
               key: "r1",
-              label: "❤️ Реакция",
+              label: "❤️ Reaction",
               onClick: () => onReact?.(menu.m, "❤️"),
             },
             {
               key: "r2",
-              label: "👍 Реакция",
+              label: "👍 Reaction",
               onClick: () => onReact?.(menu.m, "👍"),
             },
             {
               key: "r3",
-              label: "😂 Реакция",
+              label: "😂 Reaction",
               onClick: () => onReact?.(menu.m, "😂"),
             },
             {
               key: menu.m.isPinned ? "unpin" : "pin",
-              label: menu.m.isPinned ? "Открепить" : "Закрепить",
+              label: menu.m.isPinned ? "Unpin" : "Pin",
               onClick: () => handleTogglePinMessage(menu.m),
             },
           ]}
