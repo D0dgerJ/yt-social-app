@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useLayoutEffect,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Message } from "@/stores/messageStore";
 import { DateSeparator } from "./DateSeparator";
@@ -25,71 +26,6 @@ type ListItem =
   | { type: "date"; key: string; label: string }
   | { type: "system"; key: string; text: string; time?: string }
   | { type: "message"; key: string; data: Message };
-
-function formatDateLabel(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-
-  const dY = d.getFullYear(),
-    dM = d.getMonth(),
-    dD = d.getDate();
-  const tY = today.getFullYear(),
-    tM = today.getMonth(),
-    tD = today.getDate();
-
-  if (dY === tY && dM === tM && dD === tD) {
-    return "Today";
-  }
-
-  const y = d.toLocaleDateString(undefined, { year: "numeric" });
-  const m = d.toLocaleDateString(undefined, { month: "long" });
-  const day = d.toLocaleDateString(undefined, { day: "2-digit" });
-  return `${day} ${m} ${y}`;
-}
-
-function withDateSeparators(messages: Message[]): ListItem[] {
-  const out: ListItem[] = [];
-  let prevDate = "";
-
-  const seen = new Set<string>();
-
-  for (const m of messages) {
-    const sig = m.clientMessageId ? `c:${m.clientMessageId}` : `s:${m.id}`;
-    if (seen.has(sig)) continue;
-    seen.add(sig);
-
-    const dayKey = new Date(m.createdAt).toDateString();
-    if (dayKey !== prevDate) {
-      prevDate = dayKey;
-      out.push({
-        type: "date",
-        key: `date-${dayKey}`,
-        label: formatDateLabel(m.createdAt),
-      });
-    }
-
-    const isSystem = (m as any).kind === "system";
-    if (isSystem) {
-      out.push({
-        type: "system",
-        key: `sys-${m.id}`,
-        text: m.content || "[system]",
-        time: m.createdAt,
-      });
-    } else {
-      const msgKey = m.clientMessageId
-        ? `c-${m.clientMessageId}`
-        : `s-${m.id}`;
-      out.push({
-        type: "message",
-        key: msgKey,
-        data: m,
-      });
-    }
-  }
-
-  return out;
-}
 
 type Props = {
   meId: number;
@@ -119,7 +55,78 @@ const MessageList: React.FC<Props> = ({
   onDelete,
   scrollToMessageId,
 }) => {
-  const items = useMemo(() => withDateSeparators(messages), [messages]);
+  const { t } = useTranslation();
+
+  const formatDateLabel = useCallback(
+    (iso: string) => {
+      const d = new Date(iso);
+      const today = new Date();
+
+      const dY = d.getFullYear(),
+        dM = d.getMonth(),
+        dD = d.getDate();
+      const tY = today.getFullYear(),
+        tM = today.getMonth(),
+        tD = today.getDate();
+
+      if (dY === tY && dM === tM && dD === tD) {
+        return t("chat.today");
+      }
+
+      const y = d.toLocaleDateString(undefined, { year: "numeric" });
+      const m = d.toLocaleDateString(undefined, { month: "long" });
+      const day = d.toLocaleDateString(undefined, { day: "2-digit" });
+      return `${day} ${m} ${y}`;
+    },
+    [t]
+  );
+
+  const withDateSeparators = useCallback(
+    (sourceMessages: Message[]): ListItem[] => {
+      const out: ListItem[] = [];
+      let prevDate = "";
+
+      const seen = new Set<string>();
+
+      for (const m of sourceMessages) {
+        const sig = m.clientMessageId ? `c:${m.clientMessageId}` : `s:${m.id}`;
+        if (seen.has(sig)) continue;
+        seen.add(sig);
+
+        const dayKey = new Date(m.createdAt).toDateString();
+        if (dayKey !== prevDate) {
+          prevDate = dayKey;
+          out.push({
+            type: "date",
+            key: `date-${dayKey}`,
+            label: formatDateLabel(m.createdAt),
+          });
+        }
+
+        const isSystem = (m as any).kind === "system";
+        if (isSystem) {
+          out.push({
+            type: "system",
+            key: `sys-${m.id}`,
+            text: m.content || "[system]",
+            time: m.createdAt,
+          });
+        } else {
+          const msgKey = m.clientMessageId ? `c-${m.clientMessageId}` : `s-${m.id}`;
+          out.push({
+            type: "message",
+            key: msgKey,
+            data: m,
+          });
+        }
+      }
+
+      return out;
+    },
+    [formatDateLabel]
+  );
+
+  const items = useMemo(() => withDateSeparators(messages), [messages, withDateSeparators]);
 
   const currentConversationId = useChatStore((s) => s.currentConversationId);
   const conversations = useChatStore((s) => s.conversations);
@@ -131,9 +138,7 @@ const MessageList: React.FC<Props> = ({
 
   const resolveName = useCallback(
     (userId: number) => {
-      const p = participants.find(
-        (p) => (p?.user?.id ?? p?.id) === userId
-      );
+      const p = participants.find((p) => (p?.user?.id ?? p?.id) === userId);
       return (
         p?.user?.displayName ??
         p?.displayName ??
@@ -151,13 +156,10 @@ const MessageList: React.FC<Props> = ({
     m: Message;
   } | null>(null);
 
-  const openContextMenu = useCallback(
-    (e: React.MouseEvent, m: Message) => {
-      e.preventDefault();
-      setMenu({ x: e.clientX, y: e.clientY, m });
-    },
-    []
-  );
+  const openContextMenu = useCallback((e: React.MouseEvent, m: Message) => {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY, m });
+  }, []);
 
   const closeMenu = useCallback(() => setMenu(null), []);
 
@@ -175,7 +177,6 @@ const MessageList: React.FC<Props> = ({
     const convId = currentConversationId;
     if (!convId) return;
     if (!items.length) return;
-
     if (didInitialScrollRef.current[convId]) return;
 
     const lastIndex = items.length - 1;
@@ -188,7 +189,6 @@ const MessageList: React.FC<Props> = ({
 
     didInitialScrollRef.current[convId] = true;
   }, [items.length, currentConversationId]);
-
 
   const pinnedMessages = useMemo(
     () => messages.filter((m) => m.isPinned),
@@ -253,8 +253,7 @@ const MessageList: React.FC<Props> = ({
       } catch (err: any) {
         console.error("Error changing message pin:", err);
         const msg =
-          err?.response?.data?.message ||
-          "Failed to change message pin status";
+          err?.response?.data?.message || "Failed to change message pin status";
         toast.error(msg);
       } finally {
         closeMenu();
@@ -270,12 +269,7 @@ const MessageList: React.FC<Props> = ({
           return <DateSeparator label={item.label} />;
 
         case "system":
-          return (
-            <SystemMessage
-              text={item.text}
-              time={item.time}
-            />
-          );
+          return <SystemMessage text={item.text} time={item.time} />;
 
         case "message": {
           const m = item.data;
@@ -324,46 +318,36 @@ const MessageList: React.FC<Props> = ({
         }
       }
     },
-    [
-      openContextMenu,
-      meId,
-      onReply,
-      onEdit,
-      onDelete,
-      onReact,
-      onOpenAttachment,
-      resolveName,
-    ]
+    [openContextMenu, meId, onReply, onEdit, onDelete, onReact, onOpenAttachment, resolveName]
   );
 
   const components = useMemo(() => {
     const Header: React.FC = () => (
       <div className="msg-loader-top">
         {isLoadingOlder
-          ? "Loading messages…"
+          ? t("chat.loadingMessages")
           : hasMoreOlder
-          ? "Scroll up for history"
-          : "No more history"}
+            ? t("chat.scrollForHistory")
+            : t("chat.noMoreHistory")}
       </div>
     );
     return { Header };
-  }, [isLoadingOlder, hasMoreOlder]);
+  }, [isLoadingOlder, hasMoreOlder, t]);
 
   return (
     <div className="msg-virtuoso-wrap">
-      {/* 🔹 панель закреплённых сообщений */}
       {pinnedMessages.length > 0 && (
         <div className="msg-pinned-bar">
           {pinnedMessages.map((m) => {
             const label =
               (m.content && m.content.slice(0, 40)) ||
-              (m.mediaType === "image" && "📷 Image") ||
-              (m.mediaType === "video" && "🎬 Video") ||
-              (m.mediaType === "audio" && "🎧 Audio") ||
+              (m.mediaType === "image" && `📷 ${t("chat.image")}`) ||
+              (m.mediaType === "video" && `🎬 ${t("chat.video")}`) ||
+              (m.mediaType === "audio" && `🎧 ${t("chat.audio")}`) ||
               (m.mediaType === "gif" && "GIF") ||
-              (m.mediaType === "sticker" && "Sticker") ||
-              (m.mediaType === "file" && (m.fileName || "📎 File")) ||
-              `Message #${m.id}`;
+              (m.mediaType === "sticker" && t("chat.sticker")) ||
+              (m.mediaType === "file" && (m.fileName || `📎 ${t("common.file")}`)) ||
+              t("chat.messageNumber", { id: m.id });
 
             return (
               <button
@@ -401,38 +385,38 @@ const MessageList: React.FC<Props> = ({
           items={[
             {
               key: "reply",
-              label: "Reply",
+              label: t("chat.reply"),
               onClick: () => onReply?.(menu.m),
             },
             {
               key: "edit",
-              label: "Edit",
+              label: t("chat.edit"),
               onClick: () => onEdit?.(menu.m),
             },
             {
               key: "del",
-              label: "Delete",
+              label: t("chat.delete"),
               onClick: () => onDelete?.(menu.m),
               danger: true,
             },
             {
               key: "r1",
-              label: "❤️ Reaction",
+              label: `❤️ ${t("chat.reaction")}`,
               onClick: () => onReact?.(menu.m, "❤️"),
             },
             {
               key: "r2",
-              label: "👍 Reaction",
+              label: `👍 ${t("chat.reaction")}`,
               onClick: () => onReact?.(menu.m, "👍"),
             },
             {
               key: "r3",
-              label: "😂 Reaction",
+              label: `😂 ${t("chat.reaction")}`,
               onClick: () => onReact?.(menu.m, "😂"),
             },
             {
               key: menu.m.isPinned ? "unpin" : "pin",
-              label: menu.m.isPinned ? "Unpin" : "Pin",
+              label: menu.m.isPinned ? t("chat.unpin") : t("chat.pin"),
               onClick: () => handleTogglePinMessage(menu.m),
             },
           ]}

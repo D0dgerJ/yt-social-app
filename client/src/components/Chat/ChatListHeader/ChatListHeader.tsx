@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import CreateChatModal from "../CreateChatModal/CreateChatModal";
 import "./ChatListHeader.scss";
 
@@ -12,14 +13,15 @@ const ChatListHeader: React.FC<ChatListHeaderProps> = ({
   onSearchChange,
 }) => {
   const [showModal, setShowModal] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <div className="chat-list-header">
       <div className="chat-list-header__top">
         <div className="chat-list-header__title-block">
-          <h2 className="chat-list-header__title">Chats</h2>
+          <h2 className="chat-list-header__title">{t("chat.chats")}</h2>
           <p className="chat-list-header__subtitle">
-            Find a conversation or start a new one
+            {t("chat.chatSubtitle")}
           </p>
         </div>
 
@@ -29,14 +31,14 @@ const ChatListHeader: React.FC<ChatListHeaderProps> = ({
           type="button"
         >
           <span>＋</span>
-          <span>Create chat</span>
+          <span>{t("chat.createChat")}</span>
         </button>
       </div>
 
       <div className="chat-list-header__search-wrap">
         <input
           type="text"
-          placeholder="Search chats and participants..."
+          placeholder={t("chat.searchChats")}
           value={value}
           onChange={(e) => onSearchChange?.(e.target.value)}
           className="chat-list-header__search"

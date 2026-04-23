@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getIncomingFriendRequests,
   acceptFriendRequest,
@@ -24,6 +25,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
   onCountChange,
 }) => {
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +43,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
       setRequests(safe);
       onCountChange?.(safe.length);
     } catch (error) {
-      console.error("Ошибка при загрузке запросов:", error);
+      console.error("Failed to load friend requests:", error);
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
         return next;
       });
     } catch (error) {
-      console.error("Ошибка при принятии запроса:", error);
+      console.error("Failed to accept friend request:", error);
     }
   };
 
@@ -73,7 +75,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
         return next;
       });
     } catch (error) {
-      console.error("Ошибка при отклонении запроса:", error);
+      console.error("Failed to reject friend request:", error);
     }
   };
 
@@ -81,7 +83,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
     <div className="notifications-interactions">
       <div className="notifications-interactions__header">
         <span className="notifications-interactions__title">
-          Friend requests
+          {t("friends.requestsTitle")}
         </span>
         <span className="notifications-interactions__count">
           {requests.length}
@@ -89,9 +91,9 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
       </div>
 
       {loading ? (
-        <p className="notifications-interactions__info">Loading...</p>
+        <p className="notifications-interactions__info">{t("common.loading")}</p>
       ) : requests.length === 0 ? (
-        <p className="notifications-interactions__info">No new requests</p>
+        <p className="notifications-interactions__info">{t("friends.noNewRequests")}</p>
       ) : (
         <ul className="friend-requests-list">
           {requests.map(({ id, sender }) => (
@@ -104,7 +106,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                 />
                 <div className="friend-request-user">
                   <span className="friend-username">{sender.username}</span>
-                  <span className="friend-subtitle">Sent you a friend request</span>
+                  <span className="friend-subtitle">{t("friends.sentRequest")}</span>
                 </div>
               </div>
 
@@ -114,7 +116,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                   onClick={() => handleAccept(id)}
                   className="friend-request-btn friend-request-btn--accept"
                 >
-                  Accept
+                  {t("friends.accept")}
                 </button>
 
                 <button
@@ -122,7 +124,7 @@ const NotificationsInteractions: React.FC<NotificationsInteractionsProps> = ({
                   onClick={() => handleReject(id)}
                   className="friend-request-btn friend-request-btn--reject"
                 >
-                  Decline
+                  {t("friends.decline")}
                 </button>
               </div>
             </li>

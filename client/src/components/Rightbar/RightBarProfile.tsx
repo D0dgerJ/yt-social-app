@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext";
 import { followUser, unfollowUser } from "../../utils/api/user.api";
 import FollowButton from "./parts/FollowButton";
@@ -29,6 +30,7 @@ type Props = {
 
 const RightBarProfile: React.FC<Props> = ({ user, friends }) => {
   const { user: currentUser, dispatch } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const [isFollowed, setIsFollowed] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
@@ -66,7 +68,7 @@ const RightBarProfile: React.FC<Props> = ({ user, friends }) => {
     <>
       <section className="rightbar-card">
         <div className="rightbar-section-header">
-          <h3 className="rightbar-title">Profile</h3>
+          <h3 className="rightbar-title">{t("rightbar.profile")}</h3>
         </div>
 
         {user.username !== currentUser?.username && (
@@ -83,7 +85,7 @@ const RightBarProfile: React.FC<Props> = ({ user, friends }) => {
 
       <section className="rightbar-card">
         <div className="rightbar-section-header">
-          <h3 className="rightbar-title">Friends</h3>
+          <h3 className="rightbar-title">{t("rightbar.friends")}</h3>
           <span className="rightbar-counter">{friends.length}</span>
         </div>
 

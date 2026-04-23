@@ -3,10 +3,10 @@ import { AuthContext } from "../../context/AuthContext";
 import { loginUser } from "../../utils/api/auth.api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import "./Login.scss";
 
-const INVALID_LOGIN_MESSAGE = "Invalid email or password";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN_LENGTH = 6;
 
@@ -15,14 +15,17 @@ const Login: React.FC = () => {
 
   const { isFetching, dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const invalidLoginMessage = t("auth.invalidEmailOrPassword");
 
   const validateLoginForm = (email: string, password: string): string | null => {
     if (!EMAIL_REGEX.test(email)) {
-      return INVALID_LOGIN_MESSAGE;
+      return invalidLoginMessage;
     }
 
     if (password.length < PASSWORD_MIN_LENGTH) {
-      return INVALID_LOGIN_MESSAGE;
+      return invalidLoginMessage;
     }
 
     return null;
@@ -57,8 +60,8 @@ const Login: React.FC = () => {
       navigate("/");
     } catch (err) {
       const message = axios.isAxiosError(err)
-        ? err.response?.data?.message || INVALID_LOGIN_MESSAGE
-        : INVALID_LOGIN_MESSAGE;
+        ? err.response?.data?.message || invalidLoginMessage
+        : invalidLoginMessage;
 
       dispatch({
         type: "LOGIN_FAILURE",
@@ -74,16 +77,13 @@ const Login: React.FC = () => {
       <div className="auth-shell">
         <section className="auth-brand">
           <div className="auth-brand__badge">DodgerJ Social</div>
-          <h1 className="auth-brand__title">Sign in to your account</h1>
-          <p className="auth-brand__text">
-            Connect with friends, publish posts, follow activity, and manage
-            your profile in a modern interface.
-          </p>
+          <h1 className="auth-brand__title">{t("auth.loginTitle")}</h1>
+          <p className="auth-brand__text">{t("auth.loginText")}</p>
 
           <div className="auth-brand__features">
-            <div className="auth-brand__feature">Feed posts and shorts</div>
-            <div className="auth-brand__feature">Comments and reactions</div>
-            <div className="auth-brand__feature">Events, friends, and profile</div>
+            <div className="auth-brand__feature">{t("auth.loginFeature1")}</div>
+            <div className="auth-brand__feature">{t("auth.loginFeature2")}</div>
+            <div className="auth-brand__feature">{t("auth.loginFeature3")}</div>
           </div>
         </section>
 
@@ -91,15 +91,15 @@ const Login: React.FC = () => {
           <div className="auth-card">
             <div className="auth-card__header">
               <div className="auth-card__header-top">
-                <h2>Login</h2>
+                <h2>{t("auth.loginCardTitle")}</h2>
                 <span className="auth-mini-logo">DJS</span>
               </div>
-              <p>Enter your email and password to continue.</p>
+              <p>{t("auth.loginCardText")}</p>
             </div>
 
             <form onSubmit={handleLogin} className="auth-form">
               <label className="auth-field">
-                <span>Email</span>
+                <span>{t("common.email")}</span>
                 <input
                   type="email"
                   placeholder="you@example.com"
@@ -113,10 +113,10 @@ const Login: React.FC = () => {
               </label>
 
               <label className="auth-field">
-                <span>Password</span>
+                <span>{t("common.password")}</span>
                 <input
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder={t("auth.loginPasswordPlaceholder")}
                   className="auth-input"
                   value={auth.password}
                   onChange={(e) =>
@@ -128,7 +128,7 @@ const Login: React.FC = () => {
               </label>
 
               <button className="auth-submit" disabled={isFetching}>
-                {isFetching ? "Logging in..." : "Login"}
+                {isFetching ? t("auth.loggingIn") : t("auth.login")}
               </button>
 
               <button
@@ -136,7 +136,7 @@ const Login: React.FC = () => {
                 type="button"
                 onClick={() => navigate("/register")}
               >
-                Create a new account
+                {t("auth.createNewAccount")}
               </button>
 
               <button
@@ -144,7 +144,7 @@ const Login: React.FC = () => {
                 type="button"
                 onClick={() => {}}
               >
-                Forgot password?
+                {t("auth.forgotPassword")}
               </button>
             </form>
           </div>

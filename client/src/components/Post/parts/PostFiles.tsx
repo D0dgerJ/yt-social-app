@@ -1,20 +1,23 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { toAbsoluteMediaUrl } from "@/utils/mediaUrl";
 
 interface PostFilesProps {
   files?: string[];
 }
 
-const getFileName = (url: string) => {
-  try {
-    const parsed = new URL(url);
-    return decodeURIComponent(parsed.pathname.split("/").pop() || "File");
-  } catch {
-    return decodeURIComponent(url.split("/").pop() || "File");
-  }
-};
-
 const PostFiles: React.FC<PostFilesProps> = ({ files = [] }) => {
+  const { t } = useTranslation();
+
+  const getFileName = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return decodeURIComponent(parsed.pathname.split("/").pop() || t("common.file"));
+    } catch {
+      return decodeURIComponent(url.split("/").pop() || t("common.file"));
+    }
+  };
+
   const normalizedFiles = files
     .filter(Boolean)
     .map((file) => toAbsoluteMediaUrl(file));

@@ -1,24 +1,28 @@
 import React, { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Paperclip } from "lucide-react";
-import { IMAGE_MIME, VIDEO_MIME, FILE_MIME, MAX_FILE_MB } from "@/constants/mime";
+import { IMAGE_MIME, VIDEO_MIME, FILE_MIME } from "@/constants/mime";
 import { assertAllowed } from "@/utils/fileGuards";
 
 interface FilePickerProps {
   onSelect: (files: File[]) => void;
   title?: string;
   disabled?: boolean;
-  maxFiles?: number; 
+  maxFiles?: number;
   existingCount?: number;
 }
 
 const FilePicker: React.FC<FilePickerProps> = ({
   onSelect,
-  title = "Attach file",
+  title,
   disabled = false,
   maxFiles = 10,
   existingCount = 0,
 }) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const effectiveTitle = title || t("chat.attachFile");
 
   const accept = useMemo(() => {
     const all = [...IMAGE_MIME, ...VIDEO_MIME, ...FILE_MIME];
@@ -69,12 +73,12 @@ const FilePicker: React.FC<FilePickerProps> = ({
         className={`file-picker-button ${disabled || overLimit ? "disabled" : ""}`}
         title={
           disabled
-            ? "Unavailable"
+            ? t("chat.unavailable")
             : overLimit
-            ? `You can attach up to ${maxFiles} files`
-            : title
+              ? t("chat.maxFilesHint", { count: maxFiles })
+              : effectiveTitle
         }
-        aria-label={title}
+        aria-label={effectiveTitle}
         disabled={disabled || overLimit}
       >
         <Paperclip size={20} />

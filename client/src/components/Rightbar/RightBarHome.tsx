@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import birthdayIcon from "../../assets/gift.png";
 import adImage from "../../assets/ad.jpg";
 import OnlineUsersList from "./parts/OnlineUsersList";
@@ -16,16 +17,16 @@ interface Props {
 }
 
 const RightBarHome: React.FC<Props> = ({ friends, loading, error }) => {
+  const { t } = useTranslation();
+
   return (
     <>
       <section className="rightbar-card rightbar-card--compact">
         <div className="birthday-section">
           <img src={birthdayIcon} alt="Birthday" className="birthday-icon" />
           <div className="birthday-content">
-            <div className="section-title-sm">Highlights</div>
-            <p className="birthday-text">
-              Check who is online today and do not miss new activity.
-            </p>
+            <div className="section-title-sm">{t("rightbar.highlights")}</div>
+            <p className="birthday-text">{t("rightbar.highlightsText")}</p>
           </div>
         </div>
       </section>
@@ -36,7 +37,7 @@ const RightBarHome: React.FC<Props> = ({ friends, loading, error }) => {
 
       <section className="rightbar-card">
         <div className="rightbar-section-header">
-          <h3 className="rightbar-title">Online</h3>
+          <h3 className="rightbar-title">{t("rightbar.online")}</h3>
           <span className="rightbar-counter">{friends.length}</span>
         </div>
 

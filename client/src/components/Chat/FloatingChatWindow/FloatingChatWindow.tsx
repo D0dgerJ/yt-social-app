@@ -1,4 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 
 import { useFloatingChatStore } from "@/stores/floatingChatStore";
@@ -132,6 +133,7 @@ const SingleFloatingChatWindow: React.FC<SingleWindowProps> = ({
   y,
   minimized,
 }) => {
+  const { t } = useTranslation();
   const getConversation = useChatStore((s) => s.getConversation);
   const close = useFloatingChatStore((s) => s.close);
   const toggleMinimized = useFloatingChatStore((s) => s.toggleMinimized);
@@ -155,7 +157,7 @@ const SingleFloatingChatWindow: React.FC<SingleWindowProps> = ({
         )
         .filter(Boolean)
         .join(", ")) ||
-    `Chat #${conversationId}`;
+    t("chat.chatWindowFallback", { id: conversationId });
 
   const handleHeaderMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     setIsDragging(true);

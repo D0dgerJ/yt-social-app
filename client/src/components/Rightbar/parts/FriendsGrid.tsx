@@ -1,10 +1,11 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 type Friend = {
   id: number;
   username: string;
-  profilePicture: string;
+  profilePicture?: string;
 };
 
 type Props = {
@@ -13,22 +14,26 @@ type Props = {
 };
 
 const FriendsGrid: React.FC<Props> = ({ friends, fallbackAvatar }) => {
+  const { t } = useTranslation();
+
   if (!friends.length) {
-    return <div className="rightbar-empty">No friends yet</div>;
+    return <div className="rightbar-empty">{t("rightbar.noFriendsYet")}</div>;
   }
 
   return (
-    <div className="friends-grid">
-      {friends.map((f) => (
-        <Link to={`/profile/${f.username}`} key={f.id} className="friend-link">
-          <div className="friend-card">
-            <img
-              src={f.profilePicture || fallbackAvatar}
-              alt={f.username}
-              className="friend-img"
-            />
-            <span className="friend-name">{f.username}</span>
-          </div>
+    <div className="rightbar-friends-grid">
+      {friends.map((friend) => (
+        <Link
+          key={friend.id}
+          to={`/profile/${friend.username}`}
+          className="rightbar-friend-card"
+        >
+          <img
+            src={friend.profilePicture || fallbackAvatar}
+            alt={friend.username}
+            className="rightbar-friend-avatar"
+          />
+          <span className="rightbar-friend-name">{friend.username}</span>
         </Link>
       ))}
     </div>

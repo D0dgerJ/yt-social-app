@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import AudioRecorder from '../AudioRecorder/AudioRecorder';
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import AudioRecorder from "../AudioRecorder/AudioRecorder";
 
 type Props = {
   disabled?: boolean;
@@ -12,6 +13,7 @@ export const VoiceRecorder: React.FC<Props> = ({
   canAddMoreFiles = true,
   onSend,
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
@@ -31,7 +33,7 @@ export const VoiceRecorder: React.FC<Props> = ({
       await onSend(file);
       setIsOpen(false);
     } catch (e) {
-      console.error('send voice failed', e);
+      console.error("send voice failed", e);
     } finally {
       setIsSending(false);
     }
@@ -45,13 +47,13 @@ export const VoiceRecorder: React.FC<Props> = ({
           className="composer__voice-btn"
           onClick={handleOpen}
           disabled={disabled || !canAddMoreFiles}
-          aria-label="Record voice message"
+          aria-label={t("chat.recordVoiceMessage")}
           title={
             !canAddMoreFiles
-              ? 'Cannot add more attachments'
+              ? t("chat.cannotAddMoreAttachments")
               : disabled
-              ? 'Recording is currently unavailable'
-              : 'Record voice message'
+                ? t("chat.recordingUnavailable")
+                : t("chat.recordVoiceMessage")
           }
         >
           🎤

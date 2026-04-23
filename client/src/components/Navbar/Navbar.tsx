@@ -9,6 +9,7 @@ import {
 } from "react-icons/io5";
 import { IoIosNotifications } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import Logo from "../Logo/Logo";
 import noProfile from "../../assets/profile/user.png";
@@ -23,6 +24,8 @@ import { useNotificationStore } from "../../stores/notificationStore";
 import { getIncomingFriendRequests, searchUsers } from "../../utils/api/user.api";
 import { searchPosts } from "../../utils/api/post.api";
 
+import type { AppLanguage } from "../../i18n";
+import { saveLanguage } from "../../i18n";
 import "./Navbar.scss";
 
 type SearchUser = {
@@ -50,6 +53,7 @@ const Navbar: React.FC = () => {
   const { user } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const [showFriendRequests, setShowFriendRequests] = useState(false);
   const [showChatNotifications, setShowChatNotifications] = useState(false);
@@ -227,6 +231,11 @@ const Navbar: React.FC = () => {
     setShowSearchDropdown(false);
   };
 
+  const handleLanguageChange = (language: AppLanguage) => {
+    void i18n.changeLanguage(language);
+    saveLanguage(language);
+  };
+
   const handleUserClick = (username: string) => {
     navigate(`/profile/${username}`);
     clearSearch();
@@ -297,7 +306,7 @@ const Navbar: React.FC = () => {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search users, posts, or #hashtag"
+                placeholder={t("navbar.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => {
@@ -311,12 +320,12 @@ const Navbar: React.FC = () => {
             {showSearchDropdown && searchQuery.trim() && (
               <div className="search-dropdown">
                 {isSearching ? (
-                  <div className="search-empty">Searching...</div>
+                  <div className="search-empty">{t("navbar.searchLoading")}</div>
                 ) : (
                   <>
                     {!isHashtagSearch && (
                       <div className="search-section">
-                        <div className="search-section-title">Users</div>
+                        <div className="search-section-title">{t("navbar.users")}</div>
 
                         {userResults.length > 0 ? (
                           userResults.map((item) => (
@@ -337,20 +346,20 @@ const Navbar: React.FC = () => {
                                   @{item.username}
                                 </div>
                                 <div className="search-result-text">
-                                  {item.desc?.trim() || item.city || "User"}
+                                  {item.desc?.trim() || item.city || t("navbar.user")}
                                 </div>
                               </div>
                             </button>
                           ))
                         ) : (
-                          <div className="search-empty">No users found</div>
+                          <div className="search-empty">{t("navbar.noUsers")}</div>
                         )}
                       </div>
                     )}
 
                     <div className="search-section">
                       <div className="search-section-title">
-                        {isHashtagSearch ? "Posts by hashtag" : "Posts"}
+                        {isHashtagSearch ? t("navbar.postsByHashtag") : t("navbar.posts")}
                       </div>
 
                       {postResults.length > 0 ? (
@@ -365,7 +374,7 @@ const Navbar: React.FC = () => {
                               <div className="search-result-title">
                                 {item.user?.username
                                   ? `@${item.user.username}`
-                                  : "Post"}
+                                  : t("navbar.post")}
                               </div>
 
                               <div className="search-result-text">
@@ -373,13 +382,13 @@ const Navbar: React.FC = () => {
                                   ? item.desc.slice(0, 90)
                                   : item.tags?.length
                                     ? `#${item.tags.join(" #").slice(0, 90)}`
-                                    : "No text"}
+                                    : t("navbar.noText")}
                               </div>
                             </div>
                           </button>
                         ))
                       ) : (
-                        <div className="search-empty">No posts found</div>
+                        <div className="search-empty">{t("navbar.noPosts")}</div>
                       )}
                     </div>
                   </>
@@ -392,9 +401,26 @@ const Navbar: React.FC = () => {
         <div className="navbar-right">
           <nav className="tab-links">
             <Link to="/" className={`nav-pill ${isHomeActive ? "active" : ""}`}>
-              Home
+              {t("navbar.home")}
             </Link>
           </nav>
+
+          <div className="language-switcher">
+            <button
+              type="button"
+              className={`language-switcher__button ${i18n.language === "en" ? "active" : ""}`}
+              onClick={() => handleLanguageChange("en")}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={`language-switcher__button ${i18n.language === "ru" ? "active" : ""}`}
+              onClick={() => handleLanguageChange("ru")}
+            >
+              RU
+            </button>
+          </div>
 
           <div className="tab-icons">
             <button
@@ -404,8 +430,8 @@ const Navbar: React.FC = () => {
               aria-label="Toggle theme"
               title={
                 theme === "light"
-                  ? "Enable dark theme"
-                  : "Enable light theme"
+                  ? t("navbar.enableDarkTheme")
+                  : t("navbar.enableLightTheme")
               }
             >
               {theme === "light" ? <IoMoon /> : <IoSunny />}

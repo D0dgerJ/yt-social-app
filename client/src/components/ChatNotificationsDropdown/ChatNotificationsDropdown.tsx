@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./ChatNotificationsDropdown.scss";
 import { useNotificationStore } from "../../stores/notificationStore";
@@ -14,6 +15,7 @@ const CHAT_NOTIFICATION_TYPES = new Set<string>([
 
 const ChatNotificationsDropdown: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const { notifications, markAsRead, removeNotification } =
     useNotificationStore();
@@ -21,8 +23,8 @@ const ChatNotificationsDropdown: React.FC = () => {
   const chatNotifications = useMemo(
     () =>
       notifications.filter((n) => {
-        const t = String(n.type);
-        return CHAT_NOTIFICATION_TYPES.has(t) && !n.isRead;
+        const notificationType = String(n.type);
+        return CHAT_NOTIFICATION_TYPES.has(notificationType) && !n.isRead;
       }),
     [notifications]
   );
@@ -37,20 +39,20 @@ const ChatNotificationsDropdown: React.FC = () => {
   if (!chatNotifications.length) {
     return (
       <div className="chat-notifications-dropdown">
-        <h4 className="chat-dropdown-title">Chat notifications</h4>
-        <p className="chat-dropdown-empty">No new chat events yet</p>
+        <h4 className="chat-dropdown-title">{t("chatNotifications.title")}</h4>
+        <p className="chat-dropdown-empty">{t("chatNotifications.empty")}</p>
       </div>
     );
   }
 
   return (
     <div className="chat-notifications-dropdown">
-      <h4 className="chat-dropdown-title">Chat notifications</h4>
+      <h4 className="chat-dropdown-title">{t("chatNotifications.title")}</h4>
 
       <ul className="chat-notifications-list">
         {chatNotifications.map((n) => {
           const payload = parsePayload(n.content);
-          const desc = renderChatNotificationText(String(n.type), payload);
+          const desc = renderChatNotificationText(t, String(n.type), payload);
 
           return (
             <li
@@ -65,7 +67,7 @@ const ChatNotificationsDropdown: React.FC = () => {
               <div className="chat-notifications-main">
                 <img
                   src={n.fromUser?.profilePicture || "/assets/user.png"}
-                  alt={n.fromUser?.username}
+                  alt={n.fromUser?.username || t("common.user")}
                   className="chat-notifications-avatar"
                 />
                 <div className="chat-notifications-text-block">
@@ -89,7 +91,7 @@ const ChatNotificationsDropdown: React.FC = () => {
                   )}
 
                   <span className="chat-notifications-date">
-                    {formatDate(n.createdAt)}
+                    {formatDate(n.createdAt, i18n.language)}
                   </span>
                 </div>
               </div>
@@ -112,7 +114,6 @@ const ChatNotificationsDropdown: React.FC = () => {
   );
 };
 
-
 function parsePayload(raw?: string | null): any | null {
   if (!raw) return null;
   try {
@@ -122,9 +123,11 @@ function parsePayload(raw?: string | null): any | null {
   }
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, language: string) {
   const d = new Date(iso);
-  return d.toLocaleString("ru-RU", {
+  const locale = language.startsWith("ru") ? "ru-RU" : "en-US";
+
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -140,8 +143,6 @@ function navigateByChatNotification(
   const conversationId = payload?.conversationId;
   const messageId = payload?.messageId;
 
-  // Если есть id чата — пробрасываем его в URL.
-  // TODO: если у тебя другой формат URL для чата — поменяй тут.
   if (conversationId != null) {
     const searchParams = new URLSearchParams();
     searchParams.set("conversationId", String(conversationId));
@@ -156,15 +157,16 @@ function navigateByChatNotification(
 }
 
 function renderChatNotificationText(
+  t: (key: string, options?: Record<string, unknown>) => string,
   type: string,
   payload: any
 ): { main: string; details?: string; snippet?: string } {
   const chatPart =
     payload?.conversationName != null
-      ? `in chat «${payload.conversationName}»`
+      ? t("chatNotifications.inNamedChat", { name: payload.conversationName })
       : payload?.conversationId != null
-      ? `in chat #${payload.conversationId}`
-      : undefined;
+        ? t("chatNotifications.inChatById", { id: payload.conversationId })
+        : undefined;
 
   const snippet =
     typeof payload?.snippet === "string" && payload.snippet.trim().length > 0
@@ -174,46 +176,46 @@ function renderChatNotificationText(
   switch (type) {
     case "direct_message":
       return {
-        main: "sent you a message",
+        main: t("chatNotifications.sentMessage"),
         details: chatPart,
         snippet,
       };
 
     case "group_message":
       return {
-        main: "posted a message in the group chat",
+        main: t("chatNotifications.groupMessage"),
         details: chatPart,
         snippet,
       };
 
     case "message_mention":
       return {
-        main: "mentioned you in a message",
+        main: t("chatNotifications.mentionedMessage"),
         details: chatPart,
         snippet,
       };
 
     case "message_reaction":
       return {
-        main: "reacted to your message",
+        main: t("chatNotifications.reactedMessage"),
         details: chatPart,
       };
 
     case "message_quote":
       return {
-        main: "replied quoting your message",
+        main: t("chatNotifications.quotedMessage"),
         details: chatPart,
         snippet,
       };
 
     case "added_to_conversation":
       return {
-        main: "added you to a chat",
+        main: t("chatNotifications.addedToChat"),
         details: chatPart,
       };
 
     default:
-      return { main: "performed an action in chat", details: chatPart };
+      return { main: t("chatNotifications.performedAction"), details: chatPart };
   }
 }
 

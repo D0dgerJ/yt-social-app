@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import { MdLabel, MdEmojiEmotions, MdLocationPin } from "react-icons/md";
 
 import useUploadPost from "../../hooks/useUploadPost";
@@ -50,6 +51,8 @@ const UploadPost: React.FC = () => {
     submit,
   } = useUploadPost();
 
+  const { t } = useTranslation();
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [isResolvingDrop, setIsResolvingDrop] = useState(false);
   const dragDepthRef = useRef(0);
@@ -58,7 +61,7 @@ const UploadPost: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (!text.trim() && previews.length === 0) {
-      toast.error("You cannot publish an empty post");
+      toast.error(t("uploadPost.emptyPost"));
       return;
     }
 
@@ -78,15 +81,15 @@ const UploadPost: React.FC = () => {
         location: payload.location,
       });
 
-      toast.success("Post created");
+      toast.success(t("uploadPost.postCreated"));
       setText("");
       clearFiles();
     } catch (e: any) {
       const msg =
-        e?.response?.data?.message || e?.message || "Failed to create post";
+        e?.response?.data?.message || e?.message || t("uploadPost.failedToCreatePost");
       toast.error(msg);
     }
-  }, [text, previews.length, submit, errors, setText, clearFiles]);
+  }, [text, previews.length, submit, errors, setText, clearFiles, t]);
 
   const handleDragEnter = useCallback(
     (e: React.DragEvent<HTMLElement>) => {
@@ -136,13 +139,13 @@ const UploadPost: React.FC = () => {
         result.errors.forEach((message) => toast.error(message));
 
         if (result.files.length === 0) {
-          toast.error("Failed to add image from drop");
+          toast.error(t("uploadPost.failedDropImage"));
         }
       } finally {
         setIsResolvingDrop(false);
       }
     },
-    [addFiles]
+    [addFiles, t]
   );
 
   return (
@@ -157,7 +160,7 @@ const UploadPost: React.FC = () => {
         <div className="upload-post__top">
           <textarea
             className="upload-post__input"
-            placeholder="What's new?"
+            placeholder={t("uploadPost.placeholder")}
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}
@@ -166,8 +169,8 @@ const UploadPost: React.FC = () => {
 
         <div className="upload-post__drop-hint">
           {isResolvingDrop
-            ? "Loading an image from an external source..."
-            : "You can drag an image here from your computer or directly from the browser"}
+            ? t("uploadPost.loadingExternalImage")
+            : t("uploadPost.dropHint")}
         </div>
 
         {previews.length > 0 && (
@@ -194,7 +197,7 @@ const UploadPost: React.FC = () => {
           <div className="upload-post__location">
             <input
               type="text"
-              placeholder="Add location"
+              placeholder={t("uploadPost.addLocation")}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
@@ -217,7 +220,7 @@ const UploadPost: React.FC = () => {
               onClick={toggleTags}
             >
               <MdLabel className="upload-post__icon" />
-              <span>Tags</span>
+              <span>{t("uploadPost.tags")}</span>
             </button>
 
             <button
@@ -226,7 +229,7 @@ const UploadPost: React.FC = () => {
               onClick={toggleEmoji}
             >
               <MdEmojiEmotions className="upload-post__icon" />
-              <span>Emoji</span>
+              <span>{t("uploadPost.emoji")}</span>
             </button>
 
             <button
@@ -235,7 +238,7 @@ const UploadPost: React.FC = () => {
               onClick={toggleLocation}
             >
               <MdLocationPin className="upload-post__icon" />
-              <span>Location</span>
+              <span>{t("uploadPost.location")}</span>
             </button>
           </div>
 
@@ -245,7 +248,9 @@ const UploadPost: React.FC = () => {
             disabled={isSubmitting || isResolvingDrop}
             onClick={handleSubmit}
           >
-            {isSubmitting || isResolvingDrop ? "Uploading..." : "Publish"}
+            {isSubmitting || isResolvingDrop
+              ? t("uploadPost.uploading")
+              : t("uploadPost.publish")}
           </button>
         </div>
 

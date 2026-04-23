@@ -1,5 +1,6 @@
 import "./Profile.scss";
 import React, { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Navbar from "../../components/Navbar/Navbar";
 import coverImage from "./assets/coverImage.jpg";
 import noProfilePic from "./assets/user.png";
@@ -27,6 +28,7 @@ interface User {
 const Profile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const { user: currentUser, dispatch } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -72,13 +74,13 @@ const Profile: React.FC = () => {
       const uploadedUrl = uploadRes?.url || uploadRes?.urls?.[0]?.url;
 
       if (!uploadedUrl) {
-        throw new Error("Upload succeeded but no file URL was returned");
+        throw new Error(t("profile.uploadReturnedNoUrl"));
       }
 
       const res = await updateProfilePicture(user.id, uploadedUrl);
       const nextProfilePicture = res?.profilePicture || uploadedUrl;
 
-      toast.success("Profile picture updated!");
+      toast.success(t("profile.profilePictureUpdated"));
 
       setUser((prev) =>
         prev
@@ -91,7 +93,7 @@ const Profile: React.FC = () => {
         payload: { profilePicture: nextProfilePicture },
       });
     } catch (error) {
-      toast.error("Failed to update profile picture");
+      toast.error(t("profile.failedToUpdateProfilePicture"));
       console.error(error);
     } finally {
       setLoading(false);
@@ -138,7 +140,7 @@ const Profile: React.FC = () => {
               <div className="profile-info">
                 <h1 className="profile-username">{user?.username}</h1>
                 <span className="profile-desc">
-                  {user?.desc || "I am new here!"}
+                  {user?.desc || t("profile.defaultDescription")}
                 </span>
 
                 <div className="profile-actions">
@@ -151,7 +153,7 @@ const Profile: React.FC = () => {
                             onClick={handleSave}
                             className="profile-save-btn"
                           >
-                            {loading ? "Saving..." : "Save Changes"}
+                            {loading ? t("profile.saving") : t("profile.saveChanges")}
                           </button>
 
                           <button
@@ -159,7 +161,7 @@ const Profile: React.FC = () => {
                             onClick={handleCancel}
                             className="profile-cancel-btn"
                           >
-                            Cancel
+                            {t("common.cancel")}
                           </button>
                         </>
                       ) : (
@@ -168,7 +170,7 @@ const Profile: React.FC = () => {
                             htmlFor="profilePicture"
                             className="profile-edit-btn"
                           >
-                            Edit Profile
+                            {t("profile.editProfile")}
                           </label>
 
                           <input

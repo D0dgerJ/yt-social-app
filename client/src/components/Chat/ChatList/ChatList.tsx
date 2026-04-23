@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getUserConversations,
   pinConversation,
@@ -42,61 +43,65 @@ type ConversationLike = {
   } | null;
   messages?: any[];
   updatedAt?: string;
-
   isPinned?: boolean;
   pinnedAt?: string | null;
 };
 
 const norm = (s: string) => (s ?? "").toLowerCase().trim();
 
-const mediaPreview = (m?: ConversationLike["lastMessage"]) => {
-  if (!m) return "";
-  const type = (m.mediaType || "").toLowerCase();
-  switch (type) {
-    case "image":
-      return "📷 Image";
-    case "video":
-      return "🎬 Video";
-    case "audio":
-      return "🎧 Audio";
-    case "gif":
-      return "GIF";
-    case "sticker":
-      return "Sticker";
-    case "file":
-      return m.fileName ? `📎 ${m.fileName}` : "📎 File";
-    case "text":
-    default:
-      return "";
-  }
-};
-
-const getAvatarFromConv = (conv?: ConversationLike): string => {
-  const first = Array.isArray(conv?.participants)
-    ? conv.participants[0]
-    : undefined;
-
-  return first?.user?.profilePicture || first?.profilePicture || noProfilePic;
-};
-
-const getParticipantNames = (conv: ConversationLike) => {
-  const parts: ParticipantLike[] = Array.isArray(conv?.participants)
-    ? conv.participants
-    : [];
-
-  return parts
-    .map((p) => p?.user?.username ?? p?.username ?? "")
-    .filter(Boolean)
-    .join(" ");
-};
-
 const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
+  const { t } = useTranslation();
   const {
     conversations,
     currentConversationId,
     setCurrentConversationId,
     setConversations: setChatsInStore,
   } = useChatStore();
+
+  const mediaPreview = useCallback(
+    (m?: ConversationLike["lastMessage"]) => {
+      if (!m) return "";
+      const type = (m.mediaType || "").toLowerCase();
+
+      switch (type) {
+        case "image":
+          return `📷 ${t("chat.image")}`;
+        case "video":
+          return `🎬 ${t("chat.video")}`;
+        case "audio":
+          return `🎧 ${t("chat.audio")}`;
+        case "gif":
+          return "GIF";
+        case "sticker":
+          return t("chat.sticker");
+        case "file":
+          return m.fileName ? `📎 ${m.fileName}` : `📎 ${t("common.file")}`;
+        case "text":
+        default:
+          return "";
+      }
+    },
+    [t]
+  );
+
+  const getAvatarFromConv = (conv?: ConversationLike): string => {
+    const first = Array.isArray(conv?.participants)
+      ? conv.participants[0]
+      : undefined;
+
+    return first?.user?.profilePicture || first?.profilePicture || noProfilePic;
+  };
+
+  const getParticipantNames = (conv: ConversationLike) => {
+    const parts: ParticipantLike[] = Array.isArray(conv?.participants)
+      ? conv.participants
+      : [];
+
+    return parts
+      .map((p) => p?.user?.username ?? p?.username ?? "")
+      .filter(Boolean)
+      .join(" ");
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +111,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
         const data = await getUserConversations();
         if (!cancelled) setChatsInStore(data as any);
       } catch (err) {
-        console.error("Ошибка при загрузке чатов:", err);
+        console.error("Failed to load chats:", err);
       }
     })();
 
@@ -115,19 +120,22 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
     };
   }, [setChatsInStore]);
 
-  const getTitle = useCallback((conv: ConversationLike) => {
-    if (conv?.name) return conv.name;
+  const getTitle = useCallback(
+    (conv: ConversationLike) => {
+      if (conv?.name) return conv.name;
 
-    const parts: ParticipantLike[] = Array.isArray(conv?.participants)
-      ? conv.participants
-      : [];
+      const parts: ParticipantLike[] = Array.isArray(conv?.participants)
+        ? conv.participants
+        : [];
 
-    const names = parts
-      .map((p) => p?.user?.username ?? p?.username)
-      .filter(Boolean) as string[];
+      const names = parts
+        .map((p) => p?.user?.username ?? p?.username)
+        .filter(Boolean) as string[];
 
-    return names.length ? names.join(", ") : "Untitled";
-  }, []);
+      return names.length ? names.join(", ") : t("chat.untitled");
+    },
+    [t]
+  );
 
   const filteredChats = useMemo(() => {
     const q = norm(search);
@@ -186,7 +194,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
               : "";
 
           const lastMessage =
-            (mediaShort || textPreview || "").trim() || "No messages";
+            (mediaShort || textPreview || "").trim() || t("chat.noMessages");
 
           const time = lastMsg?.createdAt
             ? new Date(lastMsg.createdAt).toLocaleTimeString([], {
@@ -223,7 +231,7 @@ const ChatList: React.FC<ChatListProps> = ({ search = "" }) => {
                       chat.isPinned ? "chat-pin-btn--active" : ""
                     }`}
                     title={
-                      chat.isPinned ? "Unpin chat" : "Pin chat to top"
+                      chat.isPinned ? t("chat.unpinChat") : t("chat.pinChat")
                     }
                     onClick={(e) => handleTogglePin(chat, e)}
                     type="button"

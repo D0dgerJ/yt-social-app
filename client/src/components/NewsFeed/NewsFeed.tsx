@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import UploadPost from "../UploadPost/UploadPost";
 import Post from "../Post/Post";
 import {
@@ -61,6 +62,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const isProfile = mode === "profile";
   const isHome = mode === "home";
@@ -118,7 +120,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
         setError(
           err?.response?.data?.message ||
             err?.message ||
-            "Failed to load posts"
+            t("newsFeed.failedToLoadPosts")
         );
       } finally {
         setLoading(false);
@@ -126,17 +128,17 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
     };
 
     loadPosts();
-  }, [username, mode, user?.id]);
+  }, [username, mode, user?.id, t]);
 
   const handlePostDeleted = (postId: number) => {
     setPosts((prev) => prev.filter((post) => post.id !== postId));
   };
 
   const emptyText = isProfile
-    ? "This user has no posts yet."
+    ? t("newsFeed.emptyProfile")
     : isExplore
-      ? "There is nothing to show in Explore yet."
-      : "The feed is empty for now.";
+      ? t("newsFeed.emptyExplore")
+      : t("newsFeed.emptyHome");
 
   return (
     <section
@@ -148,7 +150,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ mode = "home" }) => {
 
       {loading ? (
         <div className="newsFeed-state">
-          <div className="newsFeed-state__card">Loading posts...</div>
+          <div className="newsFeed-state__card">{t("newsFeed.loadingPosts")}</div>
         </div>
       ) : error ? (
         <div className="newsFeed-state">

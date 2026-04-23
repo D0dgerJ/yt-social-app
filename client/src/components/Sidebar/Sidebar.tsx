@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { SiFeedly } from "react-icons/si";
 import {
   BiSolidVideos,
@@ -17,6 +18,7 @@ import "./Sidebar.scss";
 
 const Sidebar: React.FC = () => {
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const { data: friends, loading, error } = useFriends(
     typeof user?.id === "number" ? user.id : undefined
@@ -29,34 +31,34 @@ const Sidebar: React.FC = () => {
   const navItems = [
     {
       to: "/",
-      label: "Home",
+      label: t("sidebar.home"),
       icon: <SiFeedly className="sidebar-icon" />,
     },
     {
       to: "/explore",
-      label: "Explore",
+      label: t("sidebar.explore"),
       icon: <BiCompass className="sidebar-icon" />,
     },
     {
       to: "/shorts",
-      label: "Videos",
+      label: t("sidebar.videos"),
       icon: <BiSolidVideos className="sidebar-icon" />,
     },
     {
       to: "/chat",
-      label: "Chat",
+      label: t("sidebar.chat"),
       icon: <IoChatboxEllipsesSharp className="sidebar-icon" />,
     },
     {
       to: "/events",
-      label: "Events",
+      label: t("sidebar.events"),
       icon: <BiCalendar className="sidebar-icon" />,
     },
     ...(canModerate
       ? [
           {
             to: "/moderation",
-            label: "Moderation",
+            label: t("sidebar.moderation"),
             icon: <BiShieldQuarter className="sidebar-icon" />,
           },
         ]
@@ -89,12 +91,12 @@ const Sidebar: React.FC = () => {
         <hr className="sidebar-hr" />
 
         <div className="sidebar-friends-block">
-          <div className="sidebar-section-title">Friends</div>
+          <div className="sidebar-section-title">{t("sidebar.friends")}</div>
 
           <ul className="sidebar-friends-list">
-            {loading && <li className="sidebar-status">Loading...</li>}
+            {loading && <li className="sidebar-status">{t("sidebar.loadingFriends")}</li>}
             {Boolean(error) && (
-              <li className="sidebar-status">Error loading friends</li>
+              <li className="sidebar-status">{t("sidebar.errorLoadingFriends")}</li>
             )}
             {!loading &&
               !error &&

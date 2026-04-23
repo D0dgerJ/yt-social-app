@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -38,6 +39,7 @@ const toLikeArray = (likes: unknown): LikeEntity[] => {
 const PostDetailsPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   const [post, setPost] = useState<PostType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ const PostDetailsPage: React.FC = () => {
         setError(null);
 
         if (!Number.isFinite(numericPostId) || numericPostId <= 0) {
-          setError("Invalid post ID.");
+          setError(t("postDetails.invalidPostId"));
           return;
         }
 
@@ -93,7 +95,7 @@ const PostDetailsPage: React.FC = () => {
         setError(
           err?.response?.data?.message ||
             err?.message ||
-            "Failed to load post"
+            t("postDetails.failedToLoadPost")
         );
       } finally {
         setLoading(false);
@@ -101,7 +103,7 @@ const PostDetailsPage: React.FC = () => {
     };
 
     void loadPost();
-  }, [numericPostId]);
+  }, [numericPostId, t]);
 
   return (
     <>
@@ -115,7 +117,9 @@ const PostDetailsPage: React.FC = () => {
         <main className="post-details-wrapper">
           {loading ? (
             <div className="post-details-state">
-              <div className="post-details-state__card">Loading post...</div>
+              <div className="post-details-state__card">
+                {t("postDetails.loadingPost")}
+              </div>
             </div>
           ) : error ? (
             <div className="post-details-state">
@@ -131,7 +135,9 @@ const PostDetailsPage: React.FC = () => {
             />
           ) : (
             <div className="post-details-state">
-              <div className="post-details-state__card">Post not found.</div>
+              <div className="post-details-state__card">
+                {t("postDetails.postNotFound")}
+              </div>
             </div>
           )}
         </main>

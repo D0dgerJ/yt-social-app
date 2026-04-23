@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { useFriendStatus } from "../../hooks/useFriendStatus";
 import { AuthContext } from "../../context/AuthContext";
 import "./FriendButton.scss";
@@ -9,6 +10,7 @@ interface FriendButtonProps {
 
 const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const {
     status,
@@ -26,7 +28,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
   if (!status) {
     return (
       <button type="button" className="friend-btn friend-btn--ghost" disabled>
-        Loading...
+        {t("friends.loading")}
       </button>
     );
   }
@@ -39,7 +41,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--secondary"
           onClick={cancelRequest}
         >
-          Remove from friends
+          {t("friends.removeFromFriends")}
         </button>
       );
 
@@ -50,7 +52,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--ghost"
           onClick={cancelRequest}
         >
-          Cancel request
+          {t("friends.cancelRequest")}
         </button>
       );
 
@@ -62,14 +64,14 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
             className="friend-btn friend-btn--primary"
             onClick={acceptRequest}
           >
-            Accept
+            {t("friends.accept")}
           </button>
           <button
             type="button"
             className="friend-btn friend-btn--danger"
             onClick={rejectRequest}
           >
-            Decline
+            {t("friends.decline")}
           </button>
         </div>
       );
@@ -77,7 +79,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
     case "following":
       return (
         <button type="button" className="friend-btn friend-btn--ghost" disabled>
-          You are following this user
+          {t("friends.following")}
         </button>
       );
 
@@ -88,7 +90,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--secondary"
           onClick={sendRequest}
         >
-          Follower · add to friends
+          {t("friends.followerAdd")}
         </button>
       );
 
@@ -100,7 +102,7 @@ const FriendButton: React.FC<FriendButtonProps> = ({ targetUserId }) => {
           className="friend-btn friend-btn--primary"
           onClick={sendRequest}
         >
-          Add to friends
+          {t("friends.addToFriends")}
         </button>
       );
   }

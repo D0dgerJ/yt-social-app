@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getTrendingGifs, searchGifs, type GifItem } from "@/services/giphy.api";
 import "./GifPicker.scss";
 
@@ -21,8 +22,11 @@ function mergeUniqueById(list: GifItem[], add: GifItem[]) {
 
 const GifPicker: React.FC<GifPickerProps> = ({
   onSelect,
-  placeholder = "Search GIF…",
+  placeholder,
 }) => {
+  const { t } = useTranslation();
+  const effectivePlaceholder = placeholder || t("chat.searchGif");
+
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<GifItem[]>([]);
   const [offset, setOffset] = useState(0);
@@ -67,7 +71,7 @@ const GifPicker: React.FC<GifPickerProps> = ({
       setOffset(curOffset + safePage.length);
       setHasMore(safePage.length === LIMIT);
     } catch (e: any) {
-      setErr(e?.message || "Failed to load GIFs");
+      setErr(e?.message || t("chat.failedToLoadGifs"));
     } finally {
       setLoading(false);
     }
@@ -108,8 +112,8 @@ const GifPicker: React.FC<GifPickerProps> = ({
 
     const io = new IntersectionObserver((entries) => {
       if (entries[0]?.isIntersecting && hasMore && !loading) {
-        const effectiveQuery = sourceKeyRef.current || query.trim();
-        void fetchPage(effectiveQuery, offset, false);
+        const nextQuery = sourceKeyRef.current || query.trim();
+        void fetchPage(nextQuery, offset, false);
       }
     });
 
@@ -127,8 +131,8 @@ const GifPicker: React.FC<GifPickerProps> = ({
 
   const content = useMemo(() => {
     if (err) return <div className="gif-error">{err}</div>;
-    if (!items.length && loading) return <div className="gif-loading">Loading...</div>;
-    if (!items.length) return <div className="gif-empty">Nothing found</div>;
+    if (!items.length && loading) return <div className="gif-loading">{t("common.loading")}</div>;
+    if (!items.length) return <div className="gif-empty">{t("chat.nothingFound")}</div>;
 
     return (
       <>
@@ -137,7 +141,7 @@ const GifPicker: React.FC<GifPickerProps> = ({
             <button
               key={`gif-${g.id}-${i}`}
               className="gif-thumb"
-              title="Send GIF"
+              title={t("chat.sendGif")}
               onClick={() => pick(g)}
               type="button"
             >
@@ -148,14 +152,14 @@ const GifPicker: React.FC<GifPickerProps> = ({
         <div ref={sentinelRef} className="gif-sentinel" />
       </>
     );
-  }, [err, loading, items]);
+  }, [err, loading, items, t]);
 
   return (
     <div className="gif-picker">
       <div className="gif-search">
         <input
           type="text"
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           value={query}
           onChange={(e) => onInput(e.target.value)}
           onKeyDown={(e) => {
@@ -172,7 +176,7 @@ const GifPicker: React.FC<GifPickerProps> = ({
             resetList(nextQuery);
             void fetchPage(nextQuery, 0, true);
           }}
-          aria-label="Search"
+          aria-label={t("chat.search")}
           type="button"
         >
           🔍

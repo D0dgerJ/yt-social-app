@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import "./NotificationsDropdown.scss";
 import { useNotificationStore } from "../../stores/notificationStore";
@@ -31,6 +32,7 @@ const POST_RELATED_NOTIFICATION_TYPES = new Set<string>([
 
 const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const {
     notifications,
@@ -50,8 +52,8 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
   const generalNotifications = useMemo(
     () =>
       notifications.filter((n) => {
-        const t = String(n.type);
-        return !CHAT_NOTIFICATION_TYPES.has(t);
+        const notificationType = String(n.type);
+        return !CHAT_NOTIFICATION_TYPES.has(notificationType);
       }),
     [notifications]
   );
@@ -80,11 +82,11 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
   return (
     <div className="notifications-dropdown">
       <div className="notifications-header">
-        <span className="notifications-title">Notifications</span>
+        <span className="notifications-title">{t("notifications.title")}</span>
 
         {generalUnreadCount > 0 && (
           <span className="notifications-counter">
-            Unread: {generalUnreadCount}
+            {t("notifications.unread", { count: generalUnreadCount })}
           </span>
         )}
 
@@ -100,23 +102,23 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
       </div>
 
       <div className="notifications-body">
-        {loading && <p className="notifications-info">Loading...</p>}
+        {loading && <p className="notifications-info">{t("common.loading")}</p>}
 
         {error && !loading && (
           <p className="notifications-error">
-            Load error: {error}
+            {t("notifications.loadError", { error })}
           </p>
         )}
 
         {!loading && !error && generalNotifications.length === 0 && (
-          <p className="notifications-info">No notifications yet</p>
+          <p className="notifications-info">{t("notifications.empty")}</p>
         )}
 
         {!loading && !error && generalNotifications.length > 0 && (
           <ul className="notifications-list">
             {generalNotifications.map((n) => {
               const payload = parsePayload(n.content);
-              const desc = renderNotificationText(n.type, payload);
+              const desc = renderNotificationText(t, n.type, payload);
 
               return (
                 <li
@@ -138,7 +140,7 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
                   <div className="notifications-item-main">
                     <img
                       src={n.fromUser?.profilePicture || noProfilePic}
-                      alt={n.fromUser?.username || "User"}
+                      alt={n.fromUser?.username || t("common.user")}
                       className="notifications-avatar"
                       onError={(e) => {
                         e.currentTarget.src = noProfilePic;
@@ -165,7 +167,7 @@ const NotificationsDropdown: React.FC<Props> = ({ onClose }) => {
                       )}
 
                       <span className="notifications-date">
-                        {formatDate(n.createdAt)}
+                        {formatDate(n.createdAt, i18n.language)}
                       </span>
                     </div>
                   </div>
@@ -199,9 +201,11 @@ function parsePayload(raw?: string | null): any | null {
   }
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, language: string) {
   const d = new Date(iso);
-  return d.toLocaleString("ru-RU", {
+  const locale = language.startsWith("ru") ? "ru-RU" : "en-US";
+
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -240,15 +244,20 @@ function navigateByNotification(
 }
 
 function renderNotificationText(
+  t: (key: string, options?: Record<string, unknown>) => string,
   type: string,
   payload: any
 ): { main: string; details?: string; snippet?: string } {
   const postPart =
-    payload?.postId != null ? `for post #${payload.postId}` : undefined;
+    payload?.postId != null
+      ? t("notifications.forPost", { id: payload.postId })
+      : undefined;
+
   const commentPart =
     payload?.commentId != null
-      ? `for comment #${payload.commentId}`
+      ? t("notifications.forComment", { id: payload.commentId })
       : undefined;
+
   const snippet =
     typeof payload?.snippet === "string" && payload.snippet.trim().length > 0
       ? payload.snippet.trim()
@@ -257,68 +266,68 @@ function renderNotificationText(
   switch (type) {
     case "post_like":
       return {
-        main: "liked your post",
+        main: t("notifications.likedPost"),
         details: postPart,
       };
 
     case "comment_like":
       return {
-        main: "liked your comment",
+        main: t("notifications.likedComment"),
         details: commentPart || postPart,
       };
 
     case "reply_like":
       return {
-        main: "liked your reply",
+        main: t("notifications.likedReply"),
         details: commentPart || postPart,
       };
 
     case "comment_on_post":
       return {
-        main: "commented on your post",
+        main: t("notifications.commentedPost"),
         details: postPart,
         snippet,
       };
 
     case "reply_to_comment":
       return {
-        main: "replied to your comment",
+        main: t("notifications.repliedComment"),
         details: commentPart || postPart,
         snippet,
       };
 
     case "comment_mention":
       return {
-        main: "mentioned you in a comment",
+        main: t("notifications.mentionedComment"),
         details: postPart,
         snippet,
       };
 
     case "post_mention":
       return {
-        main: "mentioned you in a post",
+        main: t("notifications.mentionedPost"),
         details: postPart,
         snippet,
       };
 
     case "post_reply":
       return {
-        main: "replied to your pos",
+        main: t("notifications.repliedPost"),
         details: postPart,
         snippet,
       };
 
     case "post_share":
       return {
-        main: "shared your post",
+        main: t("notifications.sharedPost"),
         details: postPart,
       };
 
     case "follow":
-      return { main: "started following you" };
+      return { main: t("notifications.followedYou") };
 
     default:
-      return { main: "performed an action" };
+      return { main: t("notifications.performedAction") };
   }
 }
 

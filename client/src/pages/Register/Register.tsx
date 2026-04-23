@@ -2,6 +2,7 @@ import axios from "axios";
 import "./Register.scss";
 import React, { useState, useContext } from "react";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import { registerUser } from "../../utils/api/auth.api";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -27,6 +28,7 @@ const Register: React.FC = () => {
 
   const { dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const validateRegisterForm = (data: AuthData): string | null => {
     const username = data.username.trim();
@@ -34,19 +36,19 @@ const Register: React.FC = () => {
     const password = data.password;
 
     if (username.length < USERNAME_MIN_LENGTH) {
-      return `Username must be at least ${USERNAME_MIN_LENGTH} characters`;
+      return t("auth.usernameMin", { count: USERNAME_MIN_LENGTH });
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      return "Invalid email";
+      return t("auth.invalidEmail");
     }
 
     if (password.length < PASSWORD_MIN_LENGTH) {
-      return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
+      return t("auth.passwordMin", { count: PASSWORD_MIN_LENGTH });
     }
 
     if (data.confirmPassword !== password) {
-      return "Passwords do not match";
+      return t("auth.passwordsDoNotMatch");
     }
 
     return null;
@@ -71,13 +73,13 @@ const Register: React.FC = () => {
 
       dispatch({ type: "LOGIN_SUCCESS", payload: user });
 
-      toast.success(`Welcome, ${user.username}!`);
+      toast.success(t("auth.welcome", { username: user.username }));
       navigate("/");
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Something went wrong");
+        toast.error(error.response?.data?.message || t("auth.somethingWentWrong"));
       } else {
-        toast.error("Something went wrong");
+        toast.error(t("auth.somethingWentWrong"));
       }
     }
   };
@@ -87,16 +89,13 @@ const Register: React.FC = () => {
       <div className="auth-shell">
         <section className="auth-brand">
           <div className="auth-brand__badge">DodgerJ Social</div>
-          <h1 className="auth-brand__title">Create your account</h1>
-          <p className="auth-brand__text">
-            Join DodgerJ Social to publish posts, connect with others,
-            follow your friends, and customize your profile.
-          </p>
+          <h1 className="auth-brand__title">{t("auth.registerTitle")}</h1>
+          <p className="auth-brand__text">{t("auth.registerText")}</p>
 
           <div className="auth-brand__features">
-            <div className="auth-brand__feature">Personal profile</div>
-            <div className="auth-brand__feature">Comments, reactions, and friends</div>
-            <div className="auth-brand__feature">Events, explore, and shorts</div>
+            <div className="auth-brand__feature">{t("auth.registerFeature1")}</div>
+            <div className="auth-brand__feature">{t("auth.registerFeature2")}</div>
+            <div className="auth-brand__feature">{t("auth.registerFeature3")}</div>
           </div>
         </section>
 
@@ -104,18 +103,18 @@ const Register: React.FC = () => {
           <div className="auth-card">
             <div className="auth-card__header">
               <div className="auth-card__header-top">
-                <h2>Register</h2>
+                <h2>{t("auth.registerCardTitle")}</h2>
                 <span className="auth-mini-logo">DJS</span>
               </div>
-              <p>Fill out the form and start using the app.</p>
+              <p>{t("auth.registerCardText")}</p>
             </div>
 
             <form onSubmit={handleRegister} className="auth-form">
               <label className="auth-field">
-                <span>Username</span>
+                <span>{t("common.username")}</span>
                 <input
                   type="text"
-                  placeholder="Choose a username"
+                  placeholder={t("auth.chooseUsername")}
                   className="auth-input"
                   value={auth.username}
                   onChange={(e) =>
@@ -127,7 +126,7 @@ const Register: React.FC = () => {
               </label>
 
               <label className="auth-field">
-                <span>Email</span>
+                <span>{t("common.email")}</span>
                 <input
                   type="email"
                   placeholder="you@example.com"
@@ -141,10 +140,10 @@ const Register: React.FC = () => {
               </label>
 
               <label className="auth-field">
-                <span>Password</span>
+                <span>{t("common.password")}</span>
                 <input
                   type="password"
-                  placeholder="Create a password"
+                  placeholder={t("auth.createPassword")}
                   className="auth-input"
                   value={auth.password}
                   onChange={(e) =>
@@ -156,10 +155,10 @@ const Register: React.FC = () => {
               </label>
 
               <label className="auth-field">
-                <span>Confirm password</span>
+                <span>{t("auth.confirmPassword")}</span>
                 <input
                   type="password"
-                  placeholder="Repeat the password"
+                  placeholder={t("auth.repeatPassword")}
                   className="auth-input"
                   value={auth.confirmPassword}
                   onChange={(e) =>
@@ -174,11 +173,11 @@ const Register: React.FC = () => {
               </label>
 
               <button type="submit" className="auth-submit">
-                Sign up
+                {t("auth.signUp")}
               </button>
 
               <Link className="auth-secondary auth-secondary--link" to="/login">
-                Already have an account? Login
+                {t("auth.alreadyHaveAccount")}
               </Link>
             </form>
           </div>

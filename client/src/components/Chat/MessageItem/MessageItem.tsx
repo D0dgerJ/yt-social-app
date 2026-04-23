@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from "react-i18next";
 import { MessageReactions } from '../MessageReactions/MessageReactions';
 import {
   getMessageReactions as getReactionsREST,
@@ -99,9 +100,10 @@ const isImageByExt = (url?: string) =>
   );
 
 const MediaGrid: React.FC<{
-  items: NonNullable<Message['mediaFiles']>;
+  items: NonNullable<Message["mediaFiles"]>;
   onOpen?: (url: string) => void;
 }> = ({ items, onOpen }) => {
+  const { t } = useTranslation();
   if (!items?.length) return null;
 
   const count = Math.min(items.length, 10);
@@ -206,7 +208,7 @@ const MediaGrid: React.FC<{
                 className="chat-file-bubble chat-file-bubble--grid"
                 onClick={() => handleDownload(m.url)}
                 onKeyDown={(e) => onKeyOpen(e, m.url)}
-                title={m.originalName || 'File'}
+                title={m.originalName || t("common.file")}
               >
                 <div className="chat-file-bubble__icon">
                   <div className="chat-file-bubble__icon-ext">
@@ -217,11 +219,11 @@ const MediaGrid: React.FC<{
 
                 <div className="chat-file-bubble__body">
                   <div className="chat-file-bubble__name">
-                    {m.originalName || 'File'}
+                    {m.originalName || t("common.file")}
                   </div>
 
                   <div className="chat-file-bubble__meta">
-                    {formatFileSize(m.size) || 'Document'}
+                    {formatFileSize(m.size) || t("common.document")}
                   </div>
                 </div>
               </button>
@@ -276,6 +278,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   maxViewsPerUser,
   remainingViewsForMe,
 }) => {
+  const { t } = useTranslation();
   const [showActions, setShowActions] = useState(false);
   const [showReactionsPopup, setShowReactionsPopup] = useState(false);
 
@@ -522,12 +525,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
       const text = await transcribeMessageREST(messageId);
 
-      setTranscript(text || '(empty)');
+      setTranscript(text || "(empty)");
       setIsTranscriptVisible(true);
     } catch (err: any) {
       console.error('[transcribe] error:', err);
       setTranscribeError(
-        err?.message || 'Failed to transcribe voice message',
+        err?.message || t("chat.transcript"),
       );
     } finally {
       setIsTranscribing(false);
@@ -591,17 +594,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
       data-id={messageId}
       data-message-id={messageId}
       role="article"
-      aria-label="Message"
+      aria-label={t("chat.message")}
     >
       <div className="message-header">
         <span className="sender">{displayNameComputed}</span>
 
         {isEphemeralActive && (
           <span className="message-ephemeral-badge">
-            Ephemeral
+            {t("chat.ephemeral")}
             {typeof remainingViews === 'number' && (
               <span className="message-ephemeral-badge__counter">
-                · left {remainingViews}
+                · {t("chat.leftCount", { count: remainingViews })}
               </span>
             )}
           </span>
@@ -610,7 +613,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <button
           type="button"
           className="message-actions-btn"
-          aria-label="Message actions"
+          aria-label={t("chat.messageActions")}
           onClick={() => setShowActions((s) => !s)}
         >
           ⋯
@@ -622,11 +625,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
             onMouseLeave={() => setShowActions(false)}
           >
             <button type="button" onClick={() => onReply?.()}>
-              Reply
+              {t("chat.reply")}
             </button>
             {isOwnMessage && (
               <button type="button" onClick={() => onEdit?.()}>
-                Edit
+                {t("chat.edit")}
               </button>
             )}
             {isOwnMessage && (
@@ -635,7 +638,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 className="danger"
                 onClick={() => onDelete?.()}
               >
-                Delete
+                {t("chat.delete")}
               </button>
             )}
             <div className="message-actions-reactions">
@@ -670,15 +673,15 @@ const MessageItem: React.FC<MessageItemProps> = ({
           onClick={() => handleOpenEphemeral()}
         >
           <span className="message-ephemeral-placeholder__title">
-            🔒 Ephemeral message
+            🔒 {t("chat.ephemeralMessage")}
           </span>
           {typeof remainingViews === 'number' && (
             <span className="message-ephemeral-placeholder__counter">
-              Views remaining: {remainingViews}
+              {t("chat.viewsRemaining", { count: remainingViews })}
             </span>
           )}
           <span className="message-ephemeral-placeholder__hint">
-            Click to open
+            {t("chat.clickToOpen")}
           </span>
         </button>
       )}
@@ -719,7 +722,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                 }}
               />
             ) : (
-              <div className="message-image-fallback">Image Unavailable</div>
+              <div className="message-image-fallback">{t("chat.imageUnavailable")}</div>
             )}
           </div>
         )}
@@ -780,12 +783,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
               disabled={isTranscribing}
             >
               {isTranscribing
-                ? 'Transcribing...'
+                ? t("chat.transcribing")
                 : transcript
                 ? isTranscriptVisible
-                  ? 'Hide text'
-                  : 'Show text'
-                : 'Transcript'}
+                  ? t("chat.hideText")
+                  : t("chat.showText")
+                : t("chat.transcript")}
             </button>
 
             {transcribeError && (
@@ -824,10 +827,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
             <div className="chat-file-bubble__body">
               <div className="chat-file-bubble__name">
-                {fileName ?? decodeURIComponent(mediaUrl.split('/').pop() || 'File')}
+                {fileName ?? decodeURIComponent(mediaUrl.split("/").pop() || t("common.file"))}
               </div>
 
-              <div className="chat-file-bubble__meta">File</div>
+              <div className="chat-file-bubble__meta">{t("common.file")}</div>
             </div>
           </a>
         )}
@@ -845,7 +848,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         )}
 
       {reactions.length > 0 && (
-        <div className="message-reactions-static" aria-label="Message reactions">
+        <div className="message-reactions-static" aria-label={t("chat.reaction")}>
           {reactions.map((r) => {
             const mine = myReactions.has(r.emoji);
             return (
@@ -872,7 +875,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
             type="button"
             className="reaction-chip reaction-chip--add"
             onClick={openReactionsPopup}
-            aria-label="Add reaction"
+            aria-label={t("chat.addReaction")}
           >
             +
           </button>
@@ -883,7 +886,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <div
           className="reactions-popup"
           role="dialog"
-          aria-label="Reaction picker"
+          aria-label={t("chat.reactionPicker")}
           onClick={() => setShowReactionsPopup(false)}
         >
           <MessageReactions
@@ -896,18 +899,18 @@ const MessageItem: React.FC<MessageItemProps> = ({
             }
           />
           {loadingReactions && (
-            <div className="reactions-loading">Loading…</div>
+            <div className="reactions-loading">{t("common.loading")}</div>
           )}
         </div>
       )}
 
       <div className="message-status">
-        {localStatus === 'sending' && <span>Sending…</span>}
+        {localStatus === "sending" && <span>{t("chat.sending")}</span>}
         {localStatus === 'failed' && (
-          <span className="danger">Not sent</span>
+          <span className="danger">{t("chat.notSent")}</span>
         )}
-        {isDelivered && <span>Delivered</span>}
-        {isRead && <span>Read</span>}
+        {isDelivered && <span>{t("chat.delivered")}</span>}
+        {isRead && <span>{t("chat.read")}</span>}
       </div>
     </div>
   );

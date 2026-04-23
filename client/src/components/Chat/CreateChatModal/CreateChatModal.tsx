@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createChat } from "@/utils/api/chat.api";
 import { getUserFriends } from "@/utils/api/user.api";
 import { useUserStore } from "@/stores/userStore";
@@ -16,6 +17,7 @@ interface Props {
 }
 
 const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
+  const { t } = useTranslation();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,14 +36,14 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
         setFriends(res || []);
       } catch (e) {
         console.error("❌ Unable to get friends:", e);
-        setError("Failed to load friends list");
+        setError(t("chat.failedToLoadFriendsList"));
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchFriends();
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   const toggleSelect = (id: number) => {
     setSelected((prev) =>
@@ -70,14 +72,14 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
   return (
     <div className="modal-backdrop">
       <div className="modal">
-        <h2>Create chat</h2>
+        <h2>{t("chat.createChat")}</h2>
 
         {isLoading ? (
-          <p>Loading friends list...</p>
+          <p>{t("chat.loadingFriendsList")}</p>
         ) : error ? (
           <p className="error">{error}</p>
         ) : friends.length === 0 ? (
-          <p>No friends yet</p>
+          <p>{t("chat.noFriendsYet")}</p>
         ) : (
           <ul className="friend-list">
             {friends.map((friend) => (
@@ -105,9 +107,9 @@ const CreateChatModal: React.FC<Props> = ({ onClose, onCreated }) => {
             onClick={handleCreate}
             disabled={selected.length === 0 || isCreating}
           >
-            {isCreating ? "Creating..." : "Create"}
+            {isCreating ? t("chat.creating") : t("chat.create")}
           </button>
-          <button onClick={onClose}>Cancel</button>
+          <button onClick={onClose}>{t("common.cancel")}</button>
         </div>
       </div>
     </div>

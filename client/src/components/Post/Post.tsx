@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { MdOutlineMoreVert } from "react-icons/md";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 import moment from "moment";
 
 import { getUserById } from "../../utils/api/user.api";
@@ -51,6 +52,7 @@ const Post: React.FC<PostProps> = ({
   targetCommentId,
 }) => {
   const { user: currentUser } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   const [author, setAuthor] = useState<UserInfo | null>(
     post.user
@@ -131,7 +133,7 @@ const Post: React.FC<PostProps> = ({
       await toggleLike();
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to like");
+      toast.error(err?.response?.data?.message || t("post.failedToLike"));
     }
   };
 
@@ -145,13 +147,13 @@ const Post: React.FC<PostProps> = ({
 
   const handleReport = async () => {
     if (!currentUser?.id) {
-      toast.info("You need to sign in to submit a report.");
+      toast.info(t("post.signInToReport"));
       return;
     }
 
     setIsMenuOpen(false);
 
-    const messageRaw = window.prompt("Describe the issue (optional):");
+    const messageRaw = window.prompt(t("post.reportPrompt"));
     const message = typeof messageRaw === "string" ? messageRaw.trim() : "";
 
     try {
@@ -161,29 +163,29 @@ const Post: React.FC<PostProps> = ({
       });
 
       if (res?.alreadyReported) {
-        toast.info("You have already reported this post.");
+        toast.info(t("post.alreadyReported"));
         return;
       }
 
-      toast.success("Report submitted.");
+      toast.success(t("post.reportSubmitted"));
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to submit report");
+      toast.error(err?.response?.data?.message || t("post.failedToSubmitReport"));
     }
   };
 
   const handleDelete = async () => {
     if (!currentUser?.id) {
-      toast.info("You need to sign in.");
+      toast.info(t("post.signInRequired"));
       return;
     }
 
     if (!isOwner) {
-      toast.error("You cannot delete someone else's post.");
+      toast.error(t("post.cannotDeleteForeignPost"));
       return;
     }
 
-    const confirmed = window.confirm("Delete this post?");
+    const confirmed = window.confirm(t("post.confirmDelete"));
     if (!confirmed) return;
 
     setIsMenuOpen(false);
@@ -191,11 +193,11 @@ const Post: React.FC<PostProps> = ({
 
     try {
       await deletePost(post.id);
-      toast.success("Post deleted.");
+      toast.success(t("post.postDeleted"));
       onDeleted?.(post.id);
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to delete post");
+      toast.error(err?.response?.data?.message || t("post.failedToDeletePost"));
     } finally {
       setIsDeleting(false);
     }
@@ -231,7 +233,7 @@ const Post: React.FC<PostProps> = ({
             type="button"
             className="options-trigger"
             onClick={() => setIsMenuOpen((v) => !v)}
-            aria-label="Post options"
+            aria-label={t("post.postOptions")}
           >
             <MdOutlineMoreVert className="options-icon" />
           </button>
@@ -245,7 +247,7 @@ const Post: React.FC<PostProps> = ({
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  {isDeleting ? t("post.deleting") : t("post.delete")}
                 </button>
               ) : (
                 <button
@@ -253,7 +255,7 @@ const Post: React.FC<PostProps> = ({
                   className="post-options-item"
                   onClick={handleReport}
                 >
-                  Report
+                  {t("post.report")}
                 </button>
               )}
             </div>
@@ -298,7 +300,7 @@ const Post: React.FC<PostProps> = ({
           className="comment-section"
           onClick={() => setShowPostModal(true)}
         >
-          <span>{commentsCount} comments</span>
+          <span>{t("post.commentsCount", { count: commentsCount })}</span>
         </button>
       </div>
 
