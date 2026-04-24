@@ -4,7 +4,13 @@ import { Errors } from "../../../infrastructure/errors/ApiError.js";
 import { CommentStatus, CommentVisibility, UserRole } from "@prisma/client";
 
 function sanitizeDeletedComment<
-  T extends { status: CommentStatus; content?: string; images?: string[]; videos?: string[]; files?: string[] }
+  T extends {
+    status: CommentStatus;
+    content?: string;
+    images?: string[];
+    videos?: string[];
+    files?: string[];
+  }
 >(c: T): T {
   if (c.status !== CommentStatus.DELETED) return c;
 
@@ -33,7 +39,11 @@ function stripShadowFields<T extends Record<string, any>>(c: T): T {
 type ViewerCtx = { id?: number; role?: UserRole } | null | undefined;
 
 function isStaff(viewer: ViewerCtx) {
-  return viewer?.role === UserRole.MODERATOR || viewer?.role === UserRole.ADMIN || viewer?.role === UserRole.OWNER;
+  return (
+    viewer?.role === UserRole.MODERATOR ||
+    viewer?.role === UserRole.ADMIN ||
+    viewer?.role === UserRole.OWNER
+  );
 }
 
 function visibilityWhere(viewer: ViewerCtx) {
@@ -46,8 +56,81 @@ function visibilityWhere(viewer: ViewerCtx) {
 
   // Логин: PUBLIC + свои SHADOW_HIDDEN
   return {
-    OR: [{ visibility: CommentVisibility.PUBLIC }, { visibility: CommentVisibility.SHADOW_HIDDEN, userId: viewerId }],
+    OR: [
+      { visibility: CommentVisibility.PUBLIC },
+      { visibility: CommentVisibility.SHADOW_HIDDEN, userId: viewerId },
+    ],
   };
+}
+
+type RawComment = {
+  id: number;
+  parentId: number | null;
+  createdAt: Date;
+  status: CommentStatus;
+  content?: string;
+  images?: string[];
+  videos?: string[];
+  files?: string[];
+  user: {
+    id: number;
+    username: string;
+    profilePicture: string | null;
+  };
+  _count: { likes: number };
+  likes: { userId: number }[];
+} & Record<string, any>;
+
+type TreeComment = Omit<RawComment, "createdAt"> & {
+  createdAt: Date;
+  replies: TreeComment[];
+};
+
+function buildCommentTree(flat: TreeComment[]): TreeComment[] {
+  const byId = new Map<number, TreeComment>();
+
+  for (const item of flat) {
+    byId.set(item.id, { ...item, replies: [] });
+  }
+
+  const roots: TreeComment[] = [];
+
+  for (const item of flat) {
+    const current = byId.get(item.id)!;
+
+    if (item.parentId == null) {
+      roots.push(current);
+      continue;
+    }
+
+    const parent = byId.get(item.parentId);
+
+    if (parent) {
+      parent.replies.push(current);
+    } else {
+      roots.push(current);
+    }
+  }
+
+  const sortRepliesAsc = (nodes: TreeComment[]) => {
+    nodes.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    for (const node of nodes) {
+      if (node.replies?.length) {
+        sortRepliesAsc(node.replies);
+      }
+    }
+  };
+
+  sortRepliesAsc(roots);
+
+  roots.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  return roots;
 }
 
 export const getPostComments = async (postId: number, viewer?: ViewerCtx) => {
@@ -59,48 +142,33 @@ export const getPostComments = async (postId: number, viewer?: ViewerCtx) => {
 
   const staff = isStaff(viewer);
 
-  const rootWhere: any = {
+  const where: any = {
     postId,
-    parentId: null,
     status: staff
       ? { in: [CommentStatus.ACTIVE, CommentStatus.DELETED, CommentStatus.HIDDEN] }
       : { in: [CommentStatus.ACTIVE, CommentStatus.DELETED] },
     ...(staff ? {} : visibilityWhere(viewer)),
   };
 
-  const replyWhere: any = {
-    status: staff
-      ? { in: [CommentStatus.ACTIVE, CommentStatus.DELETED, CommentStatus.HIDDEN] }
-      : { in: [CommentStatus.ACTIVE, CommentStatus.DELETED] },
-    ...(staff ? {} : visibilityWhere(viewer)),
-  };
-
-  const items = await prisma.comment.findMany({
-    where: rootWhere,
+  const flatItems = await prisma.comment.findMany({
+    where,
     include: {
       user: {
         select: { id: true, username: true, profilePicture: true },
       },
-      replies: {
-        where: replyWhere,
-        include: {
-          user: {
-            select: { id: true, username: true, profilePicture: true },
-          },
-          _count: { select: { likes: true } },
-          likes: { select: { userId: true } },
-        },
-        orderBy: { createdAt: "asc" },
-      },
       _count: { select: { likes: true } },
       likes: { select: { userId: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
   });
 
-  return items.map((c) => {
-    const root = stripShadowFields(sanitizeDeletedComment(c as any));
-    const replies = (c.replies ?? []).map((r: any) => stripShadowFields(sanitizeDeletedComment(r)));
-    return { ...root, replies };
+  const prepared: TreeComment[] = flatItems.map((c) => {
+    const cleaned = stripShadowFields(sanitizeDeletedComment(c as any));
+    return {
+      ...(cleaned as any),
+      replies: [],
+    };
   });
+
+  return buildCommentTree(prepared);
 };

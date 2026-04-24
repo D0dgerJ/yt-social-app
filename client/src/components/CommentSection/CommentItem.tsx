@@ -14,6 +14,7 @@ interface Props {
   onUpdate: (commentId: number, newContent: string) => void;
   targetCommentId?: number;
   onStartReply: (commentId: number, username: string) => void;
+  depth?: number;
 }
 
 const REPORT_REASONS = [
@@ -46,6 +47,7 @@ const CommentItem: React.FC<Props> = ({
   onUpdate,
   targetCommentId,
   onStartReply,
+  depth = 0,
 }) => {
   const [editing, setEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(comment.content);
@@ -62,6 +64,7 @@ const CommentItem: React.FC<Props> = ({
   const [isHighlighted, setIsHighlighted] = useState(false);
 
   const commentRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const isAuthed = !!currentUserId;
   const isOwnComment = !!currentUserId && currentUserId === comment.userId;
@@ -73,6 +76,9 @@ const CommentItem: React.FC<Props> = ({
     !isDeleted &&
     !isHidden &&
     (comment.status ? comment.status === "ACTIVE" : true);
+
+  const isNestedReply = depth > 0;
+  const shouldFlattenReplies = depth >= 1;
 
   const likedByMe = useMemo(() => {
     if (!currentUserId) return false;
@@ -113,6 +119,21 @@ const CommentItem: React.FC<Props> = ({
       window.clearTimeout(unhighlightTimer);
     };
   }, [comment.id, targetCommentId]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpen]);
 
   const canInteract = isAuthed && isActive;
   const canEdit = canInteract && isOwnComment;
@@ -186,35 +207,85 @@ const CommentItem: React.FC<Props> = ({
     }
   };
 
+  const repliesCount = comment.replies?.length ?? 0;
+
   return (
     <div
       ref={commentRef}
-      className={`post-comment ${comment.parentId ? "post-comment--reply" : ""} ${
-        comment.status === "DELETED" ? "post-comment--deleted" : ""
-      } ${comment.status === "HIDDEN" ? "post-comment--hidden" : ""}`}
-      style={{
-        transition: "box-shadow 0.35s ease, background-color 0.35s ease",
-        boxShadow: isHighlighted
-          ? "0 0 0 2px var(--color-primary), 0 10px 30px rgba(15, 23, 42, 0.16)"
-          : undefined,
-        backgroundColor: isHighlighted
-          ? "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))"
-          : undefined,
-        borderRadius: isHighlighted ? "16px" : undefined,
-      }}
+      className={`post-comment-thread ${
+        isNestedReply ? "post-comment-thread--reply" : ""
+      } ${shouldFlattenReplies ? "post-comment-thread--flat" : ""}`}
     >
-      <img
-        src={comment.user.profilePicture || noProfilePic}
-        alt={comment.user.username}
-        className="post-comment__avatar"
-        onError={(e) => {
-          e.currentTarget.src = noProfilePic;
+      <div
+        className={`post-comment ${isNestedReply ? "post-comment--reply" : ""} ${
+          comment.status === "DELETED" ? "post-comment--deleted" : ""
+        } ${comment.status === "HIDDEN" ? "post-comment--hidden" : ""}`}
+        style={{
+          transition: "box-shadow 0.35s ease, background-color 0.35s ease",
+          boxShadow: isHighlighted
+            ? "0 0 0 2px var(--color-primary), 0 10px 30px rgba(15, 23, 42, 0.16)"
+            : undefined,
+          backgroundColor: isHighlighted
+            ? "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))"
+            : undefined,
+          borderRadius: isHighlighted ? "16px" : undefined,
         }}
-      />
+      >
+        <img
+          src={comment.user.profilePicture || noProfilePic}
+          alt={comment.user.username}
+          className="post-comment__avatar"
+          onError={(e) => {
+            e.currentTarget.src = noProfilePic;
+          }}
+        />
 
-      <div className="post-comment__content">
-        <div className="post-comment__header">
-          <span className="post-comment__username">{comment.user.username}</span>
+        <div className="post-comment__content">
+          <div className="post-comment__header">
+            <div className="post-comment__author-block">
+              <span className="post-comment__username">
+                {comment.user.username}
+              </span>
+            </div>
+
+            <div className="post-comment__menu" ref={menuRef}>
+              <button
+                type="button"
+                className="post-comment__menu-trigger"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Open comment menu"
+              >
+                <FiMoreHorizontal className="post-comment__more-icon" />
+              </button>
+
+              {menuOpen && (
+                <div className="post-comment__menu-dropdown">
+                  {!isOwnComment && (
+                    <button disabled={!canReport} onClick={openReportModal}>
+                      Report
+                    </button>
+                  )}
+
+                  {isOwnComment && (
+                    <>
+                      <button
+                        disabled={!canEdit}
+                        onClick={() => setEditing((v) => !v)}
+                      >
+                        {editing ? "Cancel edit" : "Edit"}
+                      </button>
+                      <button
+                        disabled={!canDelete}
+                        onClick={() => onDelete(comment.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
           {editing ? (
             <input
@@ -225,139 +296,106 @@ const CommentItem: React.FC<Props> = ({
               className="post-comment__inline-input"
             />
           ) : (
-            <span className="post-comment__text">
+            <div className="post-comment__text">
               {formatContent(comment.content)}
-            </span>
+            </div>
           )}
 
-          <div className="post-comment__menu">
+          {!!comment.images?.length && (
+            <div className="post-comment__images">
+              {comment.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt="attachment"
+                  className="post-comment__img"
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="post-comment__meta">
+            <span className="post-comment__time">
+              {moment(comment.createdAt).fromNow()}
+            </span>
+
             <button
               type="button"
-              className="post-comment__menu-trigger"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label="Open comment menu"
+              className={`post-comment__like-btn ${likedByMe ? "liked" : ""} ${
+                !canLike ? "disabled" : ""
+              }`}
+              onClick={() => canLike && onLike(comment.id)}
+              title={!isAuthed ? "Login to like" : !isActive ? "Unavailable" : ""}
+              disabled={!canLike}
             >
-              <FiMoreHorizontal className="post-comment__more-icon" />
+              ❤️ {comment._count?.likes || 0}
             </button>
 
-            {menuOpen && (
-              <div className="post-comment__menu-dropdown">
-                {!isOwnComment && (
-                  <button disabled={!canReport} onClick={openReportModal}>
-                    Report
-                  </button>
-                )}
-
-                {isOwnComment && (
-                  <>
-                    <button
-                      disabled={!canEdit}
-                      onClick={() => setEditing((v) => !v)}
-                    >
-                      {editing ? "Cancel edit" : "Edit"}
-                    </button>
-                    <button
-                      disabled={!canDelete}
-                      onClick={() => onDelete(comment.id)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {!!comment.images?.length && (
-          <div className="post-comment__images">
-            {comment.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt="attachment"
-                className="post-comment__img"
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="post-comment__meta">
-          <span className="post-comment__time">
-            {moment(comment.createdAt).fromNow()}
-          </span>
-
-          <button
-            type="button"
-            className={`post-comment__like-btn ${likedByMe ? "liked" : ""} ${
-              !canLike ? "disabled" : ""
-            }`}
-            onClick={() => canLike && onLike(comment.id)}
-            title={!isAuthed ? "Login to like" : !isActive ? "Unavailable" : ""}
-            disabled={!canLike}
-          >
-            ❤️ {comment._count?.likes || 0}
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              canReply && onStartReply(comment.id, comment.user.username)
-            }
-            disabled={!canReply}
-          >
-            Reply
-          </button>
-        </div>
-
-        {editing && (
-          <div className="post-comment__edit-box">
-            <button disabled={!canEdit} onClick={handleUpdate}>
-              Save
+            <button
+              type="button"
+              onClick={() =>
+                canReply && onStartReply(comment.id, comment.user.username)
+              }
+              disabled={!canReply}
+            >
+              Reply
             </button>
           </div>
-        )}
 
-        {!!comment.replies?.length && (
-          <>
-            {!showReplies && (
-              <button
-                className="post-comment__view-replies"
-                onClick={() => setShowReplies(true)}
-              >
-                View replies ({comment.replies.length})
+          {editing && (
+            <div className="post-comment__edit-box">
+              <button disabled={!canEdit} onClick={handleUpdate}>
+                Save
               </button>
-            )}
-
-            {showReplies && (
-              <>
-                <div className="post-comment__replies">
-                  {comment.replies.map((reply) => (
-                    <CommentItem
-                      key={reply.id}
-                      comment={reply}
-                      currentUserId={currentUserId}
-                      onReply={onReply}
-                      onLike={onLike}
-                      onDelete={onDelete}
-                      onUpdate={onUpdate}
-                      targetCommentId={targetCommentId}
-                      onStartReply={onStartReply}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  className="post-comment__hide-replies"
-                  onClick={() => setShowReplies(false)}
-                >
-                  Hide replies
-                </button>
-              </>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {!!repliesCount && (
+        <div className="post-comment-thread__children">
+          {!showReplies && (
+            <button
+              className="post-comment__view-replies"
+              onClick={() => setShowReplies(true)}
+            >
+              View replies ({repliesCount})
+            </button>
+          )}
+
+          {showReplies && (
+            <>
+              <div
+                className={`post-comment__replies ${
+                  shouldFlattenReplies ? "post-comment__replies--flat" : ""
+                }`}
+              >
+                {(comment.replies ?? []).map((reply) => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    currentUserId={currentUserId}
+                    onReply={onReply}
+                    onLike={onLike}
+                    onDelete={onDelete}
+                    onUpdate={onUpdate}
+                    targetCommentId={targetCommentId}
+                    onStartReply={onStartReply}
+                    depth={depth + 1}
+                  />
+                ))}
+              </div>
+
+              <button
+                className="post-comment__hide-replies"
+                onClick={() => setShowReplies(false)}
+              >
+                Hide replies
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {reportOpen && (
         <div

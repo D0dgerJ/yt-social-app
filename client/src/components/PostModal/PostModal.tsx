@@ -1,4 +1,5 @@
 import React, { useContext, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AuthContext } from "../../context/AuthContext";
 import usePostLikes from "../../hooks/usePostLike";
 
@@ -50,11 +51,22 @@ const PostModal: React.FC<PostModalProps> = ({
       if (e.key === "Escape") onClose();
     };
 
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     document.addEventListener("keydown", onEsc);
-    return () => document.removeEventListener("keydown", onEsc);
+
+    return () => {
+      document.removeEventListener("keydown", onEsc);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
   }, [onClose]);
 
-  return (
+  const modalNode = (
     <div
       className="post-modal-overlay"
       role="dialog"
@@ -115,6 +127,8 @@ const PostModal: React.FC<PostModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalNode, document.body);
 };
 
 export default PostModal;
