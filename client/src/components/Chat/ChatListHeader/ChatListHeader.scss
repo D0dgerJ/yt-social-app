@@ -108,4 +108,8 @@
     width: 100%;
     justify-content: center;
   }
+
+  .chat-list-header--has-active-chat {
+    display: none;
+  }
 }

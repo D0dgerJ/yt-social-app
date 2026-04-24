@@ -1,6 +1,5 @@
 .composer {
-  position: sticky;
-  bottom: 0;
+  position: relative;
   z-index: 5;
   display: flex;
   flex-wrap: wrap;
@@ -401,6 +400,7 @@
     padding: 10px;
     gap: 8px;
     --composer-btn-size: 40px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
   }
 
   .composer__bar {
@@ -425,5 +425,9 @@
 
   .composer__ephemeral {
     padding: 7px 8px;
+  }
+
+  .composer__emoji-btn {
+    display: none;
   }
 }

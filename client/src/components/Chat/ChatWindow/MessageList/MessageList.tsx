@@ -7,7 +7,6 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Message } from "@/stores/messageStore";
 import { DateSeparator } from "./DateSeparator";
 import { SystemMessage } from "./SystemMessage";
@@ -62,12 +61,12 @@ const MessageList: React.FC<Props> = ({
       const d = new Date(iso);
       const today = new Date();
 
-      const dY = d.getFullYear(),
-        dM = d.getMonth(),
-        dD = d.getDate();
-      const tY = today.getFullYear(),
-        tM = today.getMonth(),
-        tD = today.getDate();
+      const dY = d.getFullYear();
+      const dM = d.getMonth();
+      const dD = d.getDate();
+      const tY = today.getFullYear();
+      const tM = today.getMonth();
+      const tD = today.getDate();
 
       if (dY === tY && dM === tM && dD === tD) {
         return t("chat.today");
@@ -85,7 +84,6 @@ const MessageList: React.FC<Props> = ({
     (sourceMessages: Message[]): ListItem[] => {
       const out: ListItem[] = [];
       let prevDate = "";
-
       const seen = new Set<string>();
 
       for (const m of sourceMessages) {
@@ -163,15 +161,14 @@ const MessageList: React.FC<Props> = ({
 
   const closeMenu = useCallback(() => setMenu(null), []);
 
-  const handleStartReached = useCallback(() => {
-    if (!isLoadingOlder && hasMoreOlder) {
-      loadOlder();
-    }
-  }, [isLoadingOlder, hasMoreOlder, loadOlder]);
-
-  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const topSentinelRef = useRef<HTMLDivElement | null>(null);
   const didInitialScrollRef = useRef<Record<number, boolean>>({});
-  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  const pinnedMessages = useMemo(
+    () => messages.filter((m) => m.isPinned),
+    [messages]
+  );
 
   useLayoutEffect(() => {
     const convId = currentConversationId;
@@ -179,56 +176,68 @@ const MessageList: React.FC<Props> = ({
     if (!items.length) return;
     if (didInitialScrollRef.current[convId]) return;
 
-    const lastIndex = items.length - 1;
+    const el = scrollRef.current;
+    if (!el) return;
 
-    virtuosoRef.current?.scrollToIndex({
-      index: lastIndex,
-      align: "end",
-      behavior: "auto",
-    });
-
+    el.scrollTop = el.scrollHeight;
     didInitialScrollRef.current[convId] = true;
   }, [items.length, currentConversationId]);
-
-  const pinnedMessages = useMemo(
-    () => messages.filter((m) => m.isPinned),
-    [messages]
-  );
-
-  const scrollToMessage = useCallback(
-    (msgId: number) => {
-      const index = items.findIndex(
-        (it) => it.type === "message" && (it as any).data.id === msgId
-      );
-      if (index >= 0) {
-        virtuosoRef.current?.scrollToIndex({
-          index,
-          align: "center",
-          behavior: "smooth",
-        });
-      }
-    },
-    [items]
-  );
 
   useEffect(() => {
     if (!scrollToMessageId) return;
     if (!currentConversationId) return;
-    if (!items.length) return;
 
-    const index = items.findIndex(
-      (it) => it.type === "message" && (it as any).data.id === scrollToMessageId
-    );
-    if (index < 0) return;
+    const target = document.querySelector(
+      `[data-message-id="${scrollToMessageId}"]`
+    ) as HTMLElement | null;
 
-    virtuosoRef.current?.scrollToIndex({
-      index,
-      align: "center",
+    if (!target) return;
+
+    target.scrollIntoView({
       behavior: "smooth",
+      block: "center",
     });
 
     didInitialScrollRef.current[currentConversationId] = true;
-  }, [scrollToMessageId, items, currentConversationId]);
+  }, [scrollToMessageId, currentConversationId, items]);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    const topNode = topSentinelRef.current;
+
+    if (!root || !topNode) return;
+    if (!hasMoreOlder || isLoadingOlder) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first?.isIntersecting) {
+          loadOlder();
+        }
+      },
+      {
+        root,
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(topNode);
+
+    return () => observer.disconnect();
+  }, [loadOlder, hasMoreOlder, isLoadingOlder, items.length]);
+
+  const scrollToMessage = useCallback((msgId: number) => {
+    const target = document.querySelector(
+      `[data-message-id="${msgId}"]`
+    ) as HTMLElement | null;
+
+    if (!target) return;
+
+    target.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, []);
 
   const handleTogglePinMessage = useCallback(
     async (m: Message) => {
@@ -263,7 +272,7 @@ const MessageList: React.FC<Props> = ({
   );
 
   const renderItem = useCallback(
-    (_index: number, item: ListItem) => {
+    (item: ListItem) => {
       switch (item.type) {
         case "date":
           return <DateSeparator label={item.label} />;
@@ -275,6 +284,7 @@ const MessageList: React.FC<Props> = ({
           const m = item.data;
           return (
             <div
+              data-message-id={m.id}
               className={
                 m.isPinned
                   ? "msg-item-wrapper msg-item-wrapper--pinned"
@@ -321,19 +331,6 @@ const MessageList: React.FC<Props> = ({
     [openContextMenu, meId, onReply, onEdit, onDelete, onReact, onOpenAttachment, resolveName]
   );
 
-  const components = useMemo(() => {
-    const Header: React.FC = () => (
-      <div className="msg-loader-top">
-        {isLoadingOlder
-          ? t("chat.loadingMessages")
-          : hasMoreOlder
-            ? t("chat.scrollForHistory")
-            : t("chat.noMoreHistory")}
-      </div>
-    );
-    return { Header };
-  }, [isLoadingOlder, hasMoreOlder, t]);
-
   return (
     <div className="msg-virtuoso-wrap">
       {pinnedMessages.length > 0 && (
@@ -362,20 +359,21 @@ const MessageList: React.FC<Props> = ({
         </div>
       )}
 
-      <Virtuoso<ListItem>
-        key={currentConversationId ?? "no-conv"}
-        ref={virtuosoRef}
-        data={items}
-        className="msg-virtuoso"
-        atTopThreshold={80}
-        startReached={handleStartReached}
-        itemContent={renderItem}
-        components={components}
-        computeItemKey={(_index, item) => item.key}
-        initialTopMostItemIndex={Math.max(items.length - 1, 0)}
-        followOutput={isAtBottom ? "auto" : false}
-        atBottomStateChange={setIsAtBottom}
-      />
+      <div ref={scrollRef} className="msg-fallback-scroll">
+        <div ref={topSentinelRef} className="msg-top-sentinel" />
+
+        <div className="msg-loader-top">
+          {isLoadingOlder
+            ? t("chat.loadingMessages")
+            : hasMoreOlder
+              ? t("chat.scrollForHistory")
+              : t("chat.noMoreHistory")}
+        </div>
+
+        {items.map((item) => (
+          <React.Fragment key={item.key}>{renderItem(item)}</React.Fragment>
+        ))}
+      </div>
 
       {menu && (
         <MessageContextMenu

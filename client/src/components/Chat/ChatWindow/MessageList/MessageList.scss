@@ -1,6 +1,7 @@
 .msg-virtuoso-wrap {
-  height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background:
@@ -15,11 +16,21 @@
       transparent 28%
     ),
     var(--color-surface-soft);
+  overflow: hidden;
 }
 
-.msg-virtuoso {
-  height: 100%;
+.msg-fallback-scroll {
+  flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.msg-top-sentinel {
+  width: 100%;
+  height: 1px;
 }
 
 .msg-separator {
