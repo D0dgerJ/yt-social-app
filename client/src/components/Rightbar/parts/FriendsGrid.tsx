@@ -21,19 +21,21 @@ const FriendsGrid: React.FC<Props> = ({ friends, fallbackAvatar }) => {
   }
 
   return (
-    <div className="rightbar-friends-grid">
+    <div className="friends-grid">
       {friends.map((friend) => (
         <Link
           key={friend.id}
           to={`/profile/${friend.username}`}
-          className="rightbar-friend-card"
+          className="friend-link"
         >
-          <img
-            src={friend.profilePicture || fallbackAvatar}
-            alt={friend.username}
-            className="rightbar-friend-avatar"
-          />
-          <span className="rightbar-friend-name">{friend.username}</span>
+          <div className="friend-card">
+            <img
+              src={friend.profilePicture || fallbackAvatar}
+              alt={friend.username}
+              className="friend-img"
+            />
+            <span className="friend-name">{friend.username}</span>
+          </div>
         </Link>
       ))}
     </div>
