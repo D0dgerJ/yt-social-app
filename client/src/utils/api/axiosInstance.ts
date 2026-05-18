@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken } from "@/utils/authStorage";
+import { getToken, clearAuthStorage } from "@/utils/authStorage";
 import { env } from "@/config/env";
 
 const instance = axios.create({
@@ -16,5 +16,20 @@ instance.interceptors.request.use((config) => {
 
   return config;
 });
+
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      clearAuthStorage();
+
+      if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        window.location.assign("/login");
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default instance;

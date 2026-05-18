@@ -50,7 +50,10 @@ const AppInner: React.FC = () => {
         }
       } catch (error) {
         console.error("❌ PROFILE ERROR:", error);
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
+        if (
+          axios.isAxiosError(error) &&
+          (error.response?.status === 401 || error.response?.status === 404)
+        ) {
           logoutUser(navigate);
         }
       } finally {
